@@ -33,11 +33,13 @@ module Mongory
       end
 
       # Enables debug mode by aliasing `match?` to `debug_match`.
+      # @return [void]
       def enable
         Matchers::AbstractMatcher.alias_method :match?, :debug_match
       end
 
       # Disables debug mode by restoring `match?` to `regular_match`.
+      # @return [void]
       def disable
         Matchers::AbstractMatcher.alias_method :match?, :regular_match
       end
@@ -98,10 +100,19 @@ module Mongory
       end
 
       def clear
+        # Clears the internal trace buffer.
+        # This is useful when re-running a query and avoiding stale trace output.
+        # @return [void]
         @trace_entries.clear
       end
 
       # @private
+      # A trace entry representing a single matcher output at a given indentation level.
+      #
+      # @!attribute text
+      #   @return [String] the string to be printed
+      # @!attribute level
+      #   @return [Integer] the indentation level of this entry
       TraceEntry = Struct.new(:text, :level) do
         def formatted
           "#{'  ' * level}#{text}"

@@ -5,7 +5,7 @@ module Mongory
     # DataConverter handles automatic transformation of raw query values.
     # This class inherits from AbstractConverter and provides predefined conversions for
     # common primitive types like Symbol, Date, Time, etc.
-    # - Symbols and Dates are converted to string
+    # - Symbols and Date objects are converted to string
     # - Time and DateTime objects are ISO8601-encoded
     # - Strings and Integers are passed through as-is
     #

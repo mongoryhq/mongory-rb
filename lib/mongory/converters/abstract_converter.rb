@@ -17,9 +17,16 @@ module Mongory
       include Singleton
 
       # @private
+      # A registry entry storing a conversion rule.
+      #
+      # @!attribute klass
+      #   @return [Class] the class this rule applies to
+      # @!attribute exec
+      #   @return [Proc] the block used to convert the object
       Registry = Struct.new(:klass, :exec)
 
       # @private
+      # A sentinel value used to indicate absence of a secondary argument.
       NOTHING = Utils::SingletonBuilder.new('NOTHING')
 
       # Initializes the builder with a label and optional configuration block.
@@ -96,11 +103,19 @@ module Mongory
         end
       end
 
+      # Executes the given method only once by undefining it after execution.
+      #
+      # @param method_sym [Symbol] method name to execute once
+      # @return [void]
       def execute_once_only!(method_sym)
         send(method_sym)
         singleton_class.undef_method(method_sym)
       end
 
+      # Defines default class-to-converter registrations.
+      # Should be overridden by subclasses.
+      #
+      # @return [void]
       def default_registrations; end
     end
   end
