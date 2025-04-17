@@ -1,0 +1,76 @@
+AllCops:
+  NewCops: enable
+  Exclude:
+    - 'pre_release/**/*'
+    - 'vendor/**/*'
+    - 'node_modules/**/*'
+    - 'tmp/**/*'
+  TargetRubyVersion: 2.6
+
+Style/StringLiterals:
+  Enabled: true
+  EnforcedStyle: single_quotes
+
+Style/StringLiteralsInInterpolation:
+  Enabled: true
+  EnforcedStyle: single_quotes
+
+Layout/LineLength:
+  Max: 120
+
+Style/PercentLiteralDelimiters:
+  PreferredDelimiters:
+    default: '()'
+    '%i':    '()'
+    '%w':    '()'
+
+Metrics/ClassLength:
+  Enabled: false
+
+Metrics/MethodLength:
+  Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false
+
+Metrics/CyclomaticComplexity:
+  Enabled: false
+
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+Style/Alias:
+  EnforcedStyle: prefer_alias_method
+
+Lint/MissingSuper:
+  Enabled: false
+
+Style/SelectByRegexp:
+  Enabled: false
+
+Style/WordArray:
+  Enabled: false
+
+Style/SymbolArray:
+  Enabled: false
+
+Layout/FirstArrayElementIndentation:
+  Enabled: false
+
+Lint/StructNewOverride:
+  Enabled: false
+
+Style/Proc:
+  Enabled: false
+
+Lint/RescueException:
+  Enabled: false
+
+Naming/AccessorMethodName:
+  Enabled: false
+
+Naming/PredicateName:
+  Enabled: false
+
+Lint/UselessMethodDefinition:
+  Enabled: false

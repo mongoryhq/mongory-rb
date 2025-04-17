@@ -1,0 +1,77 @@
+# frozen_string_literal: true
+#
+# Mongory initializer
+#
+# Mongory.configure do ... will lock all configuration after execution.
+# It is recommended to register all data/key/value converters within this block.
+#
+# === Converter Notes ===
+#
+# Data converter:
+#   - Responsible for normalizing data records (e.g., model instances) into Hashes with string keys.
+#   - Expected output should be either a Hash with string keys or a primitive type (Array, String, Number, etc.).
+#   - Registered method or block should take no arguments.
+#
+# Key converter:
+#   - Responsible for transforming condition keys (e.g., :age.gt) into query fragments.
+#   - Output must be a string-keyed Hash.
+#   - Registered method or block should accept one parameter (the condition value), and return a key-value pair.
+#
+# Value converter:
+#   - Responsible for transforming condition values before matching.
+#   - Registered method or block should take no arguments.
+#
+# All converters may support recursive conversion if needed.
+
+Mongory.configure do |mc|
+  # Here to let you use query snippet like `:age.gt => 18`
+  # Or just disable it, and use `"age.$gt" => 18` instead.
+  # It will not to override what Mongoid has done on Symbol.
+  mc.enable_symbol_snippets!
+
+  # Here to let you use `some_collection.mongory.where(...)` to build mongory query filter.
+  # Or disable it, and use `Mongory.build_query(some_collection).where(...)` instead.
+  mc.register(Array)
+<% if @use_ar -%>
+  mc.register(ActiveRecord::Relation)
+<% end -%>
+<% if @use_mongoid -%>
+  mc.register(Mongoid::Criteria)
+<% end -%>
+<% if @use_sequel -%>
+  mc.register(Sequel::Dataset)
+<% end -%>
+
+  mc.data_converter.configure do |dc|
+    # Here to let you customize how to normalizing your ORM object or custom class into comparable format.
+    # Example:
+    # dc.register(ActiveRecord::Base, :attributes)
+<% if @use_ar -%>
+    dc.register(ActiveRecord::Base, :attributes)
+<% end -%>
+<% if @use_mongoid -%>
+    dc.register(Mongoid::Document, :as_document)
+    dc.register(BSON::ObjectId, :to_s)
+<% end -%>
+<% if @use_sequel -%>
+    dc.register(Sequel::Model) { values.transform_keys(&:to_s) }
+<% end -%>
+  end
+
+  mc.condition_converter.configure do |cc|
+    cc.key_converter.configure do |kc|
+      # You may register condition key converters here.
+      # Example:
+      # kc.register(MyKeyObject, :trans_to_string_key_pair)
+    end
+
+    cc.value_converter.configure do |vc|
+      # You may register condition value converters here.
+      # Example:
+      # vc.register(MyCollectionType) { map { |v| vc.convert(v) } }
+<% if @use_mongoid -%>
+      vc.register(BSON::ObjectId, :to_s)
+<% end -%>
+    end
+  end
+end

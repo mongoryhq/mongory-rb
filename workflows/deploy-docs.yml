@@ -1,0 +1,36 @@
+name: Deploy YARD Docs to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  yard-docs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v3
+
+      - name: 💎 Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '2.6'
+
+      - name: 📦 Install dependencies
+        run: |
+          gem install bundler -v 2.4.22
+          bundle install || true
+          gem install yard redcarpet
+
+      - name: 🛠️ Generate YARD documentation
+        run: yard doc
+
+      - name: 🚀 Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./doc
+          publish_branch: gh-pages
+          force_orphan: true
