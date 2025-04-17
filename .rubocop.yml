@@ -74,3 +74,6 @@ Naming/PredicateName:
 
 Lint/UselessMethodDefinition:
   Enabled: false
+
+Naming/FileName:
+  Enabled: false

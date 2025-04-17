@@ -1,3 +1,6 @@
+## [0.1.0] 2025-04-17
+- Rename Mongory to Mongory-rb and reset version to v0.1.0
+
 ## [2.0.0-beta.2] - 2025-04-16
 
 ### Changed
