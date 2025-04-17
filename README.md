@@ -1,4 +1,3 @@
-
 # Mongory-rb
 
 A Mongo-like in-memory query DSL for Ruby.
@@ -44,12 +43,13 @@ records = [
 result = records.mongory
   .where(:age.gte => 18)
   .or({ :name => /J/ }, { :name.eq => 'Bob' })
-  .desc(:age)
   .limit(2)
   .to_a
 
 puts result
 ```
+
+# This adds an `$or` condition across multiple subqueries.
 
 ## Supported Operators
 
@@ -72,6 +72,41 @@ Operators can be chained from symbols:
 { :age.gte => 18, :status.in => %w[active archived] }
 ```
 
+> Note: Symbol operator snippets (like `:age.gt`) are opt-in and enabled via:
+>
+> ```ruby
+> Mongory.enable_symbol_snippets!
+> ```
+
+## Advanced: Custom Matchers
+
+Mongory allows you to register your own matchers using `Mongory::Matchers.register`.
+
+Here's an example matcher that filters records based on their class:
+
+```ruby
+class ClassInMatcher < Mongory::Matchers::AbstractMatcher
+  def match(subject)
+    @condition.any? { |klass| subject.is_a?(klass) }
+  end
+
+  def check_validity!
+    raise TypeError, '$classIn needs an array.' unless @condition.is_a?(Array)
+    @condition.each do |klass|
+      raise TypeError, '$classIn needs an array of class.' unless klass.is_a?(Class)
+    end
+  end
+end
+
+Mongory::Matchers.register(:class_in, '$classIn', ClassInMatcher)
+
+[{a: 1}].mongory.where(:a.class_in => [Integer]).first
+# => { a: 1 }
+```
+
+You can define any matcher behavior and attach it to a `$operator` of your choice.
+Matchers can be composed, validated, and traced just like built-in ones.
+
 ## Query API Reference
 ### Registering Models
 
@@ -93,6 +128,17 @@ This injects a `.mongory` method via an internal extension module.
 - `.pluck(:field1, :field2)` → extract fields from each record
 
 Internally, the query is compiled into a matcher tree using the `QueryMatcher` and `ConditionConverter`.
+
+## Extending Mongory
+
+Mongory is designed for extensibility. You can customize:
+
+- **Value conversion**: via `mc.data_converter.register`
+- **Key parsing rules**: via `mc.condition_converter.key_converter.register`
+- **Match operators**: via `Matchers.register`
+- **Query entrypoints**: via `Mongory.register(SomeClass)`
+
+See the examples above for details.
 
 ## Configuration
 
@@ -135,6 +181,13 @@ Mongory.debugger.disable
 ```
 
 Matcher output will be indented with visual feedback.
+
+You can also render the matcher tree structure:
+
+```ruby
+query = records.mongory.where(:age => 18)
+query.explain
+```
 
 ## Architecture Overview
 
