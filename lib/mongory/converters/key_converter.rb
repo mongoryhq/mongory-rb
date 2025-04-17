@@ -39,7 +39,11 @@ module Mongory
         register(QueryOperator, :__expr_part__)
       end
 
-      # - `"a.b.c" => v` becomes `{ "a" => { "b" => { "c" => v } } }`
+      # Converts a dotted string key into nested hash form.
+      #
+      # @param key [String] the dotted key string, e.g. "a.b.c"
+      # @param value [Object] the value to assign at the deepest level
+      # @return [Hash] nested hash structure
       def convert_string_key(key, value)
         ret = {}
         *sub_keys, last_key = key.split('.')

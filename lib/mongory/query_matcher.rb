@@ -19,14 +19,16 @@ module Mongory
   # @see Matchers::LiteralMatcher
   # @see Converters::ConditionConverter
   class QueryMatcher < Matchers::LiteralMatcher
-    # @param condition [Hash] the raw user query
+    # @param condition [Hash<Symbol, Object>] a query condition using operator-style symbol keys,
+    #   e.g. { :age.gt => 18 }, which will be parsed by `Mongory.condition_converter`.
     def initialize(condition)
       super(Mongory.condition_converter.convert(condition))
     end
 
     # Matches the given record against the condition.
     #
-    # @param record [Object] the record to be matched
+    # @param record [Object] the raw input record (e.g., Hash or model object) to be matched.
+    #   It will be converted internally using `Mongory.data_converter`.
     # @return [Boolean] whether the record satisfies the condition
     def match(record)
       super(Mongory.data_converter.convert(record))
@@ -42,6 +44,7 @@ module Mongory
     # `#render_tree(prefix, is_last:)` for internal recursion.
     #
     # @return [void]
+    # @see Matchers::LiteralMatcher#render_tree
     def render_tree
       super
     end

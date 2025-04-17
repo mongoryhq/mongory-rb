@@ -17,7 +17,9 @@ module Mongory
     #   ValueConverter.instance.convert(/foo/) #=> { "$regex" => "foo" }
     #
     class ValueConverter < AbstractConverter
-      # fallback for unrecognized types
+      # Sets a fallback using DataConverter for unsupported types.
+      #
+      # @return [void]
       def initialize
         super
         d_convert = nil
@@ -33,6 +35,8 @@ module Mongory
           map { |x| v_convert.call(x) }
         end
 
+        # - Hashes are interpreted as nested condition trees
+        #   using ConditionConverter
         c_convert = nil
         register(Hash) do
           c_convert ||= ConditionConverter.instance.method(:convert)

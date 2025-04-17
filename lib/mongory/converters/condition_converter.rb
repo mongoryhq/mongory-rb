@@ -42,6 +42,7 @@ module Mongory
         end
       end
 
+      # @note Singleton instance, not configurable after initialization
       # Returns the key converter used to transform condition keys.
       #
       # @return [AbstractConverter]
@@ -49,6 +50,7 @@ module Mongory
         KeyConverter.instance
       end
 
+      # @note Singleton instance, not configurable after initialization
       # Returns the value converter used to transform condition values.
       #
       # @return [AbstractConverter]
