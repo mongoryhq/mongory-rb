@@ -3,6 +3,7 @@
 # Mongory initializer
 #
 # Mongory.configure do ... will lock all configuration after execution.
+# After the block ends, further modification is forbidden for safety.
 # It is recommended to register all data/key/value converters within this block.
 #
 # === Converter Notes ===
@@ -26,7 +27,8 @@
 Mongory.configure do |mc|
   # Here to let you use query snippet like `:age.gt => 18`
   # Or just disable it, and use `"age.$gt" => 18` instead.
-  # It will not to override what Mongoid has done on Symbol.
+  # NOTE: This method will NOT override existing Symbol methods like :gt or :in.
+  #       It only defines missing ones, and is safe to use with Mongoid or other libraries.
   mc.enable_symbol_snippets!
 
   # Here to let you use `some_collection.mongory.where(...)` to build mongory query filter.
@@ -46,6 +48,8 @@ Mongory.configure do |mc|
     # Here to let you customize how to normalizing your ORM object or custom class into comparable format.
     # Example:
     # dc.register(ActiveRecord::Base, :attributes)
+    # NOTE: If your model overrides `attributes`, or includes virtual fields,
+    #       consider defining a custom method to ensure consistency.
 <% if @use_ar -%>
     dc.register(ActiveRecord::Base, :attributes)
 <% end -%>
@@ -63,12 +67,14 @@ Mongory.configure do |mc|
       # You may register condition key converters here.
       # Example:
       # kc.register(MyKeyObject, :trans_to_string_key_pair)
+      # kc.register(MyEnumKey, ->(val) { { "my_enum" => val.to_s } })
     end
 
     cc.value_converter.configure do |vc|
       # You may register condition value converters here.
       # Example:
       # vc.register(MyCollectionType) { map { |v| vc.convert(v) } }
+      # vc.register(MyWrapperType) { unwrap_and_return_value }
 <% if @use_mongoid -%>
       vc.register(BSON::ObjectId, :to_s)
 <% end -%>
