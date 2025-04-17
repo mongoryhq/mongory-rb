@@ -1,3 +1,22 @@
+## [0.2.0] 2025-04-17
+
+### ✨ Added
+- `Matchers.register(method_sym, operator, klass)` API for registering custom operator matchers
+- `Matchers.enable_symbol_snippets!` opt-in method to enable query snippets like `:age.gt`
+- `Matchers::Validator` module for safe matcher registration validation
+- `Matchers::Registry` struct to encapsulate method/operator mapping with Symbol patching
+- All built-in matchers (`$regex`, `$or`, `$present`, etc.) now use declarative self-registration via `register(...)`
+
+### 🛠️ Changed
+- Matcher lookup is now routed through `Matchers.lookup(operator)` instead of hardcoded branches
+- Symbol snippet patching is now explicitly opt-in and will never override existing methods
+
+### 💥 Breaking (if applies)
+- If any external code relies on internal matcher instantiation logic, it should switch to using `Matchers.register`
+
+### 🔒 Security / Safety
+- All Symbol patching is guarded via `method_defined?` check to prevent conflict with Mongoid or user extensions
+
 ## [0.1.0] 2025-04-17
 - Rename Mongory to Mongory-rb and reset version to v0.1.0
 
