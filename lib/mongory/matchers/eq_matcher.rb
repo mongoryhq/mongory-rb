@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # EqMatcher matches values using the equality operator `==`.
     #
@@ -31,5 +32,7 @@ module Mongory
         :==
       end
     end
+
+    register(:eq, '$eq', EqMatcher)
   end
 end

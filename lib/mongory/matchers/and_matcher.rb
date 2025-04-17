@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # AndMatcher implements the `$and` logical operator.
     #
@@ -59,5 +60,7 @@ module Mongory
         super
       end
     end
+
+    register(:and, '$and', AndMatcher)
   end
 end

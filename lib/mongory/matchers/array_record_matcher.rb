@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # ArrayRecordMatcher matches records where the record itself is an Array.
     #
@@ -69,7 +70,7 @@ module Mongory
             h_parsed[key.to_i] = value
           when '$elemMatch'
             h_elem_match.merge!(value)
-          when *Matchers::OPERATOR_TO_CLASS_MAPPING.keys
+          when *Matchers.operators
             h_parsed[key] = value
           else
             h_elem_match[key] = value
