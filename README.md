@@ -1,5 +1,5 @@
 
-# Mongory
+# Mongory-rb
 
 A Mongo-like in-memory query DSL for Ruby.
 
@@ -22,13 +22,13 @@ This will generate `config/initializers/mongory.rb` and set up:
 Add to your Gemfile:
 
 ```bash
-bundle add mongory
+bundle add mongory-rb
 ```
 
 Or install manually:
 
 ```bash
-gem install mongory
+gem install mongory-rb
 ```
 
 ## Basic Usage
@@ -138,7 +138,7 @@ Matcher output will be indented with visual feedback.
 
 ## Architecture Overview
 
-Mongory is built from modular components:
+Mongory-rb is built from modular components:
 
 - **QueryBuilder**: chainable query API
 - **ConditionConverter**: transforms flat conditions into matcher trees
@@ -185,7 +185,7 @@ Please ensure your code adheres to the project's style guide and that all tests 
 
 ## Code of Conduct
 
-Everyone interacting in the Mongory project's codebases, issue trackers, chat rooms, and mailing lists is expected to follow the [code of conduct](https://github.com/koten0224/mongory/blob/main/CODE_OF_CONDUCT.md).
+Everyone interacting in the Mongory-rb project's codebases, issue trackers, chat rooms, and mailing lists is expected to follow the [code of conduct](https://github.com/koten0224/mongory-rb/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 
