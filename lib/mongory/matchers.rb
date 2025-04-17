@@ -86,7 +86,7 @@ module Mongory
       #
       # @param operator [String]
       # @return [void]
-      # @raise [Error] if operator format is invalid
+      # @raise [Mongory::TypeError] if operator format is invalid
       def self.validate_operator(operator)
         if Matchers.lookup(operator)
           warn "Duplicate operator registration: #{operator} (#{Matchers.lookup(operator)} vs #{klass})"
@@ -94,29 +94,29 @@ module Mongory
 
         return if operator.is_a?(String) && operator.match?(/^\$[a-z]+([A-Z][a-z]+)*$/)
 
-        raise Error, "Operator must match /^\$[a-z]+([A-Z][a-z]*)*$/, but got #{operator.inspect}"
+        raise Mongory::TypeError, "Operator must match /^\$[a-z]+([A-Z][a-z]*)*$/, but got #{operator.inspect}"
       end
 
       # Validates the matcher class to ensure it is a subclass of AbstractMatcher.
       #
       # @param klass [Class]
       # @return [void]
-      # @raise [ArgumentError] if class is not valid
+      # @raise [Mongory::TypeError] if class is not valid
       def self.validate_class(klass)
         return if klass.is_a?(Class) && klass < AbstractMatcher
 
-        raise ArgumentError, "Matcher class must be a subclass of AbstractMatcher, but got #{klass}"
+        raise Mongory::TypeError, "Matcher class must be a subclass of AbstractMatcher, but got #{klass}"
       end
 
       # Validates the method symbol to ensure it is a valid lowercase underscore symbol (e.g., :gt, :not_match).
       #
       # @param method_sym [Symbol]
       # @return [void]
-      # @raise [ArgumentError] if symbol format is invalid
+      # @raise [Mongory::TypeError] if symbol format is invalid
       def self.validate_method(method_sym)
         return if method_sym.is_a?(Symbol) && method_sym.match?(/^([a-z]+_)*[a-z]+$/)
 
-        raise ArgumentError, "Method symbol must match /^([a-z]+_)*[a-z]+$/, but got #{method_sym.inspect}"
+        raise Mongory::TypeError, "Method symbol must match /^([a-z]+_)*[a-z]+$/, but got #{method_sym.inspect}"
       end
     end
 
