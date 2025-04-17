@@ -51,6 +51,7 @@ module Mongory
     yield self
     data_converter.freeze
     condition_converter.freeze
+    Matchers.freeze
   end
 
   # Returns the data converter instance.
@@ -98,13 +99,7 @@ module Mongory
   #
   # @return [void]
   def self.enable_symbol_snippets!
-    Mongory::QueryOperator::METHOD_TO_OPERATOR_MAPPING.each do |key, operator|
-      next if ::Symbol.method_defined?(key)
-
-      ::Symbol.define_method(key) do
-        Mongory::QueryOperator.new(to_s, operator)
-      end
-    end
+    Matchers.enable_symbol_snippets!
   end
 
   # Adds a `#mongory` method to the target class via inclusion.

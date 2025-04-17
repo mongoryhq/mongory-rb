@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # ExistsMatcher implements the `$exists` operator, which checks whether a key exists.
     #
@@ -42,5 +43,7 @@ module Mongory
         raise TypeError, '$exists needs a boolean' unless BOOLEAN_VALUES.include?(@condition)
       end
     end
+
+    register(:exists, '$exists', ExistsMatcher)
   end
 end

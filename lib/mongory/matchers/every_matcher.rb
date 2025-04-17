@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # EveryMatcher implements the logic for Mongo-style `$every` which is not really support in MongoDB.
     #
@@ -35,5 +36,7 @@ module Mongory
         super
       end
     end
+
+    register(:every, '$every', EveryMatcher)
   end
 end

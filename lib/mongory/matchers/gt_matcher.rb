@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # GtMatcher implements the `$gt` (greater than) operator.
     #
@@ -23,5 +24,7 @@ module Mongory
         :>
       end
     end
+
+    register(:gt, '$gt', GtMatcher)
   end
 end

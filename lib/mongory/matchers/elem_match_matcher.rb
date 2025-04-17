@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # ElemMatchMatcher implements the logic for Mongo-style `$elemMatch`.
     #
@@ -41,5 +42,7 @@ module Mongory
         super
       end
     end
+
+    register(:elem_match, '$elemMatch', ElemMatchMatcher)
   end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # InMatcher implements the `$in` operator.
     #
@@ -46,5 +47,7 @@ module Mongory
         raise TypeError, '$in needs an array' unless @condition.is_a?(Array)
       end
     end
+
+    register(:in, '$in', InMatcher)
   end
 end

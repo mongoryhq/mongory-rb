@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # NotMatcher implements the `$not` logical operator.
     #
@@ -26,5 +27,7 @@ module Mongory
         !super(record)
       end
     end
+
+    register(:not, '$not', NotMatcher)
   end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # RegexMatcher implements the `$regex` operator and also handles raw Regexp values.
     #
@@ -55,5 +56,7 @@ module Mongory
         raise TypeError, '$regex needs a Regexp or string'
       end
     end
+
+    register(:regex, '$regex', RegexMatcher)
   end
 end

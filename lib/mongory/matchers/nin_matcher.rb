@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Mongory
+  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # NinMatcher implements the `$nin` (not in) operator.
     #
@@ -45,5 +46,7 @@ module Mongory
         raise TypeError, '$nin needs an array' unless @condition.is_a?(Array)
       end
     end
+
+    register(:nin, '$nin', NinMatcher)
   end
 end

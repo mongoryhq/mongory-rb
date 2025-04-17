@@ -31,7 +31,12 @@ module Mongory
       # @return [AbstractMatcher] a matcher instance
       def build_sub_matcher(key, value)
         case key
-        when *Matchers::OPERATOR_TO_CLASS_MAPPING.keys
+        when *Matchers.operators
+          # If the key is a recognized operator, use the corresponding matcher
+          # to handle the value.
+          # This allows for nested conditions like { :$and => [{ age: { :$gt => 30 } }] }
+          # or { :$or => [{ name: 'John' }, { age: { :$lt => 25 } }] }
+          # The operator matcher is built using the value.
           Matchers.lookup(key).build(value)
         else
           FieldMatcher.build(key, value)

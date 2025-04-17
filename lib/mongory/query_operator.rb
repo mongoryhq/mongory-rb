@@ -6,25 +6,6 @@ module Mongory
   # Used to support DSL like `:age.gt => 18` where `gt` maps to `$gt`.
   # Converts into: `{ "age" => { "$gt" => 18 } }`
   class QueryOperator
-    METHOD_TO_OPERATOR_MAPPING = {
-      eq: '$eq',
-      ne: '$ne',
-      not: '$not',
-      and: '$and',
-      or: '$or',
-      regex: '$regex',
-      present: '$present',
-      exists: '$exists',
-      gt: '$gt',
-      gte: '$gte',
-      lt: '$lt',
-      lte: '$lte',
-      in: '$in',
-      nin: '$nin',
-      elem_match: '$elemMatch',
-      every: '$every'
-    }.freeze
-
     # Initializes a new query operator wrapper.
     #
     # @param name [String] the original field name
