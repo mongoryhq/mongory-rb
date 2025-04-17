@@ -6,7 +6,7 @@ module Mongory
   # QueryBuilder provides a Mongo-like in-memory query interface.
   #
   # It supports condition chaining (`where`, `or`, `not`),
-  # sorting (`asc`, `desc`), limiting, and plucking fields.
+  # limiting, and plucking fields.
   #
   # Internally it compiles all conditions and invokes `QueryMatcher`.
   #
@@ -14,7 +14,6 @@ module Mongory
   #   records.mongory
   #     .where(:age.gte => 18)
   #     .or({ :name => /J/ }, { :name.eq => 'Bob' })
-  #     .desc(:age)
   #     .limit(2)
   #     .to_a
   class QueryBuilder

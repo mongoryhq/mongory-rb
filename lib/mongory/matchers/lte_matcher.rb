@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 module Mongory
-  # The Mongory module provides a set of matchers for querying and filtering data.
   module Matchers
     # LteMatcher implements the `$lte` (less than or equal to) operator.
     #
