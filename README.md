@@ -52,31 +52,6 @@ Or add to your Gemfile:
 gem 'mongory-rb'
 ```
 
-### Creating Custom Matchers
-#### Using the Generator
-
-You can generate a new matcher using:
-
-```bash
-rails g mongory:matcher class_in
-```
-
-This will:
-1. Create a new matcher file at `lib/mongory/matchers/class_in_matcher.rb`
-2. Create a spec file at `spec/mongory/matchers/class_in_matcher_spec.rb`
-3. Update `config/initializers/mongory.rb` to require the new matcher
-
-The generated matcher will:
-- Be named `ClassInMatcher`
-- Register the operator as `$classIn`
-- Be available as `:class_in` in queries
-
-Example usage of the generated matcher:
-```ruby
-# After implementing the matcher logic
-records.mongory.where(:value.class_in => [Integer, String])
-```
-
 ### Basic Usage
 ```ruby
 records = [
@@ -98,7 +73,7 @@ limited = records.mongory
   .where(:age.gte => 18)       # Conditions apply to limited set
 ```
 
-## Integration with MongoDB
+### Integration with MongoDB
 
 Mongory is designed to complement MongoDB, not replace it. Here's how to use them together:
 
@@ -123,9 +98,91 @@ active_users = users.mongory
   .where(:tags.elem_match => { :name => 'ruby' })  # Complex array query
 ```
 
-## Advanced Usage
+### Creating Custom Matchers
+#### Using the Generator
 
-### Complex Queries
+You can generate a new matcher using:
+
+```bash
+rails g mongory:matcher class_in
+```
+
+This will:
+1. Create a new matcher file at `lib/mongory/matchers/class_in_matcher.rb`
+2. Create a spec file at `spec/mongory/matchers/class_in_matcher_spec.rb`
+3. Update `config/initializers/mongory.rb` to require the new matcher
+
+The generated matcher will:
+- Be named `ClassInMatcher`
+- Register the operator as `$classIn`
+- Be available as `:class_in` in queries
+
+Example usage of the generated matcher:
+```ruby
+records.mongory.where(:value.class_in => [Integer, String])
+```
+
+#### Manual Creation
+
+If you prefer to create matchers manually, here's an example:
+
+```ruby
+class ClassInMatcher < Mongory::Matchers::AbstractMatcher
+  def match(subject)
+    @condition.any? { |klass| subject.is_a?(klass) }
+  end
+
+  def check_validity!
+    raise TypeError, '$classIn needs an array.' unless @condition.is_a?(Array)
+    @condition.each do |klass|
+      raise TypeError, '$classIn needs an array of class.' unless klass.is_a?(Class)
+    end
+  end
+end
+
+Mongory::Matchers.register(:class_in, '$classIn', ClassInMatcher)
+
+[{a: 1}].mongory.where(:a.class_in => [Integer]).first
+# => { a: 1 }
+```
+
+You can define any matcher behavior and attach it to a `$operator` of your choice.
+Matchers can be composed, validated, and traced just like built-in ones.
+
+### Handling Dots in Field Names
+
+Mongory supports field names containing dots, which require escaping:
+
+```ruby
+# Sample data
+records = [
+  { "user.name" => "John", "age" => 25 },  # Field name contains a dot
+  { "user" => { "name" => "Bob" }, "age" => 30 }  # Nested field
+]
+
+# Field name contains a dot
+records.mongory.where("user\\.name" => "John")  # Two backslashes needed with double quotes
+# => [{ "user.name" => "John", "age" => 25 }]
+
+# or
+records.mongory.where('user\.name' => "John")   # One backslash needed with single quotes
+# => [{ "user.name" => "John", "age" => 25 }]
+
+# Nested field (no escaping needed)
+records.mongory.where("user.name" => "Bob")
+# => [{ "user" => { "name" => "Bob" }, "age" => 30 }]
+```
+
+Note:
+- With double quotes, backslashes need to be escaped (`\\`)
+- With single quotes, backslashes don't need to be escaped (`\`)
+- This behavior is consistent with MongoDB's query syntax
+- The escaped dot pattern (`\.`) matches fields where the dot is part of the field name
+- The unescaped dot pattern (`.`) matches nested fields in the document structure
+
+### Advanced Usage
+
+#### Complex Queries
 ```ruby
 # Nested conditions
 users.mongory
@@ -151,7 +208,7 @@ posts.mongory
   .where(:comments.every => { :approved => true })
 ```
 
-### Integration with ActiveRecord
+#### Integration with ActiveRecord
 ```ruby
 class User < ActiveRecord::Base
   def active_friends
@@ -175,6 +232,8 @@ User.where(status: 'active').mongory.where(:age.gte => 18, :name.regex => "^S.+"
 
 This injects a `.mongory` method via an internal extension module.
 
+Internally, the query is compiled into a matcher tree using the `QueryMatcher` and `ConditionConverter`.
+
 | Method | Description | Example |
 |--------|-------------|---------|
 | `where` | Adds a condition to filter records | `where(age: { :$gte => 18 })` |
@@ -187,7 +246,34 @@ This injects a `.mongory` method via an internal extension module.
 | `limit` | Limits the number of records returned. This method executes immediately and affects subsequent conditions. | `limit(2)` |
 | `pluck` | Extracts selected fields from matching records | `pluck(:name)` |
 
-Internally, the query is compiled into a matcher tree using the `QueryMatcher` and `ConditionConverter`.
+### Supported Operators
+
+| Category     | Operators                           |
+|--------------|-------------------------------------|
+| Comparison   | `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte` |
+| Set          | `$in`, `$nin`                       |
+| Boolean      | `$and`, `$or`, `$not`               |
+| Pattern      | `$regex`                            |
+| Presence     | `$exists`, `$present`               |
+| Nested Match | `$elemMatch`, `$every`              |
+
+Note: Some operators are Mongory-specific and not available in MongoDB:
+- `$present`: Checks if a field is considered "present" (not nil, not empty, not KEY_NOT_FOUND)
+  - Similar to `$exists` but evaluates truthiness of the value
+  - Example: `where(:name.present => true)`
+- `$every`: Checks if all elements in an array match the given condition
+  - Similar to `$elemMatch` but requires all elements to match
+  - Example: `where(:tags.every => { :priority.gt => 5 })`
+
+Example:
+```ruby
+# $present: Check if field is present (not nil, not empty)
+records.mongory.where(:name.present => true)  # name is present
+records.mongory.where(:name.present => false) # name is not present
+
+# $every: Check if all array elements match condition
+records.mongory.where(:tags.every => { :priority.gt => 5 })  # all tags have priority > 5
+```
 
 ### Debugging Queries
 
@@ -248,36 +334,7 @@ The debug output includes:
 - Field names highlighted in gray background
 - Detailed matching process for each record
 
-### Custom Matchers
-
-Mongory allows you to register your own matchers using `Mongory::Matchers.register`.
-
-Here's an example matcher that filters records based on their class:
-
-```ruby
-class ClassInMatcher < Mongory::Matchers::AbstractMatcher
-  def match(subject)
-    @condition.any? { |klass| subject.is_a?(klass) }
-  end
-
-  def check_validity!
-    raise TypeError, '$classIn needs an array.' unless @condition.is_a?(Array)
-    @condition.each do |klass|
-      raise TypeError, '$classIn needs an array of class.' unless klass.is_a?(Class)
-    end
-  end
-end
-
-Mongory::Matchers.register(:class_in, '$classIn', ClassInMatcher)
-
-[{a: 1}].mongory.where(:a.class_in => [Integer]).first
-# => { a: 1 }
-```
-
-You can define any matcher behavior and attach it to a `$operator` of your choice.
-Matchers can be composed, validated, and traced just like built-in ones.
-
-## Performance Considerations
+### Performance Considerations
 
 1. **Memory Usage**
    - Mongory operates entirely in memory
@@ -315,35 +372,6 @@ Matchers can be composed, validated, and traced just like built-in ones.
    - Ruby version
    
    Test in your environment to determine if performance meets your needs.
-
-## Supported Operators
-
-| Category     | Operators                           |
-|--------------|-------------------------------------|
-| Comparison   | `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte` |
-| Set          | `$in`, `$nin`                       |
-| Boolean      | `$and`, `$or`, `$not`               |
-| Pattern      | `$regex`                            |
-| Presence     | `$exists`, `$present`               |
-| Nested Match | `$elemMatch`, `$every`              |
-
-Note: Some operators are Mongory-specific and not available in MongoDB:
-- `$present`: Checks if a field is considered "present" (not nil, not empty, not KEY_NOT_FOUND)
-  - Similar to `$exists` but evaluates truthiness of the value
-  - Example: `where(:name.present => true)`
-- `$every`: Checks if all elements in an array match the given condition
-  - Similar to `$elemMatch` but requires all elements to match
-  - Example: `where(:tags.every => { :priority.gt => 5 })`
-
-Example:
-```ruby
-# $present: Check if field is present (not nil, not empty)
-records.mongory.where(:name.present => true)  # name is present
-records.mongory.where(:name.present => false) # name is not present
-
-# $every: Check if all array elements match condition
-records.mongory.where(:tags.every => { :priority.gt => 5 })  # all tags have priority > 5
-```
 
 ## FAQ
 
