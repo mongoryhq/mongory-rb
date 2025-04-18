@@ -14,7 +14,7 @@ end
 converter.register(FakeBsonId, :to_s)
 
 RSpec.describe Mongory::QueryMatcher, type: :model do
-  subject { described_class.new(condition) }
+  subject { described_class.new(condition).tap(&:prepare_query) }
 
   context '#match?' do
     context 'basic condition' do
