@@ -38,16 +38,21 @@ module Mongory
       # @return [void]
       def update_initializer
         initializer_path = 'config/initializers/mongory.rb'
-        require_line = "require \"#\{Rails.root\}/lib/mongory/matchers/#{file_name}_matcher\""
+        inject_line = "require \"#\{Rails.root\}/lib/mongory/matchers/#{file_name}_matcher\""
+        front_line = '# frozen_string_literal: true'
 
-        unless File.exist?(initializer_path)
-          Mongory::Generators::InstallGenerator.start
-        end
-
+        Mongory::Generators::InstallGenerator.start unless File.exist?(initializer_path)
         content = File.read(initializer_path)
-        unless content.include?(require_line)
-          inject_into_file initializer_path, "\n#{require_line}", after: "# frozen_string_literal: true\n"
+        return if content.include?(inject_line)
+
+        required_file_lines = content.scan(/.+require\s+["'].*_matcher["'].+/)
+        if required_file_lines.empty?
+          inject_line = "\n#{inject_line}"
+        else
+          front_line = required_file_lines.last
         end
+
+        inject_into_file initializer_path, "#{inject_line}\n", after: "#{front_line}\n"
       end
     end
   end
