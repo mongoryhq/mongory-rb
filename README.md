@@ -52,6 +52,31 @@ Or add to your Gemfile:
 gem 'mongory-rb'
 ```
 
+### Creating Custom Matchers
+#### Using the Generator
+
+You can generate a new matcher using:
+
+```bash
+rails g mongory:matcher class_in
+```
+
+This will:
+1. Create a new matcher file at `lib/mongory/matchers/class_in_matcher.rb`
+2. Create a spec file at `spec/mongory/matchers/class_in_matcher_spec.rb`
+3. Update `config/initializers/mongory.rb` to require the new matcher
+
+The generated matcher will:
+- Be named `ClassInMatcher`
+- Register the operator as `$classIn`
+- Be available as `:class_in` in queries
+
+Example usage of the generated matcher:
+```ruby
+# After implementing the matcher logic
+records.mongory.where(:value.class_in => [Integer, String])
+```
+
 ### Basic Usage
 ```ruby
 records = [
