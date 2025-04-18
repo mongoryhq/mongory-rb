@@ -46,13 +46,17 @@ module Mongory
       # @return [Hash] nested hash structure
       def convert_string_key(key, value)
         ret = {}
-        *sub_keys, last_key = key.split('.')
+        *sub_keys, last_key = key.split(/(?<!\\)\./)
         last_hash = sub_keys.reduce(ret) do |res, sub_key|
-          next_res = res[sub_key] = {}
+          next_res = res[normalize_key(sub_key)] = {}
           next_res
         end
-        last_hash[last_key] = value
+        last_hash[normalize_key(last_key)] = value
         ret
+      end
+
+      def normalize_key(key)
+        key.gsub(/\\\./, '.')
       end
     end
   end
