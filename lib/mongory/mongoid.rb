@@ -8,7 +8,7 @@ module Mongory
     # @see Converters::KeyConverter
     # @return [void]
     def self.patch!
-      kc = Mongory::Converters::KeyConverter
+      kc = Mongory::Converters::KeyConverter.instance
       # It's Mongoid built-in key operator that born from `:key.gt`
       kc.register(::Mongoid::Criteria::Queryable::Key) do |v|
         kc.convert(@name.to_s, @operator => v)
