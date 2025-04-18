@@ -1,3 +1,44 @@
+# Changelog
+
+## v0.3.0
+
+### New Features
+- Added matcher generator (`rails g mongory:matcher`)
+  - Automatically generates matcher class
+  - Automatically generates test files
+  - Automatically updates initializer
+- Added performance test suite
+  - Provides performance data for different data sizes
+  - Includes both simple and complex query tests
+
+### Improvements
+- Improved code style configuration
+- Updated documentation structure
+- Optimized matcher-related code
+- Enhanced key converter functionality
+  - Added support for escaped dots in string keys (e.g., `"user\\.name"` or `'user\.name'`)
+  - Fixed key converter registry method error
+- Enhanced error handling
+  - Modified error class structure
+- Improved documentation generation
+  - Fixed yardoc issues
+  - Expanded README content
+
+### Performance Data
+- Simple queries:
+  - 1000 records: ~2.5ms
+  - 10000 records: ~24.5ms
+  - 100000 records: ~242.5ms
+- Complex queries:
+  - 1000 records: ~3.2ms
+  - 10000 records: ~31.5ms
+  - 100000 records: ~323.0ms
+
+### Bug Fixes
+- Fixed require insertion position in matcher generator
+- Fixed key converter registry method error in Mongoid patch
+- Fixed support for escaped dots in key converter
+
 ## [0.2.0] 2025-04-17
 
 ### ✨ Added
@@ -52,7 +93,7 @@
 ### 🧠 Debugger & Trace
 - Introduced structured matcher trace logging for better debugging
 - Tree-based trace visualization implemented
-- Removed dependency on Ruby’s PrettyPrint module
+- Removed dependency on Ruby's PrettyPrint module
 
 ### 🛠 Refactors
 - Unified matcher dispatch logic in `dispatched_matcher`
