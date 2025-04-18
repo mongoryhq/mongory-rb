@@ -77,3 +77,8 @@ Lint/UselessMethodDefinition:
 
 Naming/FileName:
   Enabled: false
+
+Style/Documentation:
+  Exclude:
+    - 'lib/mongory/matchers/**/*'
+    - 'spec/**/*'
