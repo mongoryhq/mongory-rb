@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-# .
 module Mongory
   # Only loaded when Mongoid is present
   module MongoidPatch
