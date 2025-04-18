@@ -1,0 +1,28 @@
+# frozen_string_literal: true
+
+# <%= @matcher_name %> implements the Mongo-style `<%= @mongo_operator %>` operator.
+#
+# @example
+#   matcher = <%= @matcher_name %>.build(condition)
+#   matcher.match?(value) #=> true/false
+#
+# @see Mongory::Matchers::AbstractMatcher
+class <%= @matcher_name %> < Mongory::Matchers::AbstractMatcher
+  # Matches the subject against the condition.
+  #
+  # @param subject [Object] the value to be tested
+  # @return [Boolean] whether the value matches
+  def match(subject)
+    # Implement your matching logic here
+  end
+
+  # Validates the condition value.
+  #
+  # @raise [TypeError] if condition is invalid
+  # @return [void]
+  def check_validity!
+    # Implement your validation logic here
+  end
+end
+
+Mongory::Matchers.register(:<%= @operator_name %>, '<%= @mongo_operator %>', <%= @matcher_name %>)
