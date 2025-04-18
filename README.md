@@ -4,8 +4,32 @@ A Mongo-like in-memory query DSL for Ruby.
 
 Mongory lets you filter and query in-memory collections using syntax and semantics similar to MongoDB. It is designed for expressive chaining, symbolic operators, and composable matchers.
 
-## Installation
-### Rails Generator
+## Positioning
+
+Mongory is designed to serve two types of users:
+
+1. For MongoDB users:
+   - Seamless integration with familiar query syntax
+   - Extends query capabilities for non-indexed fields
+   - No additional learning cost
+
+2. For non-MongoDB users:
+   - Initial learning cost for MongoDB-style syntax
+   - Long-term benefits:
+     - Improved code readability
+     - Better development efficiency
+     - Lower maintenance costs
+   - Ideal for teams valuing code quality and maintainability
+
+## Requirements
+
+- Ruby >= 2.6.0
+- No external database required
+
+## Quick Start
+
+### Installation
+#### Rails Generator
 
 You can install a starter configuration with:
 
@@ -18,20 +42,17 @@ This will generate `config/initializers/mongory.rb` and set up:
 - Class registration (e.g. `Array`, `ActiveRecord::Relation`, etc.)
 - Custom value/key converters for your ORM
 
-Add to your Gemfile:
-
-```bash
-bundle add mongory-rb
-```
-
 Or install manually:
-
 ```bash
 gem install mongory-rb
 ```
 
-## Basic Usage
+Or add to your Gemfile:
+```ruby
+gem 'mongory-rb'
+```
 
+### Basic Usage
 ```ruby
 records = [
   { 'name' => 'Jack', 'age' => 18, 'gender' => 'M' },
@@ -40,45 +61,169 @@ records = [
   { 'name' => 'Mary', 'age' => 18, 'gender' => 'F' }
 ]
 
+# Basic query with conditions
 result = records.mongory
   .where(:age.gte => 18)
   .or({ :name => /J/ }, { :name.eq => 'Bob' })
-  .limit(2)
-  .to_a
 
-puts result
+# Using limit to restrict results
+# Note: limit executes immediately and affects subsequent conditions
+limited = records.mongory
+  .limit(2)                    # Only process first 2 records
+  .where(:age.gte => 18)       # Conditions apply to limited set
 ```
 
-# This adds an `$or` condition across multiple subqueries.
+## Integration with MongoDB
 
-## Supported Operators
+Mongory is designed to complement MongoDB, not replace it. Here's how to use them together:
 
-| Category     | Operators                           |
-|--------------|-------------------------------------|
-| Comparison   | `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte` |
-| Set          | `$in`, `$nin`                       |
-| Boolean      | `$and`, `$or`, `$not`               |
-| Pattern      | `$regex`                            |
-| Presence     | `$exists`, `$present`               |
-| Nested Match | `$elemMatch`, `$every`                      |
+1. Use MongoDB for:
+   - Queries with indexes
+   - Persistent data operations
+   - Large-scale data processing
 
-Mongory extension:
-- `$present` - checks if the record is not empty or false, nil
-- `$every` – checks that all elements in an array match the condition
+2. Use Mongory for:
+   - Queries without indexes
+   - Complex in-memory calculations
+   - Temporary data filtering needs
 
-Operators can be chained from symbols:
+Example:
+```ruby
+# First use MongoDB for indexed queries
+users = User.where(status: 'active')  # Uses MongoDB index
+
+# Then use Mongory for non-indexed fields
+active_users = users.mongory
+  .where(:last_login.gte => 1.week.ago)  # No index on last_login
+  .where(:tags.elem_match => { :name => 'ruby' })  # Complex array query
+```
+
+## Advanced Usage
+
+### Complex Queries
+```ruby
+# Nested conditions
+users.mongory
+  .where(
+    :age.gte => 18,
+    :$or => [
+      { :status => 'active' },
+      { :status => 'pending', :created_at.gte => 1.week.ago }
+    ]
+  )
+
+# Using any_of for nested OR conditions
+users.mongory
+  .where(:age.gte => 18)
+  .any_of(
+    { :status => 'active' },
+    { :status => 'pending', :created_at.gte => 1.week.ago }
+  )
+
+# Array operations
+posts.mongory
+  .where(:tags.elem_match => { :name => 'ruby', :priority.gt => 5 })
+  .where(:comments.every => { :approved => true })
+```
+
+### Integration with ActiveRecord
+```ruby
+class User < ActiveRecord::Base
+  def active_friends
+    friends.mongory
+      .where(:status => 'active')
+      .where(:last_seen.gte => 1.day.ago)
+  end
+end
+```
+
+### Query API Reference
+#### Registering Models
+
+To allow calling `.mongory` on collections, use `register`:
 
 ```ruby
-{ :age.gte => 18, :status.in => %w[active archived] }
+Mongory.register(Array)
+Mongory.register(ActiveRecord::Relation)
+User.where(status: 'active').mongory.where(:age.gte => 18, :name.regex => "^S.+")
 ```
 
-> Note: Symbol operator snippets (like `:age.gt`) are opt-in and enabled via:
->
-> ```ruby
-> Mongory.enable_symbol_snippets!
-> ```
+This injects a `.mongory` method via an internal extension module.
 
-## Advanced: Custom Matchers
+| Method | Description | Example |
+|--------|-------------|---------|
+| `where` | Adds a condition to filter records | `where(age: { :$gte => 18 })` |
+| `not` | Adds a negated condition | `not(age: { :$lt => 18 })` |
+| `and` | Combines conditions with `$and` | `and({ age: { :$gte => 18 } }, { name: /J/ })` |
+| `or` | Combines conditions with `$or` | `or({ age: { :$gte => 18 } }, { name: /J/ })` |
+| `any_of` | Combines conditions with `$or` inside an `$and` block | `any_of({ age: { :$gte => 18 } }, { name: /J/ })` |
+| `in` | Checks if a value is in a set | `in(age: [18, 19, 20])` |
+| `nin` | Checks if a value is not in a set | `nin(age: [18, 19, 20])` |
+| `limit` | Limits the number of records returned. This method executes immediately and affects subsequent conditions. | `limit(2)` |
+| `pluck` | Extracts selected fields from matching records | `pluck(:name)` |
+
+Internally, the query is compiled into a matcher tree using the `QueryMatcher` and `ConditionConverter`.
+
+### Debugging Queries
+
+You can use `explain` to visualize the matcher tree structure:
+```ruby
+records = [
+  { name: 'John', age: 25, status: 'active' },
+  { name: 'Jane', age: 30, status: 'inactive' }
+]
+
+query = records.mongory
+  .where(:age.gte => 18)
+  .or({ :status => 'active' }, { :name.regex => /^J/ })
+
+query.explain
+```
+Output:
+```
+And: {"age"=>{"$gte"=>18}, "$or"=>[{"status"=>"active"}, {"name"=>{"$regex"=>/^J/}}]}
+├─ Field: "age" to match: {"$gte"=>18}
+│  └─ Gte: 18
+└─ Or: [{"status"=>"active"}, {"name"=>{"$regex"=>/^J/}}]
+   ├─ Field: "status" to match: "active"
+   │  └─ Eq: "active"
+   └─ Field: "name" to match: {"$regex"=>/^J/}
+      └─ Regex: /^J/
+```
+
+This helps you understand how your query is being processed and can be useful for debugging complex conditions.
+
+Or use the debugger for detailed matching process:
+```ruby
+# Enable debugging
+Mongory.debugger.enable
+
+# Execute your query
+query = Mongory.build_query(users).where(age: { :$gt => 18 })
+query.each do |user|
+  puts user
+end
+
+# Display the debug trace
+Mongory.debugger.display
+```
+
+The debug output will show detailed matching process with full class names:
+```
+QueryMatcher Matched, condition: {"age"=>{"$gt"=>18}}, record: {"age"=>25}
+  AndMatcher Matched, condition: {"age"=>{"$gt"=>18}}, record: {"age"=>25}
+    FieldMatcher Matched, condition: {"$gt"=>18}, field: "age", record: {"age"=>25}
+      GtMatcher Matched, condition: 18, record: 25
+```
+
+The debug output includes:
+- The matcher tree structure with full class names
+- Each matcher's condition and record value
+- Color-coded results (green for matched, red for mismatched, purple for errors)
+- Field names highlighted in gray background
+- Detailed matching process for each record
+
+### Custom Matchers
 
 Mongory allows you to register your own matchers using `Mongory::Matchers.register`.
 
@@ -107,123 +252,192 @@ Mongory::Matchers.register(:class_in, '$classIn', ClassInMatcher)
 You can define any matcher behavior and attach it to a `$operator` of your choice.
 Matchers can be composed, validated, and traced just like built-in ones.
 
-## Query API Reference
-### Registering Models
+## Performance Considerations
 
-To allow calling `.mongory` on collections, use `register`:
+1. **Memory Usage**
+   - Mongory operates entirely in memory
+   - Consider your data size and memory constraints
 
+2. **Query Optimization**
+   - Complex conditions are evaluated in sequence
+   - Use `explain` to analyze query performance
+
+3. **Benchmarks**
+   ```ruby
+   # Simple query (1000 records)
+   records.mongory.where(:age.gte => 18) # ~2.5ms
+   
+   # Complex query (1000 records)
+   records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~3.2ms
+
+   # Simple query (10000 records)
+   records.mongory.where(:age.gte => 18) # ~24.5ms
+
+   # Complex query (10000 records)
+   records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~31.5ms
+
+   # Simple query (100000 records)
+   records.mongory.where(:age.gte => 18) # ~242.5ms
+
+   # Complex query (100000 records)
+   records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~323.0ms
+   ```
+
+   Note: Performance varies based on:
+   - Data size
+   - Query complexity
+   - Hardware specifications
+   - Ruby version
+   
+   Test in your environment to determine if performance meets your needs.
+
+## Supported Operators
+
+| Category     | Operators                           |
+|--------------|-------------------------------------|
+| Comparison   | `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte` |
+| Set          | `$in`, `$nin`                       |
+| Boolean      | `$and`, `$or`, `$not`               |
+| Pattern      | `$regex`                            |
+| Presence     | `$exists`, `$present`               |
+| Nested Match | `$elemMatch`, `$every`              |
+
+Note: Some operators are Mongory-specific and not available in MongoDB:
+- `$present`: Checks if a field is considered "present" (not nil, not empty, not KEY_NOT_FOUND)
+  - Similar to `$exists` but evaluates truthiness of the value
+  - Example: `where(:name.present => true)`
+- `$every`: Checks if all elements in an array match the given condition
+  - Similar to `$elemMatch` but requires all elements to match
+  - Example: `where(:tags.every => { :priority.gt => 5 })`
+
+Example:
 ```ruby
-Mongory.register(Array)
-Mongory.register(ActiveRecord::Relation)
-User.where(status: 'active').mongory.where(:age.gte => 18, :name.regex => "^S.+")
+# $present: Check if field is present (not nil, not empty)
+records.mongory.where(:name.present => true)  # name is present
+records.mongory.where(:name.present => false) # name is not present
+
+# $every: Check if all array elements match condition
+records.mongory.where(:tags.every => { :priority.gt => 5 })  # all tags have priority > 5
 ```
 
-This injects a `.mongory` method via an internal extension module.
+## FAQ
 
-- `.where(cond)` → adds `$and` condition
-- `.or(*conds)` → adds `$or` conditions
-- `.not(cond)` → wraps condition in `$not`
-- `.asc(*keys)` / `.desc(*keys)` → sorts results
-- `.limit(n)` → restricts result size
-- `.pluck(:field1, :field2)` → extract fields from each record
+### Q: How does Mongory compare to MongoDB?
+A: Mongory provides similar query syntax but operates entirely in memory. It's ideal for:
+- Small to medium datasets
+- Complex in-memory filtering
+- Testing MongoDB-like queries without a database
 
-Internally, the query is compiled into a matcher tree using the `QueryMatcher` and `ConditionConverter`.
+### Q: Can I use Mongory with large datasets?
+A: Yes, but consider:
+- Memory usage
+- Query complexity
+- Caching strategies
+- Using `limit` early in the chain
 
-## Extending Mongory
-
-Mongory is designed for extensibility. You can customize:
-
-- **Value conversion**: via `mc.data_converter.register`
-- **Key parsing rules**: via `mc.condition_converter.key_converter.register`
-- **Match operators**: via `Matchers.register`
-- **Query entrypoints**: via `Mongory.register(SomeClass)`
-
-See the examples above for details.
-
-## Configuration
-
-You can configure custom conversion rules for keys or values:
-
+### Q: How do I handle errors?
 ```ruby
-Mongory.configure do |mc|
-  # Can use symbol to determine which method to use on convert
-  mc.data_converter.configure do |dc|
-    dc.register(MyDateLikeObject, :attributes_with_string_key)
-  end
-
-  # Or can give a block to define how to convert
-  mc.condition_converter.key_converter.configure do |kc|
-    # Key converter expected to provide a method or block that receive one parameter to construct key value pair
-    kc.register(MyOperatorKey) { |value| { transformed_key => value } }
-  end
-
-  # Also support recursively convert
-  mc.condition_converter.value_converter.configure do |vc|
-    vc.register(MyEnumerable) { map { |v| vc.convert(v) } }
-  end
+begin
+  result = records.mongory.where(invalid: :condition)
+rescue Mongory::Error => e
+  # Handle error
 end
 ```
 
-This configuration is frozen after `configure` is called.
+## Troubleshooting
 
-## Debugging
+1. **Debugging Queries**
+   ```ruby
+   Mongory.debugger.enable
+   records.mongory.where(:age => 18).to_a
+   Mongory.debugger.display
+   Mongory.debugger.disable
+   ```
 
-Enable match trace to inspect evaluation flow:
+2. **Common Issues**
+   - Symbol snippets not working? Call `Mongory.enable_symbol_snippets!`
+   - Complex queries slow? Use `explain` to analyze
+   - Memory issues? Consider pagination or streaming
 
-```ruby
-Mongory.debugger.enable
+## Best Practices
 
-records.mongory
-  .where(:age => 18)
-  .to_a
+1. **Query Composition**
+   ```ruby
+   # Good: Use method chaining
+   records.mongory
+     .where(:age.gte => 18)
+     .where(:status => 'active')
+     .limit(10)
 
-Mongory.debugger.disable
-```
+   # Bad: Avoid redundant query creation
+   query = records.mongory.where(:age.gte => 18)
+   query = query.where(:status => 'active')  # Unnecessary
+   ```
 
-Matcher output will be indented with visual feedback.
+2. **Performance Tips**
+   ```ruby
+   # Use limit to restrict result set
+   records.mongory.limit(100).where(:age.gte => 18)
 
-You can also render the matcher tree structure:
+   # Use explain to analyze complex queries
+   query = records.mongory.where(:$or => [...])
+   query.explain
+   ```
 
-```ruby
-query = records.mongory.where(:age => 18)
-query.explain
-```
+3. **Code Organization**
+   ```ruby
+   # Encapsulate common queries as methods
+   class User
+     def active_adults
+       friends.mongory
+         .where(:age.gte => 18)
+         .where(:status => 'active')
+     end
+   end
+   ```
 
-## Architecture Overview
+## Limitations
 
-Mongory-rb is built from modular components:
+1. **Data Size**
+   - Suitable for small to medium datasets
+   - Large datasets may impact performance
 
-- **QueryBuilder**: chainable query API
-- **ConditionConverter**: transforms flat conditions into matcher trees
-- **Converters**: normalize keys and values
-- **Matchers**: perform evaluation per operator
-- **Debugger**: optional trace during matching
+2. **Query Complexity**
+   - Complex queries may affect performance
+   - Not all MongoDB operators are supported
 
-## Development
+3. **Memory Usage**
+   - All operations are performed in memory
+   - Consider memory constraints
 
-- After cloning the repo, install dependencies:
+## Migration Guide
 
-  ```bash
-  bundle install
-  ```
+1. **From Array#select**
+   ```ruby
+   # Before
+   records.select { |r| r['age'] >= 18 && r['status'] == 'active' }
 
-- Run tests with RSpec:
+   # After
+   records.mongory.where(:age.gte => 18, :status => 'active')
+   ```
 
-  ```bash
-  bundle exec rspec
-  ```
+2. **From ActiveRecord**
+   ```ruby
+   # Before
+   indexed_query.where("age >= ? AND status = ?", 18, 'active')
 
-- To generate YARD documentation:
+   # After
+   indexed_query.mongory.where(:age.gte => 18, :status => 'active')
+   ```
 
-  ```bash
-  yard doc
-  ```
+3. **From MongoDB**
+   ```ruby
+   # Before (MongoDB)
+   users.where(:age.gte => 18, :status => 'active')
 
-- For an interactive console, run:
-
-  ```bash
-  bin/console
-  ```
+   # After (Mongory)
+   users.mongory.where(:age.gte => 18, :status => 'active')
+   ```
 
 ## Contributing
 
