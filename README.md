@@ -246,35 +246,6 @@ Internally, the query is compiled into a matcher tree using the `QueryMatcher` a
 | `limit` | Limits the number of records returned. This method executes immediately and affects subsequent conditions. | `limit(2)` |
 | `pluck` | Extracts selected fields from matching records | `pluck(:name)` |
 
-### Supported Operators
-
-| Category     | Operators                           |
-|--------------|-------------------------------------|
-| Comparison   | `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte` |
-| Set          | `$in`, `$nin`                       |
-| Boolean      | `$and`, `$or`, `$not`               |
-| Pattern      | `$regex`                            |
-| Presence     | `$exists`, `$present`               |
-| Nested Match | `$elemMatch`, `$every`              |
-
-Note: Some operators are Mongory-specific and not available in MongoDB:
-- `$present`: Checks if a field is considered "present" (not nil, not empty, not KEY_NOT_FOUND)
-  - Similar to `$exists` but evaluates truthiness of the value
-  - Example: `where(:name.present => true)`
-- `$every`: Checks if all elements in an array match the given condition
-  - Similar to `$elemMatch` but requires all elements to match
-  - Example: `where(:tags.every => { :priority.gt => 5 })`
-
-Example:
-```ruby
-# $present: Check if field is present (not nil, not empty)
-records.mongory.where(:name.present => true)  # name is present
-records.mongory.where(:name.present => false) # name is not present
-
-# $every: Check if all array elements match condition
-records.mongory.where(:tags.every => { :priority.gt => 5 })  # all tags have priority > 5
-```
-
 ### Debugging Queries
 
 You can use `explain` to visualize the matcher tree structure:
@@ -286,7 +257,10 @@ records = [
 
 query = records.mongory
   .where(:age.gte => 18)
-  .or({ :status => 'active' }, { :name.regex => /^J/ })
+  .any_of(
+    { :status => 'active' },
+    { :name.regex => /^J/ }
+  )
 
 query.explain
 ```
@@ -345,33 +319,62 @@ The debug output includes:
    - Use `explain` to analyze query performance
 
 3. **Benchmarks**
-   ```ruby
-   # Simple query (1000 records)
-   records.mongory.where(:age.gte => 18) # ~2.5ms
-   
-   # Complex query (1000 records)
-   records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~3.2ms
+  ```ruby
+    # Simple query (1000 records)
+    records.mongory.where(:age.gte => 18) # ~2.5ms
 
-   # Simple query (10000 records)
-   records.mongory.where(:age.gte => 18) # ~24.5ms
+    # Complex query (1000 records)
+    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~3.2ms
 
-   # Complex query (10000 records)
-   records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~31.5ms
+    # Simple query (10000 records)
+    records.mongory.where(:age.gte => 18) # ~24.5ms
 
-   # Simple query (100000 records)
-   records.mongory.where(:age.gte => 18) # ~242.5ms
+    # Complex query (10000 records)
+    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~31.5ms
 
-   # Complex query (100000 records)
-   records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~323.0ms
-   ```
+    # Simple query (100000 records)
+    records.mongory.where(:age.gte => 18) # ~242.5ms
+
+    # Complex query (100000 records)
+    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~323.0ms
+  ```
 
    Note: Performance varies based on:
    - Data size
    - Query complexity
    - Hardware specifications
    - Ruby version
-   
+
    Test in your environment to determine if performance meets your needs.
+
+### Supported Operators
+
+| Category     | Operators                           |
+|--------------|-------------------------------------|
+| Comparison   | `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte` |
+| Set          | `$in`, `$nin`                       |
+| Boolean      | `$and`, `$or`, `$not`               |
+| Pattern      | `$regex`                            |
+| Presence     | `$exists`, `$present`               |
+| Nested Match | `$elemMatch`, `$every`              |
+
+Note: Some operators are Mongory-specific and not available in MongoDB:
+- `$present`: Checks if a field is considered "present" (not nil, not empty, not KEY_NOT_FOUND)
+  - Similar to `$exists` but evaluates truthiness of the value
+  - Example: `where(:name.present => true)`
+- `$every`: Checks if all elements in an array match the given condition
+  - Similar to `$elemMatch` but requires all elements to match
+  - Example: `where(:tags.every => { :priority.gt => 5 })`
+
+Example:
+```ruby
+# $present: Check if field is present (not nil, not empty)
+records.mongory.where(:name.present => true)  # name is present
+records.mongory.where(:name.present => false) # name is not present
+
+# $every: Check if all array elements match condition
+records.mongory.where(:tags.every => { :priority.gt => 5 })  # all tags have priority > 5
+```
 
 ## FAQ
 
@@ -416,37 +419,37 @@ end
 
 1. **Query Composition**
    ```ruby
-   # Good: Use method chaining
-   records.mongory
-     .where(:age.gte => 18)
-     .where(:status => 'active')
-     .limit(10)
+    # Good: Use method chaining
+    records.mongory
+      .where(:age.gte => 18)
+      .where(:status => 'active')
+      .limit(10)
 
-   # Bad: Avoid redundant query creation
-   query = records.mongory.where(:age.gte => 18)
-   query = query.where(:status => 'active')  # Unnecessary
+    # Bad: Avoid redundant query creation
+    query = records.mongory.where(:age.gte => 18)
+    query = query.where(:status => 'active')  # Unnecessary
    ```
 
 2. **Performance Tips**
    ```ruby
-   # Use limit to restrict result set
-   records.mongory.limit(100).where(:age.gte => 18)
+    # Use limit to restrict result set
+    records.mongory.limit(100).where(:age.gte => 18)
 
-   # Use explain to analyze complex queries
-   query = records.mongory.where(:$or => [...])
-   query.explain
+    # Use explain to analyze complex queries
+    query = records.mongory.where(:$or => [...])
+    query.explain
    ```
 
 3. **Code Organization**
    ```ruby
-   # Encapsulate common queries as methods
-   class User
-     def active_adults
-       friends.mongory
-         .where(:age.gte => 18)
-         .where(:status => 'active')
-     end
-   end
+    # Encapsulate common queries as methods
+    class User
+      def active_adults
+        friends.mongory
+          .where(:age.gte => 18)
+          .where(:status => 'active')
+      end
+    end
    ```
 
 ## Limitations
@@ -466,31 +469,33 @@ end
 ## Migration Guide
 
 1. **From Array#select**
-   ```ruby
-   # Before
-   records.select { |r| r['age'] >= 18 && r['status'] == 'active' }
+  ```ruby
+    # Before
+    records.select { |r| r['age'] >= 18 && r['status'] == 'active' }
 
-   # After
-   records.mongory.where(:age.gte => 18, :status => 'active')
-   ```
+    # After
+    records.mongory.where(:age.gte => 18, status: 'active')
+  ```
 
 2. **From ActiveRecord**
-   ```ruby
-   # Before
-   indexed_query.where("age >= ? AND status = ?", 18, 'active')
+  ```ruby
+    # Before
+    indexed_query.where("age >= ? AND status = ?", 18, 'active')
 
-   # After
-   indexed_query.mongory.where(:age.gte => 18, :status => 'active')
-   ```
+    # After
+    indexed_query.mongory.where(:age.gte => 18, status: 'active')
+  ```
 
 3. **From MongoDB**
-   ```ruby
-   # Before (MongoDB)
-   users.where(:age.gte => 18, :status => 'active')
+  ```ruby
+    # Before (MongoDB)
+    users.where(:age.gte => 18, status: 'active')
 
-   # After (Mongory)
-   users.mongory.where(:age.gte => 18, :status => 'active')
-   ```
+    # After (Mongory)
+    users.mongory.where(:age.gte => 18, status: 'active')
+
+    # Just the same.
+  ```
 
 ## Contributing
 
