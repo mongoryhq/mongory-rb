@@ -22,10 +22,8 @@ module Mongory
       # @return [void]
       def initialize
         super
-        d_convert = nil
         @fallback = Proc.new do
-          d_convert ||= DataConverter.instance.method(:convert)
-          d_convert.call(self)
+          Mongory.data_converter.convert(self)
         end
       end
 
@@ -37,10 +35,8 @@ module Mongory
 
         # - Hashes are interpreted as nested condition trees
         #   using ConditionConverter
-        c_convert = nil
         register(Hash) do
-          c_convert ||= ConditionConverter.instance.method(:convert)
-          c_convert.call(self)
+          Mongory.condition_converter.convert(self)
         end
 
         register(String, :itself)
