@@ -2,8 +2,8 @@
 
 require 'spec_helper'
 
-RSpec.describe 'Mongory.data_converter' do
-  subject { Mongory.data_converter }
+RSpec.describe Mongory::Converters::DataConverter do
+  subject { described_class.instance }
 
   describe 'interface safety' do
     it 'cannot be instantiated with .new' do
