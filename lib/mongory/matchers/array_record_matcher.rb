@@ -24,6 +24,7 @@ module Mongory
     # @see Mongory::Matchers::InMatcher
     # @see Mongory::Matchers::LiteralMatcher
     class ArrayRecordMatcher < AbstractMultiMatcher
+      enable_unwrap!
       # Builds an array of matchers to evaluate the given condition against an array record.
       #
       # This method returns multiple matchers that will be evaluated using `:any?` logic:
@@ -34,7 +35,7 @@ module Mongory
       # @return [Array<Mongory::Matchers::AbstractMatcher>] an array of matcher instances
       define_instance_cache_method(:matchers) do
         result = []
-        result << EqMatcher.build(@condition)
+        result << EqMatcher.build(@condition) if @condition.is_a?(Array)
         result << if @condition.is_a?(Hash)
                     HashConditionMatcher.build(parsed_condition)
                   else
