@@ -13,7 +13,7 @@ module Mongory
         kc.convert(@name.to_s, @operator => v)
       end
     end
-  end
 
-  MongoidPatch.patch!
+    patch!
+  end
 end
