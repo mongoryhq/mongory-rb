@@ -2,7 +2,7 @@
 
 source 'https://rubygems.org'
 
-# Specify your gem's dependencies in mongory-rb.gemspec
+# Specify your gem's dependencies in mongory.gemspec
 gemspec
 
 gem 'rake', '~> 13.0'
