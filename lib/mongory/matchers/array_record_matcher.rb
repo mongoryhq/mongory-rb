@@ -36,8 +36,11 @@ module Mongory
       define_instance_cache_method(:matchers) do
         result = []
         result << EqMatcher.build(@condition) if @condition.is_a?(Array)
-        result << if @condition.is_a?(Hash)
+        result << case @condition
+                  when Hash
                     HashConditionMatcher.build(parsed_condition)
+                  when Regexp
+                    ElemMatchMatcher.build('$regex' => @condition)
                   else
                     ElemMatchMatcher.build('$eq' => @condition)
                   end
