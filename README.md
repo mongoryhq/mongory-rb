@@ -44,12 +44,12 @@ This will generate `config/initializers/mongory.rb` and set up:
 
 Or install manually:
 ```bash
-gem install mongory-rb
+gem install mongory
 ```
 
 Or add to your Gemfile:
 ```ruby
-gem 'mongory-rb'
+gem 'mongory'
 ```
 
 ### Basic Usage
