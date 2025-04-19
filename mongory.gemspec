@@ -3,7 +3,7 @@
 require_relative 'lib/mongory/version'
 
 Gem::Specification.new do |spec|
-  spec.name = 'mongory-rb'
+  spec.name = 'mongory'
   spec.version = Mongory::VERSION
   spec.authors = ['koten0224']
   spec.email = ['koten0224@gmail.com']

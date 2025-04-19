@@ -2,13 +2,77 @@
 
 # <%= @matcher_name %> implements the Mongo-style `<%= @mongo_operator %>` operator.
 #
-# @example
+# Instance Variables:
+# - @condition: The raw condition value passed to this matcher during initialization.
+#   This value is used for matching logic and should be validated in check_validity!.
+#
+# Condition Examples:
+#   # When query is: { field: { "<%= @mongo_operator %>" => your_condition } }
+#   # @condition will be: your_condition
+#
+#   # When query is: { field: { "<%= @mongo_operator %>" => { key: value } } }
+#   # @condition will be: { key: value }
+#
+#   # When query is: { field: { "<%= @mongo_operator %>" => [value1, value2] } }
+#   # @condition will be: [value1, value2]
+#
+# Matcher Tree Integration:
+# When this matcher is created as part of a matcher tree:
+# 1. It receives its @condition during initialization
+# 2. The @condition is validated via check_validity!
+# 3. The match method is called with normalized values
+# 4. The matcher can use normalize(record) to handle KEY_NOT_FOUND values
+#
+# This matcher typically serves as a leaf node in the matcher tree,
+# responsible for evaluating a single condition against a value.
+# It may be combined with other matchers through logical operators
+# like $and, $or, or $not to form complex conditions.
+#
+# Usage Examples:
+#   # Basic usage
 #   matcher = <%= @matcher_name %>.build(condition)
 #   matcher.match?(value) #=> true/false
+#
+#   # Usage in queries:
+#   # 1. Field-specific condition (MongoDB style)
+#   records.mongory.where(field: { "<%= @mongo_operator %>" => your_condition })
+#
+#   # 2. Field-specific condition (Ruby DSL style)
+#   records.mongory.where(:field.<%= @operator_name %> => your_condition)
+#
+#   # 3. Global condition (applies to all fields)
+#   records.mongory.where("<%= @mongo_operator %>" => your_condition)
+#
+# Implementation Notes:
+# 1. The match method should implement the specific operator logic
+# 2. Use normalize(subject) to handle KEY_NOT_FOUND values consistently
+# 3. The condition is available via @condition
+# 4. check_validity! should validate the format of @condition
+#
+# Interface Design:
+# This matcher provides two levels of matching interface:
+#
+# 1. Public Interface (match?):
+#    - Provides error handling
+#    - Ensures safe matching process
+#    - Suitable for external calls
+#    - Can be tracked by Mongory.debugger
+#    - Used for internal calls and debugging
+#
+# 2. Internal Interface (match):
+#    - Implements the actual matching logic
+#
+# Debugging Support:
+# The match method can be tracked by Mongory.debugger to:
+# - Visualize the matching process
+# - Diagnose matching issues
+# - Provide detailed debugging information
 #
 # @see Mongory::Matchers::AbstractMatcher
 class <%= @matcher_name %> < Mongory::Matchers::AbstractMatcher
   # Matches the subject against the condition.
+  # This is the internal interface that implements the actual matching logic.
+  # It can be tracked by Mongory.debugger for debugging purposes.
   #
   # @param subject [Object] the value to be tested
   # @return [Boolean] whether the value matches
