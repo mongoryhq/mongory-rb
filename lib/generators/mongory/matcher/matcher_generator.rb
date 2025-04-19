@@ -28,10 +28,7 @@ module Mongory
 
         template 'matcher.rb.erb', "lib/mongory/matchers/#{file_name}_matcher.rb"
         template 'matcher_spec.rb.erb', "spec/mongory/matchers/#{file_name}_matcher_spec.rb"
-        update_initializer
       end
-
-      private
 
       # Updates or creates the Mongory initializer.
       #
@@ -45,7 +42,7 @@ module Mongory
         content = File.read(initializer_path)
         return if content.include?(inject_line)
 
-        required_file_lines = content.scan(/.+require\s+["'].*_matcher["'].+/)
+        required_file_lines = content.scan(/.*require\s+["'].*_matcher["'].*/)
         if required_file_lines.empty?
           inject_line = "\n#{inject_line}"
         else

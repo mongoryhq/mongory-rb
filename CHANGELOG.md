@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.4.0] - 2025-04-20
+
+### ✨ Added
+- Support regex matching in array fields via `ArrayRecordMatcher`.
+  - Example: `tags: /vip/` will now match any element inside an array.
+- Publicize `MatcherGenerator#update_initializer` to allow external CLI or test usage.
+
+### 🧹 Changed
+- Refactored `ValueConverter` to use direct method reference instead of dynamic caching logic.
+
+### 📝 Documentation
+- Improved matcher generator template documentation.
+  - Added usage examples and matcher tree explanation.
+  - Fixed `Mongory::Debugger` references to `Mongory.debugger`.
+
+### 💥 Breaking
+- Renamed gem from `mongory-rb` to `mongory`, affecting gemspec and file references.
+  - `mongory.gemspec` now used in place of `mongory-rb.gemspec`.
+
+# Changelog
+
 ## v0.3.0
 
 ### New Features

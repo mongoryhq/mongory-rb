@@ -48,5 +48,19 @@ module Mongory
     def render_tree
       super
     end
+
+    # Prepares the query for execution by ensuring all necessary matchers are initialized.
+    # This is called before query execution to avoid premature matcher tree construction.
+    #
+    # @return [void]
+    alias_method :prepare_query, :check_validity!
+
+    # Overrides the parent class's check_validity! to prevent premature matcher tree construction.
+    # This matcher does not require validation, so this is a no-op.
+    #
+    # @return [void]
+    def check_validity!
+      # No-op for this matcher
+    end
   end
 end

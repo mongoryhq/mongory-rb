@@ -35,6 +35,7 @@ module Mongory
     def each
       return to_enum(:each) unless block_given?
 
+      @matcher.prepare_query
       @records.each do |record|
         yield record if @matcher.match?(record)
       end
