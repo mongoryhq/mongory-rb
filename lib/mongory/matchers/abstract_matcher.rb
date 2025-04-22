@@ -63,6 +63,14 @@ module Mongory
         false
       end
 
+      def to_proc
+        @to_proc ||= raw_proc
+      end
+
+      def raw_proc
+        method(:match).to_proc
+      end
+
       # Provides an alias to `#match?` for internal delegation.
       alias_method :regular_match, :match?
 

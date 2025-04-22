@@ -41,6 +41,16 @@ module Mongory
       end
     end
 
+    def fast
+      return to_enum(:fast) unless block_given?
+
+      @matcher.prepare_query
+      matcher_block = @matcher.to_proc
+      @records.each do |record|
+        yield record if matcher_block.call(record)
+      end
+    end
+
     # Adds a condition to filter records using the given condition.
     #
     # @param condition [Hash]
