@@ -39,7 +39,7 @@ end
   gc_handler do
     5.times do
       result = Benchmark.measure do
-        records.select { |r| r['age'] >= 18 }
+        records.select { |r| r.key?('age') && r['age'] >= 18 }
       end
       puts result
     end
@@ -62,6 +62,8 @@ end
     5.times do
       result = Benchmark.measure do
         records.select do |r|
+          next false unless r.key?('age') && r.key?('status')
+
           r['age'] >= 18 || r['status'] == 'active'
         end
       end
@@ -80,6 +82,22 @@ end
             { status: 'active' }
           ]
         ).to_a
+      end
+      puts result
+    end
+  end
+
+  # Complex query (Mongory) test
+  puts "\nComplex query (Mongory) fast mode (#{size} records):"
+  gc_handler do
+    5.times do
+      result = Benchmark.measure do
+        records.mongory.where(
+          :$or => [
+            { :age.gte => 18 },
+            { status: 'active' }
+          ]
+        ).fast.to_a
       end
       puts result
     end
