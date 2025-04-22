@@ -68,7 +68,7 @@ module Mongory
         value_converter.freeze
       end
 
-      undef_method :register, :exec_convert
+      undef_method :register
     end
   end
 end
