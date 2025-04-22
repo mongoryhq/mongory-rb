@@ -23,12 +23,12 @@ module Mongory
     # @note Equality behavior depends on how `==` is implemented for the given objects.
     #
     # @see AbstractOperatorMatcher
-    class EqMatcher < AbstractOperatorMatcher
+    class EqMatcher < AbstractMatcher
       # Returns the Ruby equality operator to be used in matching.
       #
       # @return [Symbol] the equality operator symbol
-      def operator
-        :==
+      def match(record)
+        record == @condition
       end
     end
 

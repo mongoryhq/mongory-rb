@@ -25,23 +25,16 @@ module Mongory
     #
     # @see LiteralMatcher
     # @see Mongory::Matchers::AbstractOperatorMatcher
-    class RegexMatcher < AbstractOperatorMatcher
-      # Uses `:match?` as the operator to invoke on the record string.
-      #
-      # @return [Symbol] the match? method symbol
-      def operator
-        :match?
+    class RegexMatcher < AbstractMatcher
+      def initialize(condition)
+        super(condition)
+        @condition = Regexp.new(condition) if condition.is_a?(String)
       end
 
-      # Ensures the record is a string before applying regex.
-      # If not, coerces to empty string to ensure match fails safely.
-      #
-      # @param record [Object] the raw input
-      # @return [String] a safe string to match against
-      def preprocess(record)
-        return '' unless record.is_a?(String)
+      def match(record)
+        return false unless record.is_a?(String)
 
-        record
+        record.match?(@condition)
       end
 
       # Ensures the condition is a Regexp (strings are converted during initialization).

@@ -15,12 +15,9 @@ module Mongory
     #   matcher.match?(42)  #=> false
     #
     # @see AbstractOperatorMatcher
-    class NeMatcher < AbstractOperatorMatcher
-      # Returns the Ruby `!=` operator symbol for comparison.
-      #
-      # @return [Symbol] the not-equal operator
-      def operator
-        :!=
+    class NeMatcher < AbstractMatcher
+      def match(record)
+        record != @condition
       end
     end
 

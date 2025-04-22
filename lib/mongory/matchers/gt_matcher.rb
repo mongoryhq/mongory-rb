@@ -15,12 +15,12 @@ module Mongory
     #   matcher.match?(10)  #=> false
     #
     # @see AbstractOperatorMatcher
-    class GtMatcher < AbstractOperatorMatcher
+    class GtMatcher < AbstractMatcher
       # Returns the Ruby `>` operator symbol for comparison.
       #
       # @return [Symbol] the greater-than operator
-      def operator
-        :>
+      def match(record)
+        record > @condition
       end
     end
 
