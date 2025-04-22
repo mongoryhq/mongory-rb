@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.0] - 2024-03-21
+
+### Added
+- Added fast mode implementation for optimized query performance
+- Added Proc-based matching for efficient record filtering
+- Added error handling in fast mode execution
+
+### Changed
+- Optimized query execution with compiled Proc objects
+- Improved memory efficiency in record matching
+- Enhanced error handling in query execution
+
+### Fixed
+- Fixed potential performance bottlenecks in record matching
+- Fixed error handling in query execution
+
 ## [0.4.0] - 2025-04-20
 
 ### ✨ Added
