@@ -35,6 +35,16 @@ module Mongory
       super_match(Mongory.data_converter.convert(record))
     end
 
+    def raw_proc
+      super_proc = super
+
+      Proc.new do |record|
+        super_proc.call(record)
+      rescue StandardError
+        false
+      end
+    end
+
     # Renders the full matcher tree for the current query.
     #
     # This method is intended to be the public entry point for rendering

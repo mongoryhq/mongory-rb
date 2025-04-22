@@ -26,6 +26,14 @@ module Mongory
       def match(record)
         !super_match(record)
       end
+
+      def raw_proc
+        super_proc = super
+
+        Proc.new do |record|
+          !super_proc.call(record)
+        end
+      end
     end
 
     register(:not, '$not', NotMatcher)

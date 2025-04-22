@@ -26,6 +26,16 @@ module Mongory
         matchers.all? { |matcher| matcher.match?(record) }
       end
 
+      def raw_proc
+        matcher_procs = matchers.map(&:to_proc)
+
+        Proc.new do |record|
+          matcher_procs.all? do |matcher_proc|
+            matcher_proc.call(record)
+          end
+        end
+      end
+
       # Constructs the appropriate submatcher for a key-value pair.
       # If the key is a registered operator, dispatches to the corresponding matcher.
       # Otherwise, assumes the key is a field path and uses FieldMatcher.

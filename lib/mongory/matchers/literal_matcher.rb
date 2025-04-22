@@ -46,11 +46,23 @@ module Mongory
       # @param record [Object] the record to be matched
       # @return [Boolean] whether the record satisfies the condition
       def match(record)
-        case record
-        when Array
+        if record.is_a?(Array)
           array_record_matcher.match?(record)
         else
           dispatched_matcher.match?(record)
+        end
+      end
+
+      def raw_proc
+        array_record_proc = array_record_matcher.to_proc
+        dispatched_proc = dispatched_matcher.to_proc
+
+        Proc.new do |record|
+          if record.is_a?(Array)
+            array_record_proc.call(record)
+          else
+            dispatched_proc.call(record)
+          end
         end
       end
 

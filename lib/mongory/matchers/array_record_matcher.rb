@@ -33,6 +33,16 @@ module Mongory
           matcher.match(record)
         end
       end
+
+      def raw_proc
+        matcher_procs = matchers.map(&:to_proc)
+
+        Proc.new do |record|
+          matcher_procs.any? do |matcher_proc|
+            matcher_proc.call(record)
+          end
+        end
+      end
       # Builds an array of matchers to evaluate the given condition against an array record.
       #
       # This method returns multiple matchers that will be evaluated using `:any?` logic:

@@ -27,6 +27,16 @@ module Mongory
         (record != KEY_NOT_FOUND) == @condition
       end
 
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          # Check if the record is nil or KEY_NOT_FOUND
+          # and compare it to the condition.
+          (record != KEY_NOT_FOUND) == condition
+        end
+      end
+
       # Ensures that the condition value is a valid boolean.
       #
       # @raise [TypeError] if condition is not true or false

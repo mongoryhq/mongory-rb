@@ -30,6 +30,14 @@ module Mongory
       def match(record)
         record == @condition
       end
+
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          record == condition
+        end
+      end
     end
 
     register(:eq, '$eq', EqMatcher)

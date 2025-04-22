@@ -30,6 +30,19 @@ module Mongory
         end
       end
 
+      def raw_proc
+        super_proc = super
+
+        Proc.new do |collection|
+          next false unless collection.is_a?(Array)
+          next false if collection.empty?
+
+          collection.all? do |record|
+            super_proc.call(record)
+          end
+        end
+      end
+
       def check_validity!
         raise TypeError, '$every needs a Hash.' unless @condition.is_a?(Hash)
 
