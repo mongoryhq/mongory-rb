@@ -21,13 +21,14 @@ module Mongory
       # Matches true if any element in the array satisfies the condition.
       # Falls back to false if the input is not an array.
 
+      alias_method :super_match, :match
       # @param collection [Object] the input to be tested
       # @return [Boolean] whether any element matches
       def match(collection)
         return false unless collection.is_a?(Array)
 
         collection.any? do |record|
-          super(Mongory.data_converter.convert(record))
+          super_match(Mongory.data_converter.convert(record))
         end
       end
 

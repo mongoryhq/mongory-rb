@@ -18,12 +18,13 @@ module Mongory
     #
     # @see LiteralMatcher
     class NotMatcher < LiteralMatcher
+      alias_method :super_match, :match
       # Inverts the result of LiteralMatcher#match.
       #
       # @param record [Object] the value to test
       # @return [Boolean] whether the negated condition is satisfied
       def match(record)
-        !super(record)
+        !super_match(record)
       end
     end
 

@@ -38,6 +38,7 @@ module Mongory
         super(condition)
       end
 
+      alias_method :super_match, :match
       # Performs field-based matching against the given record.
       #
       # This method first ensures the record is structurally eligible for field extraction—
@@ -89,7 +90,7 @@ module Mongory
             record[@field]
           end
 
-        super(Mongory.data_converter.convert(sub_record))
+        super_match(Mongory.data_converter.convert(sub_record))
       end
 
       # @return [String] a deduplication field used for matchers inside multi-match constructs
