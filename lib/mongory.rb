@@ -58,21 +58,21 @@ module Mongory
   #
   # @return [Converters::DataConverter]
   def self.data_converter
-    Converters::DataConverter.instance
+    @data_converter ||= Converters::DataConverter.instance
   end
 
   # Returns the condition converter instance.
   #
   # @return [Converters::ConditionConverter]
   def self.condition_converter
-    Converters::ConditionConverter.instance
+    @condition_converter ||= Converters::ConditionConverter.instance
   end
 
   # Returns the debugger instance.
   #
   # @return [Utils::Debugger]
   def self.debugger
-    Utils::Debugger.instance
+    @debugger ||= Utils::Debugger.instance
   end
 
   # Builds a new query over the given record set.
