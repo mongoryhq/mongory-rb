@@ -25,6 +25,14 @@ module Mongory
     # @see Mongory::Matchers::LiteralMatcher
     class ArrayRecordMatcher < AbstractMultiMatcher
       enable_unwrap!
+
+      def match(record)
+        return false unless record.is_a?(Array)
+
+        matchers.any? do |matcher|
+          matcher.match(record)
+        end
+      end
       # Builds an array of matchers to evaluate the given condition against an array record.
       #
       # This method returns multiple matchers that will be evaluated using `:any?` logic:
@@ -45,13 +53,6 @@ module Mongory
                     ElemMatchMatcher.build('$eq' => @condition)
                   end
         result
-      end
-
-      # Combines results using `:any?` for multi-match logic.
-      #
-      # @return [Symbol]
-      def operator
-        :any?
       end
 
       private
