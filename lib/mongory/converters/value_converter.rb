@@ -27,6 +27,8 @@ module Mongory
         end
       end
 
+      alias_method :super_convert, :convert
+
       def convert(target)
         case target
         when String, Integer, Regexp
@@ -36,7 +38,7 @@ module Mongory
         when Hash
           condition_converter.convert(target)
         else
-          super
+          super_convert(target)
         end
       end
 

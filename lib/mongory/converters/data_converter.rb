@@ -13,6 +13,8 @@ module Mongory
     #   DataConverter.instance.convert(:status) #=> "status"
     #
     class DataConverter < AbstractConverter
+      alias_method :super_convert, :convert
+
       def convert(target)
         case target
         when String, Integer
@@ -22,7 +24,7 @@ module Mongory
         when Time, DateTime
           target.iso8601
         else
-          super
+          super_convert(target)
         end
       end
     end

@@ -24,6 +24,8 @@ module Mongory
         @fallback = ->(x) { { self => x } }
       end
 
+      alias_method :super_convert, :convert
+
       def convert(target, other)
         case target
         when String
@@ -34,7 +36,7 @@ module Mongory
           # Handle special case for QueryOperator
           convert_string_key(*target.__expr_part__(other).first)
         else
-          super
+          super_convert(target, other)
         end
       end
 
