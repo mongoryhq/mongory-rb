@@ -38,6 +38,7 @@ module Mongory
         super(condition)
       end
 
+      alias_method :super_match, :match
       # Performs field-based matching against the given record.
       #
       # This method first ensures the record is structurally eligible for field extraction—
@@ -89,7 +90,36 @@ module Mongory
             record[@field]
           end
 
-        super(Mongory.data_converter.convert(sub_record))
+        super_match(Mongory.data_converter.convert(sub_record))
+      end
+
+      # Creates a raw Proc that performs the field-based matching operation.
+      # The Proc extracts the field value and delegates matching to the superclass.
+      #
+      # @return [Proc] a Proc that performs the field-based matching operation
+      def raw_proc
+        super_proc = super
+        field = @field
+
+        Proc.new do |record|
+          sub_record =
+            case record
+            when Hash
+              record.fetch(field) do
+                record.fetch(field.to_sym, KEY_NOT_FOUND)
+              end
+            when Array
+              record.fetch(field, KEY_NOT_FOUND)
+            when KEY_NOT_FOUND, *CLASSES_NOT_ALLOW_TO_DIG
+              next false
+            else
+              next false unless record.respond_to?(:[])
+
+              record[field]
+            end
+
+          super_proc.call(sub_record)
+        end
       end
 
       # @return [String] a deduplication field used for matchers inside multi-match constructs

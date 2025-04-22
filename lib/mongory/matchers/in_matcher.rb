@@ -38,6 +38,22 @@ module Mongory
         end
       end
 
+      # Creates a raw Proc that performs the in-matching operation.
+      # The Proc checks if any element of the record is in the condition array.
+      #
+      # @return [Proc] a Proc that performs the in-matching operation
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          if record.is_a?(Array)
+            is_present?(condition & record)
+          else
+            condition.include?(record)
+          end
+        end
+      end
+
       # Ensures the condition is an array.
       #
       # @raise [TypeError] if condition is not an array

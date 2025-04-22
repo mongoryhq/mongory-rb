@@ -13,13 +13,24 @@ module Mongory
     #   DataConverter.instance.convert(:status) #=> "status"
     #
     class DataConverter < AbstractConverter
-      def default_registrations
-        register(Symbol, :to_s)
-        register(Date, :to_s)
-        register(Time, :iso8601)
-        register(DateTime, :iso8601)
-        register(String, :itself)
-        register(Integer, :itself)
+      alias_method :super_convert, :convert
+
+      # Converts a value into its standardized form based on its type.
+      # Handles common primitive types with predefined conversion rules.
+      #
+      # @param target [Object] the value to convert
+      # @return [Object] the converted value
+      def convert(target)
+        case target
+        when String, Integer
+          target
+        when Symbol, Date
+          target.to_s
+        when Time, DateTime
+          target.iso8601
+        else
+          super_convert(target)
+        end
       end
     end
   end

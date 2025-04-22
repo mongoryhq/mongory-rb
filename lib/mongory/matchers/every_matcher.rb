@@ -15,6 +15,7 @@ module Mongory
     #
     # @see HashConditionMatcher
     class EveryMatcher < HashConditionMatcher
+      alias_method :super_match, :match
       # Matches true if all element in the array satisfies the condition.
       # Falls back to false if the input is not an array.
 
@@ -25,10 +26,31 @@ module Mongory
         return false if collection.empty?
 
         collection.all? do |record|
-          super(Mongory.data_converter.convert(record))
+          super_match(Mongory.data_converter.convert(record))
         end
       end
 
+      # Creates a raw Proc that performs the element matching operation.
+      # The Proc checks if all elements in the array match the condition.
+      #
+      # @return [Proc] a Proc that performs the element matching operation
+      def raw_proc
+        super_proc = super
+
+        Proc.new do |collection|
+          next false unless collection.is_a?(Array)
+          next false if collection.empty?
+
+          collection.all? do |record|
+            super_proc.call(record)
+          end
+        end
+      end
+
+      # Ensures the condition is a Hash.
+      #
+      # @raise [Mongory::TypeError] if the condition is not a Hash
+      # @return [void]
       def check_validity!
         raise TypeError, '$every needs a Hash.' unless @condition.is_a?(Hash)
 

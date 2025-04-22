@@ -10,15 +10,15 @@ Gem::Specification.new do |spec|
 
   spec.summary = 'MongoDB-like in-memory query DSL for Ruby'
   spec.description = 'A Mongo-like in-memory query DSL for Ruby'
-  spec.homepage = 'https://koten0224.github.io/mongory-rb/'
+  spec.homepage = 'https://mongoryhq.github.io/mongory-rb/'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 2.6.0'
 
   spec.metadata['allowed_push_host'] = 'https://rubygems.org'
   spec.metadata['rubygems_mfa_required'] = 'true'
   spec.metadata['homepage_uri'] = spec.homepage
-  spec.metadata['source_code_uri'] = 'https://github.com/koten0224/mongory-rb'
-  spec.metadata['changelog_uri'] = 'https://github.com/koten0224/mongory-rb/blob/main/CHANGELOG.md'
+  spec.metadata['source_code_uri'] = 'https://github.com/mongoryhq/mongory-rb'
+  spec.metadata['changelog_uri'] = 'https://github.com/mongoryhq/mongory-rb/blob/main/CHANGELOG.md'
 
   # Specify which files should be added to the gem when it is released.
   # The `git ls-files -z` loads the files in the RubyGem that have been added into git.

@@ -510,7 +510,7 @@ Please ensure your code adheres to the project's style guide and that all tests 
 
 ## Code of Conduct
 
-Everyone interacting in the Mongory-rb project's codebases, issue trackers, chat rooms, and mailing lists is expected to follow the [code of conduct](https://github.com/koten0224/mongory-rb/blob/main/CODE_OF_CONDUCT.md).
+Everyone interacting in the Mongory-rb project's codebases, issue trackers, chat rooms, and mailing lists is expected to follow the [code of conduct](https://github.com/mongoryhq/mongory-rb/blob/main/CODE_OF_CONDUCT.md).
 
 ## License
 

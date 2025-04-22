@@ -15,12 +15,25 @@ module Mongory
     #   matcher.match?(9)   #=> false
     #
     # @see AbstractOperatorMatcher
-    class GteMatcher < AbstractOperatorMatcher
-      # Returns the Ruby `>=` operator symbol for comparison.
+    class GteMatcher < AbstractMatcher
+      # Checks if the record is greater than or equal to the condition.
       #
-      # @return [Symbol] the greater-than-or-equal operator
-      def operator
-        :>=
+      # @param record [Object] the value to compare against
+      # @return [Boolean] true if the record is greater than or equal to the condition
+      def match(record)
+        record >= @condition
+      end
+
+      # Creates a raw Proc that performs the greater-than-or-equal comparison.
+      # The Proc uses the `>=` operator to compare values.
+      #
+      # @return [Proc] a Proc that performs the greater-than-or-equal comparison
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          record >= condition
+        end
       end
     end
 

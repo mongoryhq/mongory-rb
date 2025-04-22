@@ -46,11 +46,27 @@ module Mongory
       # @param record [Object] the record to be matched
       # @return [Boolean] whether the record satisfies the condition
       def match(record)
-        case record
-        when Array
+        if record.is_a?(Array)
           array_record_matcher.match?(record)
         else
           dispatched_matcher.match?(record)
+        end
+      end
+
+      # Creates a raw Proc that performs the literal matching operation.
+      # The Proc handles both array and non-array records appropriately.
+      #
+      # @return [Proc] a Proc that performs the literal matching operation
+      def raw_proc
+        array_record_proc = array_record_matcher.to_proc
+        dispatched_proc = dispatched_matcher.to_proc
+
+        Proc.new do |record|
+          if record.is_a?(Array)
+            array_record_proc.call(record)
+          else
+            dispatched_proc.call(record)
+          end
         end
       end
 
@@ -109,8 +125,8 @@ module Mongory
       # Outputs the matcher tree by selecting either collection or condition matcher.
       # Delegates `render_tree` to whichever submatcher was active.
       #
-      # @param prefix [String]
-      # @param is_last [Boolean]
+      # @param prefix [String] the prefix string for tree rendering
+      # @param is_last [Boolean] whether this is the last node in the tree
       # @return [void]
       def render_tree(prefix = '', is_last: true)
         super
