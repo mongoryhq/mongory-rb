@@ -25,6 +25,33 @@ module Mongory
     # @see Mongory::Matchers::LiteralMatcher
     class ArrayRecordMatcher < AbstractMultiMatcher
       enable_unwrap!
+
+      # Checks if any element in the array record matches the condition.
+      #
+      # @param record [Array] the array record to match against
+      # @return [Boolean] true if any element matches, false otherwise
+      def match(record)
+        return false unless record.is_a?(Array)
+
+        matchers.any? do |matcher|
+          matcher.match(record)
+        end
+      end
+
+      # Creates a raw Proc that performs the array matching operation.
+      # The Proc checks if any element in the array matches the condition.
+      #
+      # @return [Proc] a Proc that performs the array matching operation
+      def raw_proc
+        matcher_procs = matchers.map(&:to_proc)
+
+        Proc.new do |record|
+          matcher_procs.any? do |matcher_proc|
+            matcher_proc.call(record)
+          end
+        end
+      end
+
       # Builds an array of matchers to evaluate the given condition against an array record.
       #
       # This method returns multiple matchers that will be evaluated using `:any?` logic:
@@ -45,13 +72,6 @@ module Mongory
                     ElemMatchMatcher.build('$eq' => @condition)
                   end
         result
-      end
-
-      # Combines results using `:any?` for multi-match logic.
-      #
-      # @return [Symbol]
-      def operator
-        :any?
       end
 
       private

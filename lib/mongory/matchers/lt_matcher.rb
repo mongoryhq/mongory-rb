@@ -15,12 +15,25 @@ module Mongory
     #   matcher.match?(11)   #=> false
     #
     # @see AbstractOperatorMatcher
-    class LtMatcher < AbstractOperatorMatcher
-      # Returns the Ruby `<` operator symbol for comparison.
+    class LtMatcher < AbstractMatcher
+      # Checks if the record is less than the condition.
       #
-      # @return [Symbol] the less-than operator
-      def operator
-        :<
+      # @param record [Object] the value to compare against
+      # @return [Boolean] true if the record is less than the condition
+      def match(record)
+        record < @condition
+      end
+
+      # Creates a raw Proc that performs the less-than comparison.
+      # The Proc uses the `<` operator to compare values.
+      #
+      # @return [Proc] a Proc that performs the less-than comparison
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          record < condition
+        end
       end
     end
 

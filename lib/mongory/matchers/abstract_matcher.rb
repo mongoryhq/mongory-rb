@@ -63,6 +63,23 @@ module Mongory
         false
       end
 
+      # Converts the matcher into a Proc that can be used for matching.
+      # The Proc is cached for better performance.
+      #
+      # @return [Proc] a Proc that can be used to match records
+      def to_proc
+        @to_proc ||= raw_proc
+      end
+
+      # Creates a raw Proc from the match method.
+      # This is used internally by to_proc and can be overridden by subclasses
+      # to provide custom matching behavior.
+      #
+      # @return [Proc] the raw Proc implementation of the match method
+      def raw_proc
+        method(:match).to_proc
+      end
+
       # Provides an alias to `#match?` for internal delegation.
       alias_method :regular_match, :match?
 
@@ -139,6 +156,10 @@ module Mongory
           "record: #{record.inspect}"
       end
 
+      # Formats the match result with ANSI color codes for terminal output.
+      #
+      # @param result [Boolean, Exception] the match result
+      # @return [String] the colored result string
       def colored_result(result)
         if result.is_a?(Exception)
           "\e[45;97m#{result}\e[0m"

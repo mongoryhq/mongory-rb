@@ -18,20 +18,27 @@ module Mongory
     #   matcher.match?(KEY_NOT_FOUND)   #=> true
     #
     # @see AbstractOperatorMatcher
-    class ExistsMatcher < AbstractOperatorMatcher
+    class ExistsMatcher < AbstractMatcher
       # Converts the raw record value into a boolean indicating presence.
       #
       # @param record [Object] the value associated with the field
       # @return [Boolean] true if the key exists, false otherwise
-      def preprocess(record)
-        record != KEY_NOT_FOUND
+      def match(record)
+        (record != KEY_NOT_FOUND) == @condition
       end
 
-      # Uses Ruby's equality operator to compare presence against expected boolean.
+      # Creates a raw Proc that performs the existence check.
+      # The Proc checks if the record exists and compares it to the condition.
       #
-      # @return [Symbol] the comparison operator
-      def operator
-        :==
+      # @return [Proc] a Proc that performs the existence check
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          # Check if the record is nil or KEY_NOT_FOUND
+          # and compare it to the condition.
+          (record != KEY_NOT_FOUND) == condition
+        end
       end
 
       # Ensures that the condition value is a valid boolean.
@@ -39,7 +46,9 @@ module Mongory
       # @raise [TypeError] if condition is not true or false
       # @return [void]
       def check_validity!
-        raise TypeError, '$exists needs a boolean' unless BOOLEAN_VALUES.include?(@condition)
+        return if [true, false].include?(@condition)
+
+        raise TypeError, "$exists needs a boolean, but got #{@condition.inspect}"
       end
     end
 

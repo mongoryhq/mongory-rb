@@ -21,21 +21,27 @@ module Mongory
     #   matcher.match?(nil)         #=> true
     #
     # @see AbstractOperatorMatcher
-    class PresentMatcher < AbstractOperatorMatcher
-      # Transforms the record into a boolean presence flag
-      # before applying comparison.
+    class PresentMatcher < AbstractMatcher
+      # Checks if the record's presence matches the condition.
       #
-      # @param record [Object] the original value
-      # @return [Boolean] whether the value is present
-      def preprocess(record)
-        is_present?(super)
+      # @param record [Object] the value to test
+      # @return [Boolean] true if the record's presence matches the condition
+      def match(record)
+        record = nil if record == KEY_NOT_FOUND
+        is_present?(record) == @condition
       end
 
-      # Uses Ruby `==` to compare the presence result to the expected boolean.
+      # Creates a raw Proc that performs the presence check.
+      # The Proc checks if the record's presence matches the condition.
       #
-      # @return [Symbol] the equality operator
-      def operator
-        :==
+      # @return [Proc] a Proc that performs the presence check
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          record = nil if record == KEY_NOT_FOUND
+          is_present?(record) == condition
+        end
       end
 
       # Ensures that the condition value is a boolean.
@@ -43,7 +49,9 @@ module Mongory
       # @raise [TypeError] if condition is not true or false
       # @return [void]
       def check_validity!
-        raise TypeError, '$present needs a boolean' unless BOOLEAN_VALUES.include?(@condition)
+        return if [true, false].include?(@condition)
+
+        raise TypeError, '$present needs a boolean'
       end
     end
 

@@ -34,7 +34,7 @@ module Mongory
         super(self.class.to_s)
         @registries = []
         @fallback = Proc.new { |*| self }
-        execute_once_only!(:default_registrations)
+        @convert_strategy_map = {}.compare_by_identity
       end
 
       # Applies the registered conversion to the given target object.
@@ -43,27 +43,29 @@ module Mongory
       # @param other [Object] optional secondary value
       # @return [Object] converted result
       def convert(target, other = NOTHING)
+        convert_strategy = @convert_strategy_map[target.class] ||= find_strategy(target)
+
+        if other == NOTHING
+          target.instance_exec(&convert_strategy)
+        else
+          target.instance_exec(other, &convert_strategy)
+        end
+      end
+
+      # Finds the appropriate conversion strategy for the target object.
+      # Searches through registered rules and returns the first matching one,
+      # or the fallback strategy if no match is found.
+      #
+      # @param target [Object] the object to find a strategy for
+      # @return [Proc] the conversion strategy to use
+      def find_strategy(target)
         @registries.each do |registry|
           next unless target.is_a?(registry.klass)
 
-          return exec_convert(target, other, &registry.exec)
+          return registry.exec
         end
 
-        exec_convert(target, other, &@fallback)
-      end
-
-      # Internal dispatch logic to apply a matching converter.
-      #
-      # @param target [Object] the object to match
-      # @param other [Object] optional extra data
-      # @yield fallback block if no converter is found
-      # @return [Object]
-      def exec_convert(target, other, &block)
-        if other == NOTHING
-          target.instance_exec(&block)
-        else
-          target.instance_exec(other, &block)
-        end
+        @fallback
       end
 
       # Opens a configuration block to register more converters.
@@ -98,25 +100,11 @@ module Mongory
           register(klass) { |*args, &bl| send(converter, *args, &bl) }
         elsif block.is_a?(Proc)
           @registries.unshift(Registry.new(klass, block))
+          @convert_strategy_map[klass] = block
         else
           raise 'Support Symbol and block only.'
         end
       end
-
-      # Executes the given method only once by undefining it after execution.
-      #
-      # @param method_sym [Symbol] method name to execute once
-      # @return [void]
-      def execute_once_only!(method_sym)
-        send(method_sym)
-        singleton_class.undef_method(method_sym)
-      end
-
-      # Defines default class-to-converter registrations.
-      # Should be overridden by subclasses.
-      #
-      # @return [void]
-      def default_registrations; end
     end
   end
 end
