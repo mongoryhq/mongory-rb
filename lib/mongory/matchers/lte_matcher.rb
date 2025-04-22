@@ -16,10 +16,18 @@ module Mongory
     #
     # @see AbstractOperatorMatcher
     class LteMatcher < AbstractMatcher
+      # Checks if the record is less than or equal to the condition.
+      #
+      # @param record [Object] the value to compare against
+      # @return [Boolean] true if the record is less than or equal to the condition
       def match(record)
         record <= @condition
       end
 
+      # Creates a raw Proc that performs the less-than-or-equal comparison.
+      # The Proc uses the `<=` operator to compare values.
+      #
+      # @return [Proc] a Proc that performs the less-than-or-equal comparison
       def raw_proc
         condition = @condition
 

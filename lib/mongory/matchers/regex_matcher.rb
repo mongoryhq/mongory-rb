@@ -26,17 +26,29 @@ module Mongory
     # @see LiteralMatcher
     # @see Mongory::Matchers::AbstractOperatorMatcher
     class RegexMatcher < AbstractMatcher
+      # Initializes the matcher with a regex pattern.
+      # Converts string patterns to Regexp objects.
+      #
+      # @param condition [String, Regexp] the regex pattern to match against
       def initialize(condition)
         super(condition)
         @condition = Regexp.new(condition) if condition.is_a?(String)
       end
 
+      # Checks if the record matches the regex pattern.
+      #
+      # @param record [Object] the value to test
+      # @return [Boolean] true if the record is a string that matches the pattern
       def match(record)
         return false unless record.is_a?(String)
 
         record.match?(@condition)
       end
 
+      # Creates a raw Proc that performs the regex matching operation.
+      # The Proc checks if the record is a string that matches the pattern.
+      #
+      # @return [Proc] a Proc that performs the regex matching operation
       def raw_proc
         condition = @condition
 
@@ -49,7 +61,7 @@ module Mongory
 
       # Ensures the condition is a Regexp (strings are converted during initialization).
       #
-      # @raise [TypeError] if condition is not a string
+      # @raise [TypeError] if condition is not a string or Regexp
       # @return [void]
       def check_validity!
         return if @condition.is_a?(Regexp)

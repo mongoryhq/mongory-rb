@@ -16,10 +16,18 @@ module Mongory
     #
     # @see AbstractOperatorMatcher
     class NeMatcher < AbstractMatcher
+      # Checks if the record is not equal to the condition.
+      #
+      # @param record [Object] the value to compare against
+      # @return [Boolean] true if the record is not equal to the condition
       def match(record)
         record != @condition
       end
 
+      # Creates a raw Proc that performs the not-equal comparison.
+      # The Proc uses the `!=` operator to compare values.
+      #
+      # @return [Proc] a Proc that performs the not-equal comparison
       def raw_proc
         condition = @condition
 

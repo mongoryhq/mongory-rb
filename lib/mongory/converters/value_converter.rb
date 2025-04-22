@@ -29,6 +29,11 @@ module Mongory
 
       alias_method :super_convert, :convert
 
+      # Converts a value into its standardized form based on its type.
+      # Handles arrays, hashes, regex, and basic types.
+      #
+      # @param target [Object] the value to convert
+      # @return [Object] the converted value
       def convert(target)
         case target
         when String, Integer, Regexp
@@ -42,6 +47,9 @@ module Mongory
         end
       end
 
+      # Returns the condition converter instance.
+      #
+      # @return [ConditionConverter] the condition converter instance
       def condition_converter
         @condition_converter ||= Mongory.condition_converter
       end
