@@ -37,6 +37,16 @@ module Mongory
         record.match?(@condition)
       end
 
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          next false unless record.is_a?(String)
+
+          record.match?(condition)
+        end
+      end
+
       # Ensures the condition is a Regexp (strings are converted during initialization).
       #
       # @raise [TypeError] if condition is not a string

@@ -27,6 +27,15 @@ module Mongory
         is_present?(record) == @condition
       end
 
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          record = nil if record == KEY_NOT_FOUND
+          is_present?(record) == condition
+        end
+      end
+
       # Ensures that the condition value is a boolean.
       #
       # @raise [TypeError] if condition is not true or false

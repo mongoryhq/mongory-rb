@@ -38,6 +38,18 @@ module Mongory
         end
       end
 
+      def raw_proc
+        condition = @condition
+
+        Proc.new do |record|
+          if record.is_a?(Array)
+            is_present?(condition & record)
+          else
+            condition.include?(record)
+          end
+        end
+      end
+
       # Ensures the condition is an array.
       #
       # @raise [TypeError] if condition is not an array

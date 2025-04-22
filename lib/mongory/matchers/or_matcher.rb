@@ -29,6 +29,14 @@ module Mongory
         @matchers.any? { |matcher| matcher.match?(record) }
       end
 
+      def raw_proc
+        procs = matchers.map(&:to_proc)
+
+        Proc.new do |record|
+          procs.any? { |proc| proc.call(record) }
+        end
+      end
+
       define_instance_cache_method(:matchers) do
         @condition.map do |sub_condition|
           # Use HashConditionMatcher with conversion disabled

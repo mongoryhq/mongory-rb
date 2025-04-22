@@ -30,6 +30,16 @@ module Mongory
           matcher.match(record)
         end
       end
+
+      def raw_proc
+        matcher_procs = matchers.map(&:to_proc)
+        Proc.new do |record|
+          matcher_procs.all? do |matcher_proc|
+            matcher_proc.call(record)
+          end
+        end
+      end
+
       # Returns the flattened list of all matchers from each subcondition.
       #
       # Each condition is passed to a HashConditionMatcher, then recursively flattened.

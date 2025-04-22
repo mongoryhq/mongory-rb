@@ -32,6 +32,16 @@ module Mongory
         end
       end
 
+      def raw_proc
+        super_proc = super
+
+        Proc.new do |collection|
+          collection.any? do |record|
+            super_proc.call(record)
+          end
+        end
+      end
+
       # Ensures the condition is a Hash.
       #
       # @raise [Mongory::TypeError] if the condition is not a Hash
