@@ -93,6 +93,10 @@ module Mongory
         super_match(Mongory.data_converter.convert(sub_record))
       end
 
+      # Creates a raw Proc that performs the field-based matching operation.
+      # The Proc extracts the field value and delegates matching to the superclass.
+      #
+      # @return [Proc] a Proc that performs the field-based matching operation
       def raw_proc
         super_proc = super
         field = @field

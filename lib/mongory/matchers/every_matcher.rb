@@ -30,6 +30,10 @@ module Mongory
         end
       end
 
+      # Creates a raw Proc that performs the element matching operation.
+      # The Proc checks if all elements in the array match the condition.
+      #
+      # @return [Proc] a Proc that performs the element matching operation
       def raw_proc
         super_proc = super
 
@@ -43,6 +47,10 @@ module Mongory
         end
       end
 
+      # Ensures the condition is a Hash.
+      #
+      # @raise [Mongory::TypeError] if the condition is not a Hash
+      # @return [void]
       def check_validity!
         raise TypeError, '$every needs a Hash.' unless @condition.is_a?(Hash)
 

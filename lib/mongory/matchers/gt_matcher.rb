@@ -16,13 +16,18 @@ module Mongory
     #
     # @see AbstractOperatorMatcher
     class GtMatcher < AbstractMatcher
-      # Returns the Ruby `>` operator symbol for comparison.
+      # Checks if the record is greater than the condition.
       #
-      # @return [Symbol] the greater-than operator
+      # @param record [Object] the value to compare against
+      # @return [Boolean] true if the record is greater than the condition
       def match(record)
         record > @condition
       end
 
+      # Creates a raw Proc that performs the greater-than comparison.
+      # The Proc uses the `>` operator to compare values.
+      #
+      # @return [Proc] a Proc that performs the greater-than comparison
       def raw_proc
         condition = @condition
 

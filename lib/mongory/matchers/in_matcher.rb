@@ -38,6 +38,10 @@ module Mongory
         end
       end
 
+      # Creates a raw Proc that performs the in-matching operation.
+      # The Proc checks if any element of the record is in the condition array.
+      #
+      # @return [Proc] a Proc that performs the in-matching operation
       def raw_proc
         condition = @condition
 

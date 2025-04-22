@@ -27,6 +27,10 @@ module Mongory
         (record != KEY_NOT_FOUND) == @condition
       end
 
+      # Creates a raw Proc that performs the existence check.
+      # The Proc checks if the record exists and compares it to the condition.
+      #
+      # @return [Proc] a Proc that performs the existence check
       def raw_proc
         condition = @condition
 

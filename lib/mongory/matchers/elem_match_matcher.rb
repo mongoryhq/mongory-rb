@@ -32,6 +32,10 @@ module Mongory
         end
       end
 
+      # Creates a raw Proc that performs the element matching operation.
+      # The Proc checks if any element in the array matches the condition.
+      #
+      # @return [Proc] a Proc that performs the element matching operation
       def raw_proc
         super_proc = super
 

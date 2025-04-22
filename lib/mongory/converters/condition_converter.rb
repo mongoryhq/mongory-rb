@@ -16,8 +16,9 @@ module Mongory
     #
     class ConditionConverter < AbstractConverter
       # Converts a flat condition hash into a nested structure.
+      # Applies both key and value conversion, and merges overlapping keys.
       #
-      # @param condition [Hash]
+      # @param condition [Hash] the flat condition hash to convert
       # @return [Hash] the transformed nested condition
       def convert(condition)
         result = {}
@@ -30,8 +31,10 @@ module Mongory
       end
 
       # Provides a block that merges values for overlapping keys in a deep way.
+      # When both values are hashes, recursively merges them.
+      # Otherwise, uses the second value.
       #
-      # @return [Proc]
+      # @return [Proc] a block for deep merging hash values
       def deep_merge_block
         @deep_merge_block ||= Proc.new do |_, a, b|
           if a.is_a?(Hash) && b.is_a?(Hash)
@@ -45,7 +48,7 @@ module Mongory
       # @note Singleton instance, not configurable after initialization
       # Returns the key converter used to transform condition keys.
       #
-      # @return [AbstractConverter]
+      # @return [AbstractConverter] the key converter instance
       def key_converter
         KeyConverter.instance
       end

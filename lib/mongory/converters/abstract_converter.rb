@@ -52,6 +52,12 @@ module Mongory
         end
       end
 
+      # Finds the appropriate conversion strategy for the target object.
+      # Searches through registered rules and returns the first matching one,
+      # or the fallback strategy if no match is found.
+      #
+      # @param target [Object] the object to find a strategy for
+      # @return [Proc] the conversion strategy to use
       def find_strategy(target)
         @registries.each do |registry|
           next unless target.is_a?(registry.klass)

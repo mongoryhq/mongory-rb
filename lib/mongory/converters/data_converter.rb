@@ -15,6 +15,11 @@ module Mongory
     class DataConverter < AbstractConverter
       alias_method :super_convert, :convert
 
+      # Converts a value into its standardized form based on its type.
+      # Handles common primitive types with predefined conversion rules.
+      #
+      # @param target [Object] the value to convert
+      # @return [Object] the converted value
       def convert(target)
         case target
         when String, Integer

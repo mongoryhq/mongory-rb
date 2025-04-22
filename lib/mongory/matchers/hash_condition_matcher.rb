@@ -21,11 +21,19 @@ module Mongory
     class HashConditionMatcher < AbstractMultiMatcher
       enable_unwrap!
 
+      # Checks if all submatchers match the record.
+      #
+      # @param record [Object] the record to match against
+      # @return [Boolean] true if all subconditions match, false otherwise
       def match(record)
         # Check if all submatchers match the record
         matchers.all? { |matcher| matcher.match?(record) }
       end
 
+      # Creates a raw Proc that performs the hash condition matching operation.
+      # The Proc combines all submatcher Procs and returns true only if all match.
+      #
+      # @return [Proc] a Proc that performs the hash condition matching operation
       def raw_proc
         matcher_procs = matchers.map(&:to_proc)
 
@@ -39,9 +47,10 @@ module Mongory
       # Constructs the appropriate submatcher for a key-value pair.
       # If the key is a registered operator, dispatches to the corresponding matcher.
       # Otherwise, assumes the key is a field path and uses FieldMatcher.
+      #
+      # @return [Array<AbstractMatcher>] list of sub-matchers
       # @see FieldMatcher
       # @see Matchers.lookup
-      # @return [Array<AbstractMatcher>] list of sub-matchers
       define_instance_cache_method(:matchers) do
         @condition.map do |key, value|
           case key

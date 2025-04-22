@@ -25,12 +25,21 @@ module Mongory
       # Conversion is disabled to avoid double-processing.
       enable_unwrap!
 
+      # Performs the logical AND operation on all subconditions.
+      # Returns true only if all subconditions match the record.
+      #
+      # @param record [Object] the record to match against
+      # @return [Boolean] true if all subconditions match, false otherwise
       def match(record)
         matchers.all? do |matcher|
           matcher.match(record)
         end
       end
 
+      # Creates a raw Proc that performs the AND operation.
+      # The Proc combines all subcondition Procs and returns true only if all match.
+      #
+      # @return [Proc] a Proc that performs the AND operation
       def raw_proc
         matcher_procs = matchers.map(&:to_proc)
         Proc.new do |record|
