@@ -27,20 +27,21 @@ module Mongory
         end
       end
 
-      def default_registrations
-        v_convert = method(:convert)
-        register(Array) do
-          map { |x| v_convert.call(x) }
+      def convert(target)
+        case target
+        when String, Integer, Regexp
+          target
+        when Array
+          target.map { |x| convert(x) }
+        when Hash
+          condition_converter.convert(target)
+        else
+          super
         end
+      end
 
-        # - Hashes are interpreted as nested condition trees
-        #   using ConditionConverter
-        register(Hash) do
-          Mongory.condition_converter.convert(self)
-        end
-
-        register(String, :itself)
-        register(Integer, :itself)
+      def condition_converter
+        @condition_converter ||= Mongory.condition_converter
       end
     end
   end

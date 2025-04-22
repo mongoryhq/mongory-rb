@@ -35,7 +35,6 @@ module Mongory
         @registries = []
         @fallback = Proc.new { |*| self }
         @convert_strategy_map = {}.compare_by_identity
-        execute_once_only!(:default_registrations)
       end
 
       # Applies the registered conversion to the given target object.
@@ -100,21 +99,6 @@ module Mongory
           raise 'Support Symbol and block only.'
         end
       end
-
-      # Executes the given method only once by undefining it after execution.
-      #
-      # @param method_sym [Symbol] method name to execute once
-      # @return [void]
-      def execute_once_only!(method_sym)
-        send(method_sym)
-        singleton_class.undef_method(method_sym)
-      end
-
-      # Defines default class-to-converter registrations.
-      # Should be overridden by subclasses.
-      #
-      # @return [void]
-      def default_registrations; end
     end
   end
 end

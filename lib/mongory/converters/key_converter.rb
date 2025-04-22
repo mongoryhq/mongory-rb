@@ -24,19 +24,18 @@ module Mongory
         @fallback = ->(x) { { self => x } }
       end
 
-      def default_registrations
-        convert_string_key = method(:convert_string_key)
-        register(String) do |value|
-          convert_string_key.call(self, value)
+      def convert(target, other)
+        case target
+        when String
+          convert_string_key(target, other)
+        when Symbol
+          convert_string_key(target.to_s, other)
+        when QueryOperator
+          # Handle special case for QueryOperator
+          convert_string_key(*target.__expr_part__(other).first)
+        else
+          super
         end
-
-        # - `:"a.b.c" => v` becomes `{ "a" => { "b" => { "c" => v } } }`
-        register(Symbol) do |other|
-          convert_string_key.call(to_s, other)
-        end
-
-        # - `:"a.b.c".present => true` becomes `{ "a" => { "b" => { "c" => { "$present" => true } } } }`
-        register(QueryOperator, :__expr_part__)
       end
 
       # Converts a dotted string key into nested hash form.
