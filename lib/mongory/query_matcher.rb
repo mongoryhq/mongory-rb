@@ -25,13 +25,14 @@ module Mongory
       super(Mongory.condition_converter.convert(condition))
     end
 
+    alias_method :super_match, :match
     # Matches the given record against the condition.
     #
     # @param record [Object] the raw input record (e.g., Hash or model object) to be matched.
     #   It will be converted internally using `Mongory.data_converter`.
     # @return [Boolean] whether the record satisfies the condition
     def match(record)
-      super(Mongory.data_converter.convert(record))
+      super_match(Mongory.data_converter.convert(record))
     end
 
     # Renders the full matcher tree for the current query.

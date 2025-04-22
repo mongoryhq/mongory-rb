@@ -15,6 +15,7 @@ module Mongory
     #
     # @see HashConditionMatcher
     class EveryMatcher < HashConditionMatcher
+      alias_method :super_match, :match
       # Matches true if all element in the array satisfies the condition.
       # Falls back to false if the input is not an array.
 
@@ -25,7 +26,7 @@ module Mongory
         return false if collection.empty?
 
         collection.all? do |record|
-          super(Mongory.data_converter.convert(record))
+          super_match(Mongory.data_converter.convert(record))
         end
       end
 
