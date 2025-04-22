@@ -17,7 +17,7 @@ def gc_handler
   created = after[:total_allocated_objects] - before[:total_allocated_objects]
   freed   = after[:total_freed_objects] - before[:total_freed_objects]
   alive   = after[:heap_live_slots] - before[:heap_live_slots]
-  
+
   puts "Created: #{created}"    # 分配了幾個 object
   puts "Freed: #{freed}"        # 中途 GC 掃掉幾個（若 GC 有觸發）
   puts "Net alive: #{alive}"    # 最後還活著的物件數
