@@ -25,6 +25,11 @@ module Mongory
       # Conversion is disabled to avoid double-processing.
       enable_unwrap!
 
+      def match(record)
+        matchers.all? do |matcher|
+          matcher.match(record)
+        end
+      end
       # Returns the flattened list of all matchers from each subcondition.
       #
       # Each condition is passed to a HashConditionMatcher, then recursively flattened.
@@ -36,13 +41,6 @@ module Mongory
         @condition.flat_map do |condition|
           HashConditionMatcher.new(condition).matchers
         end.uniq(&:uniq_key)
-      end
-
-      # Combines submatcher results using `:all?`.
-      #
-      # @return [Symbol]
-      def operator
-        :all?
       end
 
       # Ensures the condition is an array of hashes.

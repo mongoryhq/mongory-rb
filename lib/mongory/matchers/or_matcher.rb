@@ -23,21 +23,17 @@ module Mongory
     # @see AbstractMultiMatcher
     class OrMatcher < AbstractMultiMatcher
       enable_unwrap!
-      # Constructs a HashConditionMatcher for each subcondition.
-      # Conversion is disabled to avoid double-processing.
 
-      # @see HashConditionMatcher
-      # @param condition [Object] a subcondition to be wrapped
-      # @return [HashConditionMatcher] a matcher for this condition
-      def build_sub_matcher(condition)
-        HashConditionMatcher.build(condition)
+      def match(record)
+        # Check if any of the submatchers match
+        @matchers.any? { |matcher| matcher.match?(record) }
       end
 
-      # Uses `:any?` to return true if any submatcher passes.
-      #
-      # @return [Symbol] the combining operator
-      def operator
-        :any?
+      define_instance_cache_method(:matchers) do
+        @condition.map do |sub_condition|
+          # Use HashConditionMatcher with conversion disabled
+          HashConditionMatcher.build(sub_condition)
+        end
       end
 
       # Ensures the condition is an array of hashes.

@@ -20,35 +20,32 @@ module Mongory
     # @see AbstractMultiMatcher
     class HashConditionMatcher < AbstractMultiMatcher
       enable_unwrap!
+
+      def match(record)
+        # Check if all submatchers match the record
+        matchers.all? { |matcher| matcher.match?(record) }
+      end
+
       # Constructs the appropriate submatcher for a key-value pair.
       # If the key is a registered operator, dispatches to the corresponding matcher.
       # Otherwise, assumes the key is a field path and uses FieldMatcher.
-
       # @see FieldMatcher
       # @see Matchers.lookup
-      # @param key [String] the condition key (either an operator or field name)
-      # @param value [Object] the condition value
-      # @return [AbstractMatcher] a matcher instance
-      def build_sub_matcher(key, value)
-        case key
-        when *Matchers.operators
-          # If the key is a recognized operator, use the corresponding matcher
-          # to handle the value.
-          # This allows for nested conditions like { :$and => [{ age: { :$gt => 30 } }] }
-          # or { :$or => [{ name: 'John' }, { age: { :$lt => 25 } }] }
-          # The operator matcher is built using the value.
-          Matchers.lookup(key).build(value)
-        else
-          FieldMatcher.build(key, value)
+      # @return [Array<AbstractMatcher>] list of sub-matchers
+      define_instance_cache_method(:matchers) do
+        @condition.map do |key, value|
+          case key
+          when *Matchers.operators
+            # If the key is a recognized operator, use the corresponding matcher
+            # to handle the value.
+            # This allows for nested conditions like { :$and => [{ age: { :$gt => 30 } }] }
+            # or { :$or => [{ name: 'John' }, { age: { :$lt => 25 } }] }
+            # The operator matcher is built using the value.
+            Matchers.lookup(key).build(value)
+          else
+            FieldMatcher.build(key, value)
+          end
         end
-      end
-
-      # Specifies the matching strategy for all subconditions.
-      # Uses `:all?`, meaning all conditions must be satisfied.
-      #
-      # @return [Symbol] the combining operator method
-      def operator
-        :all?
       end
     end
   end
