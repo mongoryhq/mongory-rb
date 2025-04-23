@@ -6,7 +6,7 @@ module Mongory
     #
     # It returns true if the record is strictly greater than the condition.
     #
-    # Inherits core logic from AbstractOperatorMatcher, including
+    # Inherits core logic from AbstractMatcher, including
     # error handling and optional preprocessing.
     #
     # @example
@@ -14,7 +14,7 @@ module Mongory
     #   matcher.match?(15)  #=> true
     #   matcher.match?(10)  #=> false
     #
-    # @see AbstractOperatorMatcher
+    # @see AbstractMatcher
     class GtMatcher < AbstractMatcher
       # Checks if the record is greater than the condition.
       #

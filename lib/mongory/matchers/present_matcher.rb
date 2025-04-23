@@ -20,7 +20,7 @@ module Mongory
     #   matcher = PresentMatcher.build(false)
     #   matcher.match?(nil)         #=> true
     #
-    # @see AbstractOperatorMatcher
+    # @see AbstractMatcher
     class PresentMatcher < AbstractMatcher
       # Checks if the record's presence matches the condition.
       #

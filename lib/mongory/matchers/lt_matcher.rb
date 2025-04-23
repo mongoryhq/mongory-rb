@@ -6,7 +6,7 @@ module Mongory
     #
     # It returns true if the record is strictly less than the condition value.
     #
-    # This matcher inherits from AbstractOperatorMatcher and uses the `<` operator.
+    # This matcher inherits from AbstractMatcher and uses the `<` operator.
     #
     # @example
     #   matcher = LtMatcher.build(10)
@@ -14,7 +14,7 @@ module Mongory
     #   matcher.match?(10)   #=> false
     #   matcher.match?(11)   #=> false
     #
-    # @see AbstractOperatorMatcher
+    # @see AbstractMatcher
     class LtMatcher < AbstractMatcher
       # Checks if the record is less than the condition.
       #
