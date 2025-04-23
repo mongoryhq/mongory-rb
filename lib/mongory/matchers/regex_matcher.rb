@@ -12,24 +12,31 @@ module Mongory
     # If a string is provided instead of a Regexp, it will be converted via `Regexp.new(...)`.
     # This ensures consistent behavior for queries like `:field.regex => "foo"` and `:field.regex => /foo/`.
     #
-    # @example
-    #   matcher = RegexMatcher.build('^foo')
+    # @example Basic regex matching
+    #   matcher = RegexMatcher.build(/^foo/)
     #   matcher.match?('foobar')   #=> true
     #   matcher.match?('barfoo')   #=> false
     #
-    # @example Match with explicit regex
-    #   RegexMatcher.build(/admin/i).match?("ADMIN") # => true
+    # @example Case-insensitive matching
+    #   matcher = RegexMatcher.build(/admin/i)
+    #   matcher.match?("ADMIN")    #=> true
     #
-    # @example Match via LiteralMatcher fallback
-    #   LiteralMatcher.new(/admin/i).match("ADMIN") # => true
+    # @example String pattern
+    #   matcher = RegexMatcher.build("^foo")
+    #   matcher.match?("foobar")   #=> true
     #
-    # @see LiteralMatcher
-    # @see Mongory::Matchers::AbstractMatcher
+    # @example Non-string input
+    #   matcher = RegexMatcher.build(/\d+/)
+    #   matcher.match?(123)        #=> false (not a string)
+    #
+    # @see AbstractMatcher
     class RegexMatcher < AbstractMatcher
       # Initializes the matcher with a regex pattern.
       # Converts string patterns to Regexp objects.
       #
       # @param condition [String, Regexp] the regex pattern to match against
+      # @param context [Context] the query context
+      # @raise [TypeError] if condition is not a string or Regexp
       def initialize(condition, context: Context.new)
         super
         @condition = Regexp.new(condition) if condition.is_a?(String)
@@ -37,8 +44,9 @@ module Mongory
 
       # Creates a raw Proc that performs the regex matching operation.
       # The Proc checks if the record is a string that matches the pattern.
+      # Returns false for non-string inputs or if the match fails.
       #
-      # @return [Proc] a Proc that performs the regex matching operation
+      # @return [Proc] a Proc that performs regex matching
       def raw_proc
         condition = @condition
 
@@ -46,10 +54,12 @@ module Mongory
           next false unless record.is_a?(String)
 
           record.match?(condition)
+        rescue StandardError
+          false
         end
       end
 
-      # Ensures the condition is a Regexp (strings are converted during initialization).
+      # Ensures the condition is a valid regex pattern (Regexp or String).
       #
       # @raise [TypeError] if condition is not a string or Regexp
       # @return [void]

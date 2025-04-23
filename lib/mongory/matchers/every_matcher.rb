@@ -18,7 +18,8 @@ module Mongory
       # Creates a raw Proc that performs the element matching operation.
       # The Proc checks if all elements in the array match the condition.
       #
-      # @return [Proc] a Proc that performs the element matching operation
+      # @return [Proc] A proc that performs element matching with context awareness
+      # @note The proc includes error handling and context-based record conversion
       def raw_proc
         super_proc = super
         need_convert = @context.need_convert

@@ -19,7 +19,7 @@ module Mongory
       # Creates a raw Proc that performs the not-equal comparison.
       # The Proc uses the `!=` operator to compare values.
       #
-      # @return [Proc] a Proc that performs the not-equal comparison
+      # @return [Proc] A proc that performs not-equal comparison
       def raw_proc
         condition = @condition
 

@@ -11,8 +11,9 @@ module Mongory
     #   context.current_record = record
     #   context.config = new_config
     #
-    # @attr [Config] config The configuration object for the context.
-    # @attr [Record] current_record The current record being processed.
+    # @attr [Config] config The configuration object for the context
+    # @attr [Record] current_record The current record being processed in the matcher tree
+    # @attr [Boolean] need_convert Whether the record needs to be converted before matching
     class Context
       attr_accessor :config, :current_record, :need_convert
 
@@ -26,6 +27,10 @@ module Mongory
         @need_convert = true
       end
 
+      # Creates a duplicate of the context with its own configuration.
+      #
+      # @return [Context] A new context instance with duplicated configuration
+      # @note The new context shares the same configuration object but has its own state
       def dup
         new_context = super
         new_context.config = @config.dup

@@ -166,6 +166,20 @@ module Mongory
       end
     end
 
+    # Returns the raw parsed condition for this query.
+    #
+    # @return [Hash] the raw compiled condition
+    def raw_condition
+      @matcher.condition
+    end
+
+    # Creates a new query builder with additional context configuration.
+    #
+    # @param addon_context [Hash] Additional context configuration to merge
+    # @return [QueryBuilder] A new query builder instance with merged context
+    # @note Creates a new query builder with the current matcher's condition and merged context
+    # @example
+    #   query.with_context(need_convert: false) #=> Returns a new query builder with conversion disabled
     def with_context(addon_context = {})
       dup_instance_exec do
         @context = @context.dup
@@ -173,15 +187,6 @@ module Mongory
         set_matcher(@matcher.condition)
       end
     end
-
-    # Returns the raw parsed condition for this query.
-    #
-    # @return [Hash] the raw compiled condition
-    def condition
-      @matcher.condition
-    end
-
-    alias_method :selector, :condition
 
     # Prints the internal matcher tree structure for the current query.
     # Will output a human-readable visual tree of matchers.

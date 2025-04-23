@@ -2,18 +2,22 @@
 
 module Mongory
   module Matchers
-    # FieldMatcher is responsible for extracting a value from a record
-    # using a field (or index) and then delegating the match to LiteralMatcher logic.
+    # FieldMatcher handles field-level matching by extracting and comparing field values.
     #
-    # It handles nested access in structures like Hashes or Arrays, and guards
-    # against types that should not be dig into (e.g., String, Symbol, Proc).
+    # This matcher is responsible for:
+    # 1. Extracting field values from records using dot notation
+    # 2. Converting extracted values if needed
+    # 3. Delegating the actual comparison to a submatcher
     #
-    # This matcher is typically used when the query refers to a specific field,
-    # like `{ age: { :$gte => 18 } }` where `:age` is passed as the dig field.
+    # It supports:
+    # - Hash records with string/symbol keys
+    # - Array records with numeric indices
+    # - Objects that respond to `[]`
     #
-    # @example
-    #   matcher = FieldMatcher.build(:age, { :$gte => 18 })
-    #   matcher.match?({ age: 20 }) #=> true
+    # @example Basic field matching
+    #   matcher = FieldMatcher.build('age', 30)
+    #   matcher.match?({ 'age' => 30 })  #=> true
+    #   matcher.match?({ age: 30 })      #=> true
     #
     # @see LiteralMatcher
     class FieldMatcher < LiteralMatcher
@@ -29,17 +33,18 @@ module Mongory
         ::Symbol
       ].freeze
 
-      # Initializes the matcher with a target field and condition.
+      # Initializes a new field matcher.
       #
-      # @param field [Object] the field (or index) used to dig into the record
-      # @param condition [Object] the condition to match against the extracted value
+      # @param field [String, Symbol] the field to match against
+      # @param condition [Object] the condition to match with
+      # @param context [Context] the query context
       def initialize(field, condition, context: Context.new)
         @field = field
         super(condition, context: context)
       end
 
-      alias_method :super_match, :match
-      # Performs field-based matching against the given record.
+      # Creates a raw Proc that performs the field matching operation.
+      # The Proc extracts the field value and delegates to the submatcher.
       #
       # This method first ensures the record is structurally eligible for field extraction—
       # it must be a Hash, Array, or respond to `[]`. If the structure does not allow for
@@ -74,9 +79,8 @@ module Mongory
       # Creates a raw Proc that performs the field-based matching operation.
       # The Proc extracts the field value and delegates matching to the superclass.
       #
-      # @return [Proc] a Proc that performs the field-based matching operation
-      # @param record [Object] the input data structure to be matched
-      # @return [Boolean] true if the extracted field value matches the condition; false otherwise
+      # @return [Proc] A proc that performs field-based matching with context awareness
+      # @note The proc handles field extraction and delegates matching to the superclass
       def raw_proc
         super_proc = super
         field = @field
@@ -105,7 +109,10 @@ module Mongory
         end
       end
 
-      # @return [String] a deduplication field used for matchers inside multi-match constructs
+      # Returns a unique key for this matcher, including the field name.
+      # Used for deduplication in multi-matchers.
+      #
+      # @return [String] a unique key for this matcher
       # @see AbstractMultiMatcher#matchers
       def uniq_key
         super + "field:#{@field}"
@@ -113,9 +120,9 @@ module Mongory
 
       private
 
-      # Returns a single-line summary of the dig matcher including the field and condition.
+      # Returns a single-line summary of the field matcher including the field and condition.
       #
-      # @return [String]
+      # @return [String] a formatted title for tree display
       def tree_title
         "Field: #{@field.inspect} to match: #{@condition.inspect}"
       end
@@ -124,7 +131,7 @@ module Mongory
       #
       # @param record [Object] the input record
       # @param result [Boolean] match result
-      # @return [String] formatted debug string
+      # @return [String] formatted debug string with highlighted field
       def debug_display(record, result)
         "#{self.class.name.split('::').last} #{colored_result(result)}, " \
           "condition: #{@condition.inspect}, " \

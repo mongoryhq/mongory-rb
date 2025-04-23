@@ -16,8 +16,14 @@ module Mongory
     # @abstract
     # @see AbstractMatcher
     class AbstractMultiMatcher < AbstractMatcher
+      # A Proc that always returns true, used as a default for empty AND conditions
+      # @return [Proc] A proc that always returns true
       TRUE_PROC = Proc.new { |_| true }
+
+      # A Proc that always returns false, used as a default for empty OR conditions
+      # @return [Proc] A proc that always returns false
       FALSE_PROC = Proc.new { |_| false }
+
       # Enables auto-unwrap logic.
       # When used, `.build` may unwrap to first matcher if only one is present.
       #
@@ -31,9 +37,12 @@ module Mongory
       private_class_method :enable_unwrap!
 
       # Builds a matcher and conditionally unwraps it.
+      # If unwrapping is enabled and there is only one submatcher,
+      # returns that submatcher instead of the multi-matcher wrapper.
       #
       # @param args [Array] arguments passed to the constructor
-      # @return [AbstractMatcher]
+      # @param context [Context] the query context
+      # @return [AbstractMatcher] the constructed matcher or its unwrapped submatcher
       def self.build_or_unwrap(*args, context: Context.new)
         matcher = new(*args, context: context)
         return matcher unless @enable_unwrap
@@ -43,7 +52,9 @@ module Mongory
       end
 
       # Recursively checks all submatchers for validity.
+      # Raises an error if any submatcher is invalid.
       #
+      # @raise [Mongory::TypeError] if any submatcher is invalid
       # @return [void]
       def check_validity!
         matchers.each(&:check_validity!)
