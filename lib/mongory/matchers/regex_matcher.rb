@@ -30,8 +30,8 @@ module Mongory
       # Converts string patterns to Regexp objects.
       #
       # @param condition [String, Regexp] the regex pattern to match against
-      def initialize(condition)
-        super(condition)
+      def initialize(condition, context: Context.new)
+        super
         @condition = Regexp.new(condition) if condition.is_a?(String)
       end
 

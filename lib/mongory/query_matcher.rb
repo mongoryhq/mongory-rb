@@ -35,8 +35,8 @@ module Mongory
     #
     # @param condition [Hash<Symbol, Object>] a query condition using operator-style symbol keys,
     #   e.g. { :age.gt => 18 }, which will be parsed by `Mongory.condition_converter`.
-    def initialize(condition)
-      super(Mongory.condition_converter.convert(condition))
+    def initialize(condition, context: Utils::Context.new)
+      super(Mongory.condition_converter.convert(condition), context: context)
     end
 
     alias_method :super_match, :match

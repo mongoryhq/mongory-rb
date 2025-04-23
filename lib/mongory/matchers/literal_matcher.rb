@@ -93,16 +93,16 @@ module Mongory
       define_matcher(:dispatched) do
         case @condition
         when Hash
-          HashConditionMatcher.build(@condition)
+          HashConditionMatcher.build(@condition, context: @context)
         when Regexp
-          RegexMatcher.build(@condition)
+          RegexMatcher.build(@condition, context: @context)
         when nil
           OrMatcher.build([
             { '$exists' => false },
             { '$eq' => nil }
-          ])
+          ], context: @context)
         else
-          EqMatcher.build(@condition)
+          EqMatcher.build(@condition, context: @context)
         end
       end
 
@@ -112,7 +112,7 @@ module Mongory
       # @return [ArrayRecordMatcher] the matcher used to match array-type records
       # @!method array_record_matcher
       define_matcher(:array_record) do
-        ArrayRecordMatcher.build(@condition)
+        ArrayRecordMatcher.build(@condition, context: @context)
       end
 
       # Validates the nested condition matcher, if applicable.

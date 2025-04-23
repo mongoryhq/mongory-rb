@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'mongory'
+require_relative 'matchers/shared_spec'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

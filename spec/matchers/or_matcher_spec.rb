@@ -5,7 +5,9 @@ require 'spec_helper'
 RSpec.describe Mongory::Matchers::OrMatcher do
   describe '#match?' do
     subject { described_class.new(condition) }
+    let(:condition) { [] }
 
+    it_behaves_like 'all the sub-matchers of multi matcher has the same context'
     context 'when any subcondition is satisfied' do
       let(:condition) do
         [
@@ -14,6 +16,7 @@ RSpec.describe Mongory::Matchers::OrMatcher do
         ]
       end
 
+      it_behaves_like 'all the sub-matchers of multi matcher has the same context'
       it { is_expected.to be_match('age' => 20, 'name' => 'bar') }
       it { is_expected.to be_match('age' => 16, 'name' => 'foobar') }
       it { is_expected.to be_match('age' => 18) }

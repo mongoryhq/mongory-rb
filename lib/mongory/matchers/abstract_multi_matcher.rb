@@ -32,8 +32,8 @@ module Mongory
       #
       # @param args [Array] arguments passed to the constructor
       # @return [AbstractMatcher]
-      def self.build_or_unwrap(*args)
-        matcher = new(*args)
+      def self.build_or_unwrap(*args, context: Context.new)
+        matcher = new(*args, context: context)
         return matcher unless @enable_unwrap
 
         matcher = matcher.matchers.first if matcher.matchers.count == 1

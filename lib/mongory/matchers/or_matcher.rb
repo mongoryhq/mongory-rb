@@ -52,7 +52,7 @@ module Mongory
       define_instance_cache_method(:matchers) do
         @condition.map do |sub_condition|
           # Use HashConditionMatcher with conversion disabled
-          HashConditionMatcher.build(sub_condition)
+          HashConditionMatcher.build(sub_condition, context: @context)
         end
       end
 

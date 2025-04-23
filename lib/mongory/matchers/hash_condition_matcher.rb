@@ -60,9 +60,9 @@ module Mongory
             # This allows for nested conditions like { :$and => [{ age: { :$gt => 30 } }] }
             # or { :$or => [{ name: 'John' }, { age: { :$lt => 25 } }] }
             # The operator matcher is built using the value.
-            Matchers.lookup(key).build(value)
+            Matchers.lookup(key).build(value, context: @context)
           else
-            FieldMatcher.build(key, value)
+            FieldMatcher.build(key, value, context: @context)
           end
         end
       end

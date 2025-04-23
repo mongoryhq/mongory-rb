@@ -29,7 +29,7 @@ module Mongory
       end
 
       # @return [Object] the raw condition this matcher was initialized with
-      attr_reader :condition
+      attr_reader :condition, :context
 
       # @return [String] a unique key representing this matcher instance, used for deduplication
       # @see AbstractMultiMatcher#matchers
@@ -40,8 +40,9 @@ module Mongory
       # Initializes the matcher with a raw condition.
       #
       # @param condition [Object] the condition to match against
-      def initialize(condition)
+      def initialize(condition, context: Context.new)
         @condition = condition
+        @context = context
 
         check_validity!
       end

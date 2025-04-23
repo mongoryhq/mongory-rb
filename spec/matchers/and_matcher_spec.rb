@@ -14,6 +14,7 @@ RSpec.describe Mongory::Matchers::AndMatcher do
         ]
       end
 
+      it_behaves_like 'all the sub-matchers of multi matcher has the same context'
       it { is_expected.to be_match('age' => 20, 'name' => 'foobar') }
       it { is_expected.not_to be_match('age' => 20, 'name' => 'bar') }
       it { is_expected.not_to be_match('age' => 20) }
