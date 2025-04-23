@@ -35,15 +35,20 @@ module Mongory
     #
     # @param condition [Hash<Symbol, Object>] a query condition using operator-style symbol keys,
     #   e.g. { :age.gt => 18 }, which will be parsed by `Mongory.condition_converter`.
+    # @param context [Context] The query context containing configuration and current record
+    # @option context [Hash] :config The query configuration
+    # @option context [Object] :current_record The current record being processed
+    # @option context [Boolean] :need_convert Whether the record needs to be converted
     def initialize(condition, context: Utils::Context.new)
       super(Mongory.condition_converter.convert(condition), context: context)
     end
 
     # Returns a Proc that can be used for fast matching.
-    # The Proc handles errors gracefully by returning false
-    # if any error occurs during matching.
+    # The Proc converts the record using Mongory.data_converter
+    # and delegates to the superclass's raw_proc.
     #
-    # @return [Proc] a callable that takes a record and returns a boolean
+    # @return [Proc] A proc that performs query matching with context awareness
+    # @note The proc includes error handling and context-based record conversion
     def raw_proc
       super_proc = super
       need_convert = @context.need_convert

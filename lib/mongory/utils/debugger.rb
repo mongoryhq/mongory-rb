@@ -32,14 +32,16 @@ module Mongory
         @trace_entries = []
       end
 
-      # Enables debug mode by aliasing `match?` to `debug_match`.
+      # Enables debug mode by aliasing `to_proc` to `debug_proc`.
       # @return [void]
+      # @note Changes the behavior of to_proc to use debug_proc instead of cached_proc
       def enable
         Matchers::AbstractMatcher.alias_method :to_proc, :debug_proc
       end
 
-      # Disables debug mode by restoring `match?` to `regular_match`.
+      # Disables debug mode by restoring `to_proc` to `cached_proc`.
       # @return [void]
+      # @note Restores the original behavior of to_proc
       def disable
         Matchers::AbstractMatcher.alias_method :to_proc, :cached_proc
       end

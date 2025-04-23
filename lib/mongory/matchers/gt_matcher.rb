@@ -19,7 +19,8 @@ module Mongory
       # Creates a raw Proc that performs the greater-than comparison.
       # The Proc uses the `>` operator to compare values.
       #
-      # @return [Proc] a Proc that performs the greater-than comparison
+      # @return [Proc] A proc that performs greater-than comparison with error handling
+      # @note The proc includes error handling for invalid comparisons
       def raw_proc
         condition = @condition
 

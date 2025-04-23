@@ -2,32 +2,35 @@
 
 module Mongory
   module Matchers
-    # ArrayRecordMatcher matches records where the record itself is an Array.
+    # ArrayRecordMatcher handles matching against array-type records.
     #
-    # This matcher checks whether any element of the record array satisfies the expected condition.
-    # It is typically used when the record is a collection of values, and the query condition
-    # is either a scalar value or a subcondition matcher.
+    # This matcher is used when a field value is an array and needs to be matched
+    # against a condition. It supports both exact array matching and element-wise
+    # comparison through `$elemMatch`.
     #
-    # @example Match when any element equals the expected value
-    #   matcher = ArrayRecordMatcher.build(42)
-    #   matcher.match?([10, 42, 99])    #=> true
+    # For empty conditions, it returns false (using FALSE_PROC).
     #
-    # @example Match using a nested matcher (e.g. condition is a hash)
-    #   matcher = ArrayRecordMatcher.build({ '$gt' => 10 })
-    #   matcher.match?([5, 20, 3])      #=> true
+    # @example Match exact array
+    #   matcher = ArrayRecordMatcher.build([1, 2, 3])
+    #   matcher.match?([1, 2, 3])  #=> true
+    #   matcher.match?([1, 2])     #=> false
     #
-    # This matcher is automatically invoked by LiteralMatcher when the record value is an array.
+    # @example Match with hash condition
+    #   matcher = ArrayRecordMatcher.build({ '$gt' => 5 })
+    #   matcher.match?([3, 6, 9])  #=> true (6 and 9 match)
+    #   matcher.match?([1, 2, 3])  #=> false
     #
-    # @note This is distinct from `$in` or `$nin`, where the **condition** is an array.
-    #       Here, the **record** is the array being matched against.
+    # @example Empty conditions
+    #   matcher = ArrayRecordMatcher.build([])
+    #   matcher.match?(record) #=> false (uses FALSE_PROC)
     #
-    # @see Mongory::Matchers::InMatcher
-    # @see Mongory::Matchers::LiteralMatcher
+    # @see AbstractMultiMatcher
     class ArrayRecordMatcher < AbstractMultiMatcher
       enable_unwrap!
 
       # Creates a raw Proc that performs the array matching operation.
       # The Proc checks if any element in the array matches the condition.
+      # For empty conditions, returns FALSE_PROC.
       #
       # @return [Proc] a Proc that performs the array matching operation
       def raw_proc
@@ -36,6 +39,16 @@ module Mongory
         combine_procs(*matchers.map(&:to_proc))
       end
 
+      # Recursively combines multiple matcher procs with OR logic.
+      # This method optimizes the combination of multiple matchers by building
+      # a balanced tree of OR operations.
+      #
+      # @param left [Proc] The left matcher proc to combine
+      # @param rest [Array<Proc>] The remaining matcher procs to combine
+      # @return [Proc] A new proc that combines all matchers with OR logic
+      # @example
+      #   combine_procs(proc1, proc2, proc3)
+      #   #=> proc { |record| proc1.call(record) || proc2.call(record) || proc3.call(record) }
       def combine_procs(left, *rest)
         return left if rest.empty?
 
@@ -52,7 +65,7 @@ module Mongory
       # - A hash condition matcher if the condition is a hash
       # - An `$elemMatch` matcher for element-wise comparison
       #
-      # @return [Array<Mongory::Matchers::AbstractMatcher>] an array of matcher instances
+      # @return [Array<AbstractMatcher>] An array of matcher instances
       define_instance_cache_method(:matchers) do
         result = []
         result << EqMatcher.build(@condition, context: @context) if @condition.is_a?(Array)
@@ -76,7 +89,7 @@ module Mongory
       # - Operator keys (e.g., `$size`, `$type`): retained at the top level
       # - All other keys: grouped under a `$elemMatch` clause for element-wise comparison
       #
-      # @return [Hash] a normalized condition hash, potentially containing `$elemMatch`
+      # @return [Hash] A normalized condition hash, potentially containing `$elemMatch`
       def parsed_condition
         h_parsed = {}
         h_elem_match = {}

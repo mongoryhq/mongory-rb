@@ -19,7 +19,8 @@ module Mongory
       # Creates a raw Proc that performs the less-than-or-equal comparison.
       # The Proc uses the `<=` operator to compare values.
       #
-      # @return [Proc] a Proc that performs the less-than-or-equal comparison
+      # @return [Proc] A proc that performs less-than-or-equal comparison with error handling
+      # @note The proc includes error handling for invalid comparisons
       def raw_proc
         condition = @condition
 

@@ -23,7 +23,7 @@ def gc_handler
   puts "Net alive: #{alive}"    # 最後還活著的物件數
 end
 # Test with different data sizes
-[1000, 10_000, 100_000].each do |size|
+[20, 1000, 10_000, 100_000].each do |size|
   puts "\nTesting with #{size} records:"
 
   # Generate test data

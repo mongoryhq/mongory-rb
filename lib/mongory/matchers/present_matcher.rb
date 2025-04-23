@@ -25,7 +25,7 @@ module Mongory
       # Creates a raw Proc that performs the presence check.
       # The Proc checks if the record's presence matches the condition.
       #
-      # @return [Proc] a Proc that performs the presence check
+      # @return [Proc] A proc that performs presence check
       def raw_proc
         condition = @condition
 

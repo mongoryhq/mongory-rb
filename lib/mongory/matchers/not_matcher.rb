@@ -21,7 +21,7 @@ module Mongory
       # Creates a raw Proc that performs the not-matching operation.
       # The Proc inverts the result of the wrapped matcher.
       #
-      # @return [Proc] a Proc that performs the not-matching operation
+      # @return [Proc] A proc that performs not-matching
       def raw_proc
         super_proc = super
 

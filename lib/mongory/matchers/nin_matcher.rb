@@ -27,7 +27,7 @@ module Mongory
       # Creates a raw Proc that performs the not-in matching operation.
       # The Proc checks if the record has no elements in common with the condition array.
       #
-      # @return [Proc] a Proc that performs the not-in matching operation
+      # @return [Proc] A proc that performs not-in matching
       def raw_proc
         condition = @condition
 

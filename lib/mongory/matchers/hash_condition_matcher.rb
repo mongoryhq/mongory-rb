@@ -9,13 +9,18 @@ module Mongory
     #
     # Each subcondition is matched independently using the `:all?` strategy, meaning
     # all subconditions must match for the entire HashConditionMatcher to succeed.
+    # For empty conditions, it returns true (using TRUE_PROC).
     #
     # This matcher plays a central role in dispatching symbolic query conditions
     # to the appropriate field or operator matcher.
     #
-    # @example
+    # @example Basic field matching
     #   matcher = HashConditionMatcher.build({ age: { :$gt => 30 }, active: true })
     #   matcher.match?(record) #=> true only if all subconditions match
+    #
+    # @example Empty conditions
+    #   matcher = HashConditionMatcher.build({})
+    #   matcher.match?(record) #=> true (uses TRUE_PROC)
     #
     # @see AbstractMultiMatcher
     class HashConditionMatcher < AbstractMultiMatcher
@@ -23,6 +28,7 @@ module Mongory
 
       # Creates a raw Proc that performs the hash condition matching operation.
       # The Proc combines all submatcher Procs and returns true only if all match.
+      # For empty conditions, returns TRUE_PROC.
       #
       # @return [Proc] a Proc that performs the hash condition matching operation
       def raw_proc
@@ -31,6 +37,16 @@ module Mongory
         combine_procs(*matchers.map(&:to_proc))
       end
 
+      # Recursively combines multiple matcher procs with AND logic.
+      # This method optimizes the combination of multiple matchers by building
+      # a balanced tree of AND operations.
+      #
+      # @param left [Proc] The left matcher proc to combine
+      # @param rest [Array<Proc>] The remaining matcher procs to combine
+      # @return [Proc] A new proc that combines all matchers with AND logic
+      # @example
+      #   combine_procs(proc1, proc2, proc3)
+      #   #=> proc { |record| proc1.call(record) && proc2.call(record) && proc3.call(record) }
       def combine_procs(left, *rest)
         return left if rest.empty?
 
@@ -40,23 +56,17 @@ module Mongory
         end
       end
 
-      # Constructs the appropriate submatcher for a key-value pair.
-      # If the key is a registered operator, dispatches to the corresponding matcher.
-      # Otherwise, assumes the key is a field path and uses FieldMatcher.
+      # Returns the list of matchers for each key-value pair in the condition.
       #
-      # @return [Array<AbstractMatcher>] list of sub-matchers
-      # @see FieldMatcher
-      # @see Matchers.lookup
+      # For each pair:
+      # - If the key is a registered operator, uses the corresponding matcher
+      # - Otherwise, wraps the value in a FieldMatcher for field path matching
+      #
+      # @return [Array<AbstractMatcher>] List of matchers for each condition
       define_instance_cache_method(:matchers) do
         @condition.map do |key, value|
-          case key
-          when *Matchers.operators
-            # If the key is a recognized operator, use the corresponding matcher
-            # to handle the value.
-            # This allows for nested conditions like { :$and => [{ age: { :$gt => 30 } }] }
-            # or { :$or => [{ name: 'John' }, { age: { :$lt => 25 } }] }
-            # The operator matcher is built using the value.
-            Matchers.lookup(key).build(value, context: @context)
+          if (matcher_class = Matchers.lookup(key))
+            matcher_class.build(value, context: @context)
           else
             FieldMatcher.build(key, value, context: @context)
           end
