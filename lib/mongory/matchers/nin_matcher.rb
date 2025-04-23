@@ -33,6 +33,8 @@ module Mongory
 
         Proc.new do |record|
           if record.is_a?(Array)
+            return true if condition.is_a?(Range)
+
             is_blank?(condition & record)
           else
             !condition.include?(record)
@@ -40,12 +42,15 @@ module Mongory
         end
       end
 
-      # Ensures the condition is a valid array.
+      # Ensures the condition is a valid array or range.
       #
-      # @raise [TypeError] if the condition is not an array
+      # @raise [TypeError] if the condition is not an array nor a range
       # @return [void]
       def check_validity!
-        raise TypeError, '$nin needs an array' unless @condition.is_a?(Array)
+        return if @condition.is_a?(Array)
+        return if @condition.is_a?(Range)
+
+        raise TypeError, '$nin needs an array'
       end
     end
 
