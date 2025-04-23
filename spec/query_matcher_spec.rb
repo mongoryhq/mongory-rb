@@ -14,9 +14,7 @@ end
 converter.register(FakeBsonId, :to_s)
 
 RSpec.describe Mongory::QueryMatcher, type: :model do
-  subject { described_class.new(condition).tap(&:prepare_query) }
-
-  context '#match?' do
+  shared_examples 'matcher behavior' do
     context 'basic condition' do
       context 'match all document when condition is empty' do
         let(:condition) { {} }
@@ -136,32 +134,6 @@ RSpec.describe Mongory::QueryMatcher, type: :model do
         end
       end
 
-      context 'match array' do
-        let(:condition) do
-          {
-            '2': 'target'
-          }
-        end
-
-        it { is_expected.to be_match([anything, anything, 'target']) }
-        it { is_expected.not_to be_match([anything, 'target', anything]) }
-        it { is_expected.not_to be_match([anything, 'target']) }
-        it { is_expected.not_to be_match([]) }
-      end
-
-      context 'match array with nil' do
-        let(:condition) do
-          {
-            '2': nil
-          }
-        end
-
-        it { is_expected.to be_match([anything, anything, nil]) }
-        it { is_expected.to be_match([anything, nil]) }
-        it { is_expected.to be_match([]) }
-        it { is_expected.not_to be_match([anything, nil, anything]) }
-      end
-
       context 'match array with non-array' do
         let(:condition) do
           {
@@ -203,39 +175,41 @@ RSpec.describe Mongory::QueryMatcher, type: :model do
       context 'match array with condition' do
         let(:condition) do
           {
-            name: 'Billy',
-            age: 18
+           people: {
+              name: 'Billy',
+              age: 18
+            }
           }
         end
 
-        let(:data1) do
+        let(:person1) do
           {
             name: 'Billy',
             age: 20
           }
         end
-        let(:data2) do
+        let(:person2) do
           {
             name: 'Mary',
             age: 18
           }
         end
-        let(:data3) do
+        let(:person3) do
           {
             name: 'Frank',
             age: 20
           }
         end
-        let(:matched_data) do
+        let(:matched_person) do
           {
             name: 'Billy',
             age: 18
           }
         end
 
-        it { is_expected.to be_match([data1, data2, matched_data]) }
-        it { is_expected.not_to be_match([data1, data2, data3]) }
-        it { is_expected.not_to be_match([data2, data3]) }
+        it { is_expected.to be_match(people: [person1, person2, matched_person]) }
+        it { is_expected.not_to be_match(people: [person1, person2, person3]) }
+        it { is_expected.not_to be_match(people: [person2, person3]) }
       end
 
       context 'fake model behavior' do
@@ -946,5 +920,26 @@ RSpec.describe Mongory::QueryMatcher, type: :model do
         it { is_expected.not_to be_match(abilities: []) }
       end
     end
+  end
+
+  describe '#match?' do
+    subject { described_class.new(condition).tap(&:prepare_query) }
+
+    it_behaves_like 'matcher behavior'
+  end
+
+  describe '#to_proc' do
+    subject do
+      double('FakeMatcher').tap do |fake|
+        matcher.prepare_query
+        allow(fake).to receive(:match?) do |doc|
+          matcher.to_proc.call(doc)
+        end
+      end
+    end
+
+    let(:matcher) { described_class.new(condition) }
+
+    it_behaves_like 'matcher behavior'
   end
 end
