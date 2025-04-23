@@ -33,7 +33,6 @@ module Mongory
       def initialize
         super(self.class.to_s)
         @registries = []
-        @fallback = Proc.new { |*| self }
         @convert_strategy_map = {}.compare_by_identity
       end
 
@@ -45,11 +44,14 @@ module Mongory
       def convert(target, other = NOTHING)
         convert_strategy = @convert_strategy_map[target.class] ||= find_strategy(target)
 
-        if other == NOTHING
-          target.instance_exec(&convert_strategy)
-        else
-          target.instance_exec(other, &convert_strategy)
-        end
+        return fallback(target, other) if convert_strategy == NOTHING
+        return target.instance_exec(&convert_strategy) if other == NOTHING
+
+        target.instance_exec(other, &convert_strategy)
+      end
+
+      def fallback(target, _)
+        target
       end
 
       # Finds the appropriate conversion strategy for the target object.
@@ -65,7 +67,7 @@ module Mongory
           return registry.exec
         end
 
-        @fallback
+        NOTHING
       end
 
       # Opens a configuration block to register more converters.

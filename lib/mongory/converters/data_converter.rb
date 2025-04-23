@@ -22,7 +22,7 @@ module Mongory
       # @return [Object] the converted value
       def convert(target)
         case target
-        when String, Integer
+        when String, Integer, Hash, Array
           target
         when Symbol, Date
           target.to_s
