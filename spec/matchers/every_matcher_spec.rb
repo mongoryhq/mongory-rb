@@ -5,10 +5,13 @@ require 'spec_helper'
 RSpec.describe Mongory::Matchers::EveryMatcher do
   describe '#match?' do
     subject { described_class.new(condition) }
+    let(:condition) { {} }
 
+    it_behaves_like 'all the sub-matchers of multi matcher has the same context'
     context 'when all elements match the condition' do
       let(:condition) { { 'status' => 'active' } }
 
+      it_behaves_like 'all the sub-matchers of multi matcher has the same context'
       it { is_expected.to be_match([{ 'status' => 'active' }, { 'status' => 'active' }]) }
       it { is_expected.not_to be_match([{ 'status' => 'active' }, { 'status' => 'inactive' }]) }
       it { is_expected.not_to be_match([{ 'status' => 'active' }, {}]) }

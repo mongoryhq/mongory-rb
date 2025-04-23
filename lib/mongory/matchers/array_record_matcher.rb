@@ -62,14 +62,14 @@ module Mongory
       # @return [Array<Mongory::Matchers::AbstractMatcher>] an array of matcher instances
       define_instance_cache_method(:matchers) do
         result = []
-        result << EqMatcher.build(@condition) if @condition.is_a?(Array)
+        result << EqMatcher.build(@condition, context: @context) if @condition.is_a?(Array)
         result << case @condition
                   when Hash
-                    HashConditionMatcher.build(parsed_condition)
+                    HashConditionMatcher.build(parsed_condition, context: @context)
                   when Regexp
-                    ElemMatchMatcher.build('$regex' => @condition)
+                    ElemMatchMatcher.build('$regex' => @condition, context: @context)
                   else
-                    ElemMatchMatcher.build('$eq' => @condition)
+                    ElemMatchMatcher.build('$eq' => @condition, context: @context)
                   end
         result
       end

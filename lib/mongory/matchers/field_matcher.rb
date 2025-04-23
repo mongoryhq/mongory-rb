@@ -33,9 +33,9 @@ module Mongory
       #
       # @param field [Object] the field (or index) used to dig into the record
       # @param condition [Object] the condition to match against the extracted value
-      def initialize(field, condition)
+      def initialize(field, condition, context: Context.new)
         @field = field
-        super(condition)
+        super(condition, context: context)
       end
 
       alias_method :super_match, :match

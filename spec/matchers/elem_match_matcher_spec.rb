@@ -5,7 +5,9 @@ require 'spec_helper'
 RSpec.describe Mongory::Matchers::ElemMatchMatcher do
   describe '#match?' do
     subject { described_class.new(condition) }
+    let(:condition) { {} }
 
+    it_behaves_like 'all the sub-matchers of multi matcher has the same context'
     context 'when any element matches the condition' do
       let(:condition) { { 'x' => 1 } }
 
@@ -17,6 +19,7 @@ RSpec.describe Mongory::Matchers::ElemMatchMatcher do
     context 'when condition contains operator' do
       let(:condition) { { 'x' => { '$gt' => 10 } } }
 
+      it_behaves_like 'all the sub-matchers of multi matcher has the same context'
       it { is_expected.to be_match([{ 'x' => 5 }, { 'x' => 20 }]) }
       it { is_expected.not_to be_match([{ 'x' => 5 }, { 'x' => 8 }]) }
     end

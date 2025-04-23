@@ -3,6 +3,7 @@
 require 'date'
 require_relative 'utils/singleton_builder'
 require_relative 'utils/debugger'
+require_relative 'utils/context'
 
 module Mongory
   # Utility helpers shared across Mongory internals.

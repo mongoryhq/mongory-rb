@@ -5,7 +5,9 @@ require 'spec_helper'
 RSpec.describe Mongory::Matchers::HashConditionMatcher do
   describe '#match?' do
     subject { described_class.new(condition) }
+    let(:condition) { {} }
 
+    it_behaves_like 'all the sub-matchers of multi matcher has the same context'
     context 'when condition is a single field matcher' do
       let(:condition) { { 'x' => 1 } }
 
@@ -24,6 +26,7 @@ RSpec.describe Mongory::Matchers::HashConditionMatcher do
     context 'when condition is mixed: field + operator' do
       let(:condition) { { 'x' => { '$gt' => 10 }, '$exists' => true } }
 
+      it_behaves_like 'all the sub-matchers of multi matcher has the same context'
       it { is_expected.to be_match('x' => 20) }
       it { is_expected.not_to be_match('x' => 5) }
       it { is_expected.not_to be_match({}) }
@@ -32,6 +35,7 @@ RSpec.describe Mongory::Matchers::HashConditionMatcher do
     context 'when all subconditions must match' do
       let(:condition) { { 'x' => { '$gt' => 10 }, 'y' => 1 } }
 
+      it_behaves_like 'all the sub-matchers of multi matcher has the same context'
       it { is_expected.to be_match('x' => 20, 'y' => 1) }
       it { is_expected.not_to be_match('x' => 5, 'y' => 1) }
       it { is_expected.not_to be_match('x' => 20, 'y' => 2) }

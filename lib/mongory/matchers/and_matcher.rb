@@ -58,7 +58,7 @@ module Mongory
       # @see AbstractMatcher#uniq_key
       define_instance_cache_method(:matchers) do
         @condition.flat_map do |condition|
-          HashConditionMatcher.new(condition).matchers
+          HashConditionMatcher.new(condition, context: @context).matchers
         end.uniq(&:uniq_key)
       end
 
