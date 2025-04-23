@@ -72,6 +72,12 @@ module Mongory
           end
         end
       end
+
+      def check_validity!
+        return super if @condition.is_a?(Hash)
+
+        raise TypeError, 'condition needs a Hash.'
+      end
     end
   end
 end
