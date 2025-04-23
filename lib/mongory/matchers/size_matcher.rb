@@ -25,7 +25,7 @@ module Mongory
     #       that will return the size of the symbol object.
     #       So, this is the only operator that cannot be used with
     #       the symbol snippet syntax (e.g. `:tags.size`).
-    #       
+    #
     #       Use string key syntax instead: `:"tags.$size" => ...`
     class SizeMatcher < LiteralMatcher
       # Creates a raw Proc that performs the size matching operation.

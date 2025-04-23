@@ -175,7 +175,7 @@ RSpec.describe Mongory::QueryMatcher, type: :model do
       context 'match array with condition' do
         let(:condition) do
           {
-           people: {
+            people: {
               name: 'Billy',
               age: 18
             }
