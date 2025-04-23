@@ -245,6 +245,22 @@ Internally, the query is compiled into a matcher tree using the `QueryMatcher` a
 | `nin` | Checks if a value is not in a set | `nin(age: [18, 19, 20])` |
 | `limit` | Limits the number of records returned. This method executes immediately and affects subsequent conditions. | `limit(2)` |
 | `pluck` | Extracts selected fields from matching records | `pluck(:name)` |
+| `with_context` | Sets a custom context for the query. Useful for controlling data conversion and sharing configuration across matchers. | `with_context(merchant: merchant)` |
+
+#### Context Configuration
+
+The `with_context` method allows you to customize the query execution environment:
+
+```ruby
+# Share configuration across matchers
+records.mongory
+  .with_context(custom_option: true)
+  .where(:status => 'active')
+  .where(:age.gte => 18)
+```
+
+This will share a mutatable, but stable context object to all matchers in matcher tree.
+To get your custom option, using `@context.config` in your custom matcher.
 
 ### Debugging Queries
 
@@ -313,30 +329,37 @@ The debug output includes:
 1. **Memory Usage**
    - Mongory operates entirely in memory
    - Consider your data size and memory constraints
+   - Proc-based implementation reduces memory usage
+   - Context system provides better memory management
 
 2. **Query Optimization**
    - Complex conditions are evaluated in sequence
    - Use `explain` to analyze query performance
+   - Empty conditions are optimized with cached Procs
+   - Context system allows fine-grained control over conversion
 
 3. **Benchmarks**
   ```ruby
     # Simple query (1000 records)
-    records.mongory.where(:age.gte => 18) # ~2.5ms
+    records.mongory.where(:age.gte => 18) # ~0.8ms
 
     # Complex query (1000 records)
-    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~3.2ms
+    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~0.9ms
 
     # Simple query (10000 records)
-    records.mongory.where(:age.gte => 18) # ~24.5ms
+    records.mongory.where(:age.gte => 18) # ~6.5ms
 
     # Complex query (10000 records)
-    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~31.5ms
+    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~7.5ms
 
     # Simple query (100000 records)
-    records.mongory.where(:age.gte => 18) # ~242.5ms
+    records.mongory.where(:age.gte => 18) # ~64.7ms
 
     # Complex query (100000 records)
-    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~323.0ms
+    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~75.0ms
+
+    # Complex query with fast mode (100000 records)
+    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]).fast # ~42.8ms, about 3x of plain ruby
   ```
 
    Note: Performance varies based on:
@@ -435,6 +458,9 @@ end
     # Use limit to restrict result set
     records.mongory.limit(100).where(:age.gte => 18)
 
+    # Use fast mode for better performance
+    records.mongory.where(:age.gte => 18).fast
+
     # Use explain to analyze complex queries
     query = records.mongory.where(:$or => [...])
     query.explain
@@ -457,10 +483,14 @@ end
 1. **Data Size**
    - Suitable for small to medium datasets
    - Large datasets may impact performance
+   - Proc-based implementation helps with memory usage
+   - Context system provides better resource management
 
 2. **Query Complexity**
    - Complex queries may affect performance
    - Not all MongoDB operators are supported
+   - Proc-based implementation improves complex query performance
+   - Context system allows better control over query execution
 
 3. **Memory Usage**
    - All operations are performed in memory
