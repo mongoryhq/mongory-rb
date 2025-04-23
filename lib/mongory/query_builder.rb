@@ -30,8 +30,9 @@ module Mongory
     # Initializes a new query builder with the given record set.
     #
     # @param records [Enumerable] the collection to query against
-    def initialize(records)
+    def initialize(records, context: Utils::Context.new)
       @records = records
+      @context = context
       set_matcher
     end
 
@@ -46,6 +47,7 @@ module Mongory
 
       @matcher.prepare_query
       @records.each do |record|
+        @context.current_record = record
         yield record if @matcher.match?(record)
       end
     end
@@ -163,6 +165,14 @@ module Mongory
       end
     end
 
+    def with_context(addon_context = {})
+      dup_instance_exec do
+        @context = @context.dup
+        @context.config.merge!(addon_context)
+        set_matcher(@matcher.condition)
+      end
+    end
+
     # Returns the raw parsed condition for this query.
     #
     # @return [Hash] the raw compiled condition
@@ -202,7 +212,7 @@ module Mongory
     # @param condition [Hash] the condition to build the matcher from
     # @return [void]
     def set_matcher(condition = {})
-      @matcher = QueryMatcher.new(condition)
+      @matcher = QueryMatcher.new(condition, context: @context)
     end
 
     # @private

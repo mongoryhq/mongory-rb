@@ -24,6 +24,12 @@ module Mongory
         @config = config
         @current_record = nil
       end
+
+      def dup
+        new_context = super
+        new_context.config = @config.dup
+        new_context
+      end
     end
   end
 end
