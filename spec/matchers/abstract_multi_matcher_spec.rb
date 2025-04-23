@@ -3,12 +3,14 @@
 require 'spec_helper'
 
 class MockMultiMatcher < Mongory::Matchers::AbstractMultiMatcher
-  def build_sub_matcher(arg)
-    SimpleMatcher.new(arg)
+  def matchers
+    @matchers ||= @condition.map do |arg|
+      SimpleMatcher.new(arg)
+    end.uniq(&:uniq_key)
   end
 
-  def operator
-    :all?
+  def match(record)
+    matchers.all? { |matcher| matcher.match(record) }
   end
 end
 

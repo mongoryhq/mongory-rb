@@ -24,24 +24,22 @@ module Mongory
     class OrMatcher < AbstractMultiMatcher
       enable_unwrap!
 
-      # Checks if any of the submatchers match the record.
-      #
-      # @param record [Object] the record to match against
-      # @return [Boolean] true if any subcondition matches, false otherwise
-      def match(record)
-        # Check if any of the submatchers match
-        @matchers.any? { |matcher| matcher.match?(record) }
-      end
-
       # Creates a raw Proc that performs the or-matching operation.
       # The Proc combines all submatcher Procs and returns true if any match.
       #
       # @return [Proc] a Proc that performs the or-matching operation
       def raw_proc
-        procs = matchers.map(&:to_proc)
+        return FALSE_PROC if matchers.empty?
 
+        combine_procs(*matchers.map(&:to_proc))
+      end
+
+      def combine_procs(left, *rest)
+        return left if rest.empty?
+
+        right = combine_procs(*rest)
         Proc.new do |record|
-          procs.any? { |proc| proc.call(record) }
+          left.call(record) || right.call(record)
         end
       end
 

@@ -41,18 +41,6 @@ module Mongory
     # @see Mongory::Matchers::ArrayRecordMatcher
     # @see Mongory::Matchers::HashConditionMatcher
     class LiteralMatcher < AbstractMatcher
-      # Matches the given record against the condition.
-      #
-      # @param record [Object] the record to be matched
-      # @return [Boolean] whether the record satisfies the condition
-      def match(record)
-        if record.is_a?(Array)
-          array_record_matcher.match?(record)
-        else
-          dispatched_matcher.match?(record)
-        end
-      end
-
       # Creates a raw Proc that performs the literal matching operation.
       # The Proc handles both array and non-array records appropriately.
       #

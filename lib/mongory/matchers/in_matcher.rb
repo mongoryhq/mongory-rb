@@ -24,20 +24,6 @@ module Mongory
     #
     # @see AbstractMatcher
     class InMatcher < AbstractMatcher
-      # Matches if any element of the record appears in the condition array.
-      # Converts record to an array before intersecting.
-      #
-      # @param record [Object] the record value to test
-      # @return [Boolean] whether any values intersect
-      def match(record)
-        record = normalize(record)
-        if record.is_a?(Array)
-          is_present?(@condition & record)
-        else
-          @condition.include?(record)
-        end
-      end
-
       # Creates a raw Proc that performs the in-matching operation.
       # The Proc checks if any element of the record is in the condition array.
       #

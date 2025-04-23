@@ -14,7 +14,7 @@ module Mongory
     # @attr [Config] config The configuration object for the context.
     # @attr [Record] current_record The current record being processed.
     class Context
-      attr_accessor :config, :current_record
+      attr_accessor :config, :current_record, :need_convert
 
       # Initializes a new Context instance with the given configuration.
       #
@@ -23,6 +23,7 @@ module Mongory
       def initialize(config = {})
         @config = config
         @current_record = nil
+        @need_convert = true
       end
 
       def dup

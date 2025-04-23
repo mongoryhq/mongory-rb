@@ -18,29 +18,18 @@ module Mongory
     #
     # @see HashConditionMatcher
     class ElemMatchMatcher < HashConditionMatcher
-      # Matches true if any element in the array satisfies the condition.
-      # Falls back to false if the input is not an array.
-
-      alias_method :super_match, :match
-      # @param collection [Object] the input to be tested
-      # @return [Boolean] whether any element matches
-      def match(collection)
-        return false unless collection.is_a?(Array)
-
-        collection.any? do |record|
-          super_match(Mongory.data_converter.convert(record))
-        end
-      end
-
       # Creates a raw Proc that performs the element matching operation.
       # The Proc checks if any element in the array matches the condition.
       #
       # @return [Proc] a Proc that performs the element matching operation
       def raw_proc
         super_proc = super
+        need_convert = @context.need_convert
+        data_converter = Mongory.data_converter
 
         Proc.new do |collection|
           collection.any? do |record|
+            record = data_converter.convert(record) if need_convert
             super_proc.call(record)
           end
         end

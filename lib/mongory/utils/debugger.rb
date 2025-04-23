@@ -35,13 +35,13 @@ module Mongory
       # Enables debug mode by aliasing `match?` to `debug_match`.
       # @return [void]
       def enable
-        Matchers::AbstractMatcher.alias_method :match?, :debug_match
+        Matchers::AbstractMatcher.alias_method :to_proc, :debug_proc
       end
 
       # Disables debug mode by restoring `match?` to `regular_match`.
       # @return [void]
       def disable
-        Matchers::AbstractMatcher.alias_method :match?, :regular_match
+        Matchers::AbstractMatcher.alias_method :to_proc, :cached_proc
       end
 
       # Wraps a matcher evaluation block with indentation control.

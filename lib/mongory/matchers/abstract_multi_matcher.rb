@@ -16,6 +16,8 @@ module Mongory
     # @abstract
     # @see AbstractMatcher
     class AbstractMultiMatcher < AbstractMatcher
+      TRUE_PROC = Proc.new { |_| true }
+      FALSE_PROC = Proc.new { |_| false }
       # Enables auto-unwrap logic.
       # When used, `.build` may unwrap to first matcher if only one is present.
       #
@@ -39,48 +41,6 @@ module Mongory
         matcher = matcher.matchers.first if matcher.matchers.count == 1
         matcher
       end
-
-      # Performs matching over all sub-matchers using the specified operator.
-      # The input record may be preprocessed first (e.g., for normalization).
-      #
-      # @param record [Object] the record to match
-      # @return [Boolean] whether the combined result of sub-matchers satisfies the condition
-      def match(record)
-        record = preprocess(record)
-        matchers.send(operator) do |matcher|
-          matcher.match?(record)
-        end
-      end
-
-      # Lazily builds and caches the array of sub-matchers.
-      # Subclasses provide the implementation of `#build_sub_matcher`.
-      # Duplicate matchers (by uniq_key) are removed to avoid redundancy.
-      #
-      # @return [Array<AbstractMatcher>] list of sub-matchers
-      define_instance_cache_method(:matchers) do
-        @condition.map(&method(:build_sub_matcher)).uniq(&:uniq_key)
-      end
-
-      # Optional hook for subclasses to transform the input record before matching.
-      # Default implementation returns the record unchanged.
-      #
-      # @param record [Object] the input record
-      # @return [Object] the transformed or original record
-      def preprocess(record)
-        record
-      end
-
-      # Abstract method to define how each subcondition should be turned into a matcher.
-      #
-      # @param args [Array] the inputs needed to construct a matcher
-      # @return [AbstractMatcher] a matcher instance for the subcondition
-      def build_sub_matcher(*args); end
-
-      # Abstract method to specify the combining operator for sub-matchers.
-      # Must return a valid enumerable method name (e.g., :all?, :any?).
-      #
-      # @return [Symbol] the operator method to apply over matchers
-      def operator; end
 
       # Recursively checks all submatchers for validity.
       #

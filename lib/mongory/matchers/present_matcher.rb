@@ -22,15 +22,6 @@ module Mongory
     #
     # @see AbstractMatcher
     class PresentMatcher < AbstractMatcher
-      # Checks if the record's presence matches the condition.
-      #
-      # @param record [Object] the value to test
-      # @return [Boolean] true if the record's presence matches the condition
-      def match(record)
-        record = nil if record == KEY_NOT_FOUND
-        is_present?(record) == @condition
-      end
-
       # Creates a raw Proc that performs the presence check.
       # The Proc checks if the record's presence matches the condition.
       #

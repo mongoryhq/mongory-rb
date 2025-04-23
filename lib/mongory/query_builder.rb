@@ -61,6 +61,7 @@ module Mongory
     def fast
       return to_enum(:fast) unless block_given?
 
+      @context.need_convert = false
       @matcher.prepare_query
       matcher_block = @matcher.to_proc
       @records.each do |record|
