@@ -28,7 +28,7 @@ module Mongory
   #
   # @see Matchers::LiteralMatcher
   # @see Converters::ConditionConverter
-  class QueryMatcher < Matchers::LiteralMatcher
+  class QueryMatcher < Matchers::HashConditionMatcher
     # Initializes a new query matcher with the given condition.
     # The condition is converted using Mongory.condition_converter
     # before being passed to the parent matcher.
