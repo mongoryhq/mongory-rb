@@ -915,5 +915,36 @@ RSpec.describe Mongory::QueryMatcher, type: :model do
         it { is_expected.not_to be_match(abilities: []) }
       end
     end
+
+    context 'use operator $size' do
+      context 'will match' do
+        let(:condition) do
+          {
+            abilities: {
+              '$size': 2
+            }
+          }
+        end
+
+        it { is_expected.to be_match(abilities: [{ name: 'attack', power: 10 }, { name: 'attack', power: 59 }]) }
+        it { is_expected.not_to be_match(abilities: []) }
+        it { is_expected.not_to be_match(abilities: nil) }
+        it { is_expected.not_to be_match({}) }
+        it { is_expected.not_to be_match([]) }
+        it { is_expected.not_to be_match(nil) }
+      end
+
+      context 'not match empty array via conbinding present operator' do
+        let(:condition) do
+          {
+            'abilities.$size.$lte': 2,
+            :abilities.present => true
+          }
+        end
+
+        it { is_expected.to be_match(abilities: [{ name: 'attack', power: 10 }, { name: 'attack', power: 59 }]) }
+        it { is_expected.not_to be_match(abilities: []) }
+      end
+    end
   end
 end
