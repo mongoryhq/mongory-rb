@@ -73,9 +73,9 @@ module Mongory
                   when Hash
                     HashConditionMatcher.build(parsed_condition, context: @context)
                   when Regexp
-                    ElemMatchMatcher.build('$regex' => @condition, context: @context)
+                    ElemMatchMatcher.build({ '$regex' => @condition }, context: @context)
                   else
-                    ElemMatchMatcher.build('$eq' => @condition, context: @context)
+                    ElemMatchMatcher.build({ '$eq' => @condition }, context: @context)
                   end
         result
       end
