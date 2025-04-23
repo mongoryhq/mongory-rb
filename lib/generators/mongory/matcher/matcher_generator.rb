@@ -14,7 +14,7 @@ module Mongory
     #   #   spec/mongory/matchers/class_in_matcher_spec.rb
     #   #   config/initializers/mongory.rb (if not exists)
     #
-    # @see Mongory::Matchers::AbstractOperatorMatcher
+    # @see Mongory::Matchers::AbstractMatcher
     class MatcherGenerator < Rails::Generators::NamedBase
       source_root File.expand_path('templates', __dir__)
 

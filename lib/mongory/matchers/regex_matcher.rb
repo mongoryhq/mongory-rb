@@ -24,7 +24,7 @@ module Mongory
     #   LiteralMatcher.new(/admin/i).match("ADMIN") # => true
     #
     # @see LiteralMatcher
-    # @see Mongory::Matchers::AbstractOperatorMatcher
+    # @see Mongory::Matchers::AbstractMatcher
     class RegexMatcher < AbstractMatcher
       # Initializes the matcher with a regex pattern.
       # Converts string patterns to Regexp objects.

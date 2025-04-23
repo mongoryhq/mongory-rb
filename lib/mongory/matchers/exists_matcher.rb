@@ -17,7 +17,7 @@ module Mongory
     #   matcher = ExistsMatcher.build(false)
     #   matcher.match?(KEY_NOT_FOUND)   #=> true
     #
-    # @see AbstractOperatorMatcher
+    # @see AbstractMatcher
     class ExistsMatcher < AbstractMatcher
       # Converts the raw record value into a boolean indicating presence.
       #

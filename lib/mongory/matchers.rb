@@ -153,7 +153,6 @@ end
 
 require_relative 'matchers/abstract_matcher'
 require_relative 'matchers/abstract_multi_matcher'
-require_relative 'matchers/abstract_operator_matcher'
 require_relative 'matchers/literal_matcher'
 require_relative 'matchers/hash_condition_matcher'
 require_relative 'matchers/and_matcher'
