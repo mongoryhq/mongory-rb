@@ -35,11 +35,12 @@ module Mongory
       #
       # @return [Proc] a Proc that performs the literal matching operation
       def raw_proc
-        array_record_proc = array_record_matcher.to_proc
+        array_record_proc = nil
         dispatched_proc = dispatched_matcher.to_proc
 
         Proc.new do |record|
           if record.is_a?(Array)
+            array_record_proc ||= array_record_matcher.to_proc
             array_record_proc.call(record)
           else
             dispatched_proc.call(record)
