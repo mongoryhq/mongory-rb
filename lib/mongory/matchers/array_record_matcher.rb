@@ -31,6 +31,8 @@ module Mongory
       #
       # @return [Proc] a Proc that performs the array matching operation
       def raw_proc
+        return FALSE_PROC if matchers.empty?
+
         combine_procs(*matchers.map(&:to_proc))
       end
 
