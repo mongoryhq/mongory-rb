@@ -1,6 +1,34 @@
 # Changelog
 
-## [0.5.0] - 2024-03-21
+## [0.6.0] - 2025-04-23
+
+### Major Changes
+- Refactored matcher system to use Proc-based implementation
+- Introduced Context system for better state management
+- Optimized empty condition handling with TRUE_PROC and FALSE_PROC
+
+### Breaking Changes
+- Removed `match` method in favor of `raw_proc`
+- Changed converter behavior to be executed within Proc
+- Modified fallback behavior in converters
+
+### Features
+- Added Context system for better configuration management
+- Improved performance with Proc caching
+- Enhanced error handling in matchers
+- Better support for complex query conditions
+
+### Performance
+- Optimized empty condition handling
+- Reduced memory usage with Proc caching
+- Improved execution speed with Proc-based implementation
+
+### Internal
+- Refactored matcher system architecture
+- Improved code organization and maintainability
+- Enhanced test coverage
+
+## [0.5.0] - 2025-04-22
 
 ### Added
 - Added fast mode implementation for optimized query performance
