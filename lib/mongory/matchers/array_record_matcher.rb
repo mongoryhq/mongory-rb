@@ -26,29 +26,20 @@ module Mongory
     class ArrayRecordMatcher < AbstractMultiMatcher
       enable_unwrap!
 
-      # Checks if any element in the array record matches the condition.
-      #
-      # @param record [Array] the array record to match against
-      # @return [Boolean] true if any element matches, false otherwise
-      def match(record)
-        return false unless record.is_a?(Array)
-
-        matchers.any? do |matcher|
-          matcher.match(record)
-        end
-      end
-
       # Creates a raw Proc that performs the array matching operation.
       # The Proc checks if any element in the array matches the condition.
       #
       # @return [Proc] a Proc that performs the array matching operation
       def raw_proc
-        matcher_procs = matchers.map(&:to_proc)
+        combine_procs(*matchers.map(&:to_proc))
+      end
 
+      def combine_procs(left, *rest)
+        return left if rest.empty?
+
+        right = combine_procs(*rest)
         Proc.new do |record|
-          matcher_procs.any? do |matcher_proc|
-            matcher_proc.call(record)
-          end
+          left.call(record) || right.call(record)
         end
       end
 

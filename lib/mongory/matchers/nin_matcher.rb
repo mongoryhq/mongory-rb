@@ -24,19 +24,6 @@ module Mongory
     #
     # @see AbstractMatcher
     class NinMatcher < AbstractMatcher
-      # Matches true if the record has no elements in common with the condition array.
-      #
-      # @param record [Object] the value to be tested
-      # @return [Boolean] whether the record is disjoint from the condition array
-      def match(record)
-        record = normalize(record)
-        if record.is_a?(Array)
-          is_blank?(@condition & record)
-        else
-          !@condition.include?(record)
-        end
-      end
-
       # Creates a raw Proc that performs the not-in matching operation.
       # The Proc checks if the record has no elements in common with the condition array.
       #

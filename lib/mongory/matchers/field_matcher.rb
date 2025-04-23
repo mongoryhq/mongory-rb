@@ -55,9 +55,6 @@ module Mongory
       # Once the value is extracted, it is passed through the data converter
       # and matched against the condition via the superclass.
       #
-      # @param record [Object] the input data structure to be matched
-      # @return [Boolean] true if the extracted field value matches the condition; false otherwise
-      #
       # @example Matching a Hash with a nil field value
       #   matcher = Mongory::QueryMatcher.new(a: nil)
       #   matcher.match?({ a: nil }) # => true
@@ -73,33 +70,18 @@ module Mongory
       # @example Hash with symbol key, matcher uses string key
       #   matcher = Mongory::QueryMatcher.new('a' => 123)
       #   matcher.match?({ a: 123 }) # => true
-      def match(record)
-        sub_record =
-          case record
-          when Hash
-            record.fetch(@field) do
-              record.fetch(@field.to_sym, KEY_NOT_FOUND)
-            end
-          when Array
-            record.fetch(@field, KEY_NOT_FOUND)
-          when KEY_NOT_FOUND, *CLASSES_NOT_ALLOW_TO_DIG
-            return false
-          else
-            return false unless record.respond_to?(:[])
-
-            record[@field]
-          end
-
-        super_match(Mongory.data_converter.convert(sub_record))
-      end
 
       # Creates a raw Proc that performs the field-based matching operation.
       # The Proc extracts the field value and delegates matching to the superclass.
       #
       # @return [Proc] a Proc that performs the field-based matching operation
+      # @param record [Object] the input data structure to be matched
+      # @return [Boolean] true if the extracted field value matches the condition; false otherwise
       def raw_proc
         super_proc = super
         field = @field
+        need_convert = @context.need_convert
+        data_converter = Mongory.data_converter
 
         Proc.new do |record|
           sub_record =
@@ -118,6 +100,7 @@ module Mongory
               record[field]
             end
 
+          sub_record = data_converter.convert(sub_record) if need_convert
           super_proc.call(sub_record)
         end
       end

@@ -16,14 +16,6 @@ module Mongory
     #
     # @see AbstractMatcher
     class LtMatcher < AbstractMatcher
-      # Checks if the record is less than the condition.
-      #
-      # @param record [Object] the value to compare against
-      # @return [Boolean] true if the record is less than the condition
-      def match(record)
-        record < @condition
-      end
-
       # Creates a raw Proc that performs the less-than comparison.
       # The Proc uses the `<` operator to compare values.
       #
@@ -33,6 +25,8 @@ module Mongory
 
         Proc.new do |record|
           record < condition
+        rescue StandardError
+          false
         end
       end
     end

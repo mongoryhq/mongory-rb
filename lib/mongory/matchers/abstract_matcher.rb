@@ -47,19 +47,12 @@ module Mongory
         check_validity!
       end
 
-      # Performs the actual match logic.
-      # Subclasses must override this method.
-      #
-      # @param record [Object] the input record to test
-      # @return [Boolean] whether the record matches the condition
-      def match(record); end
-
       # Matches the given record against the condition.
       #
       # @param record [Object] the input record
       # @return [Boolean]
       def match?(record)
-        match(record)
+        to_proc.call(record)
       rescue StandardError
         false
       end
@@ -68,8 +61,31 @@ module Mongory
       # The Proc is cached for better performance.
       #
       # @return [Proc] a Proc that can be used to match records
-      def to_proc
-        @to_proc ||= raw_proc
+      def cached_proc
+        @cached_proc ||= raw_proc
+      end
+
+      alias_method :to_proc, :cached_proc
+
+      def debug_proc
+        return @debug_proc if defined?(@debug_proc)
+
+        raw_proc = raw_proc()
+        @debug_proc = Proc.new do |record|
+          result = nil
+
+          Debugger.instance.with_indent do
+            result = begin
+              raw_proc.call(record)
+            rescue StandardError => e
+              e
+            end
+
+            debug_display(record, result)
+          end
+
+          result.is_a?(Exception) ? false : result
+        end
       end
 
       # Creates a raw Proc from the match method.
@@ -81,29 +97,12 @@ module Mongory
         method(:match).to_proc
       end
 
-      # Provides an alias to `#match?` for internal delegation.
-      alias_method :regular_match, :match?
-
-      # Evaluates the match with debugging output.
-      # Increments indent level and prints visual result with colors.
+      # Performs the actual match logic.
+      # Subclasses must override this method.
       #
       # @param record [Object] the input record to test
-      # @return [Boolean] whether the match succeeded
-      def debug_match(record)
-        result = nil
-
-        Debugger.instance.with_indent do
-          result = begin
-            match(record)
-          rescue StandardError => e
-            e
-          end
-
-          debug_display(record, result)
-        end
-
-        result.is_a?(Exception) ? false : result
-      end
+      # @return [Boolean] whether the record matches the condition
+      def match(record); end
 
       # Validates the condition (no-op by default).
       # Override in subclasses to raise error if invalid.

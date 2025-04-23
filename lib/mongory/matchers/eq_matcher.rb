@@ -24,14 +24,6 @@ module Mongory
     #
     # @see AbstractMatcher
     class EqMatcher < AbstractMatcher
-      # Checks if the record equals the condition using the `==` operator.
-      #
-      # @param record [Object] the value to compare against
-      # @return [Boolean] true if the record equals the condition
-      def match(record)
-        record == @condition
-      end
-
       # Creates a raw Proc that performs the equality check.
       # The Proc uses the `==` operator to compare values.
       #

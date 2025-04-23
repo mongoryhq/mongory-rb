@@ -39,19 +39,6 @@ module Mongory
       super(Mongory.condition_converter.convert(condition), context: context)
     end
 
-    alias_method :super_match, :match
-
-    # Matches the given record against the condition.
-    # The record is first converted using Mongory.data_converter
-    # to ensure consistent data types during comparison.
-    #
-    # @param record [Object] the raw input record (e.g., Hash or model object) to be matched.
-    #   It will be converted internally using `Mongory.data_converter`.
-    # @return [Boolean] whether the record satisfies the condition
-    def match(record)
-      super_match(Mongory.data_converter.convert(record))
-    end
-
     # Returns a Proc that can be used for fast matching.
     # The Proc handles errors gracefully by returning false
     # if any error occurs during matching.
@@ -59,8 +46,11 @@ module Mongory
     # @return [Proc] a callable that takes a record and returns a boolean
     def raw_proc
       super_proc = super
+      need_convert = @context.need_convert
+      data_converter = Mongory.data_converter
 
       Proc.new do |record|
+        record = data_converter.convert(record) if need_convert
         super_proc.call(record)
       rescue StandardError
         false
