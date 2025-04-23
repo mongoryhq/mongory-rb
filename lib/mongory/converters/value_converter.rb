@@ -17,16 +17,6 @@ module Mongory
     #   ValueConverter.instance.convert(/foo/) #=> { "$regex" => "foo" }
     #
     class ValueConverter < AbstractConverter
-      # Sets a fallback using DataConverter for unsupported types.
-      #
-      # @return [void]
-      def initialize
-        super
-        @fallback = Proc.new do
-          Mongory.data_converter.convert(self)
-        end
-      end
-
       alias_method :super_convert, :convert
 
       # Converts a value into its standardized form based on its type.
@@ -45,6 +35,10 @@ module Mongory
         else
           super_convert(target)
         end
+      end
+
+      def fallback(target, *)
+        Mongory.data_converter.convert(target)
       end
 
       # Returns the condition converter instance.

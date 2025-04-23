@@ -29,15 +29,6 @@ module Mongory
     #
     # @see AbstractConverter
     class KeyConverter < AbstractConverter
-      # Initializes the converter with a fallback handler.
-      # The fallback creates a simple hash with the key as-is.
-      #
-      # @return [void]
-      def initialize
-        super
-        @fallback = ->(x) { { self => x } }
-      end
-
       alias_method :super_convert, :convert
 
       # Converts a key into its normalized form based on its type.
@@ -59,6 +50,10 @@ module Mongory
         else
           super_convert(target, other)
         end
+      end
+
+      def fallback(target, other)
+        { target => other }
       end
 
       # Converts a dotted string key into nested hash form.
