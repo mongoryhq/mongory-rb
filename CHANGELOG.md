@@ -1,4 +1,11 @@
 # Changelog
+## [0.6.1] - 2025-04-24
+
+### Major Changes
+- Add size matcher
+- $in and $nin supports range condition
+- Query matcher inherits from Hash condition matcher to accept hash condition only
+- Introduced Converted to mark converted data and prevent double convert
 
 ## [0.6.0] - 2025-04-23
 
