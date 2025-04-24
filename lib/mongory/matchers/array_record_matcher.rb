@@ -34,28 +34,7 @@ module Mongory
       #
       # @return [Proc] a Proc that performs the array matching operation
       def raw_proc
-        return FALSE_PROC if matchers.empty?
-
-        combine_procs(*matchers.map(&:to_proc))
-      end
-
-      # Recursively combines multiple matcher procs with OR logic.
-      # This method optimizes the combination of multiple matchers by building
-      # a balanced tree of OR operations.
-      #
-      # @param left [Proc] The left matcher proc to combine
-      # @param rest [Array<Proc>] The remaining matcher procs to combine
-      # @return [Proc] A new proc that combines all matchers with OR logic
-      # @example
-      #   combine_procs(proc1, proc2, proc3)
-      #   #=> proc { |record| proc1.call(record) || proc2.call(record) || proc3.call(record) }
-      def combine_procs(left, *rest)
-        return left if rest.empty?
-
-        right = combine_procs(*rest)
-        Proc.new do |record|
-          left.call(record) || right.call(record)
-        end
+        combine_procs_with_or(*matchers.map(&:to_proc))
       end
 
       # Builds an array of matchers to evaluate the given condition against an array record.

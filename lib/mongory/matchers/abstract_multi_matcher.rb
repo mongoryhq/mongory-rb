@@ -75,6 +75,46 @@ module Mongory
           matcher.render_tree(new_prefix, is_last: index == last_index)
         end
       end
+
+      private
+
+      # Recursively combines multiple matcher procs with AND logic.
+      # This method optimizes the combination of multiple matchers by building
+      # a balanced tree of AND operations.
+      #
+      # @param left [Proc] The left matcher proc to combine
+      # @param rest [Array<Proc>] The remaining matcher procs to combine
+      # @return [Proc] A new proc that combines all matchers with AND logic
+      # @example
+      #   combine_procs_with_and(proc1, proc2, proc3)
+      #   #=> proc { |record| proc1.call(record) && proc2.call(record) && proc3.call(record) }
+      def combine_procs_with_and(left = TRUE_PROC, *rest)
+        return left if rest.empty?
+
+        right = combine_procs_with_and(*rest)
+        Proc.new do |record|
+          left.call(record) && right.call(record)
+        end
+      end
+
+      # Recursively combines multiple matcher procs with OR logic.
+      # This method optimizes the combination of multiple matchers by building
+      # a balanced tree of OR operations.
+      #
+      # @param left [Proc] The left matcher proc to combine
+      # @param rest [Array<Proc>] The remaining matcher procs to combine
+      # @return [Proc] A new proc that combines all matchers with OR logic
+      # @example
+      #   combine_procs_with_or(proc1, proc2, proc3)
+      #   #=> proc { |record| proc1.call(record) || proc2.call(record) || proc3.call(record) }
+      def combine_procs_with_or(left = FALSE_PROC, *rest)
+        return left if rest.empty?
+
+        right = combine_procs_with_or(*rest)
+        Proc.new do |record|
+          left.call(record) || right.call(record)
+        end
+      end
     end
   end
 end
