@@ -21,28 +21,16 @@ module Mongory
       # @param condition [Hash] the flat condition hash to convert
       # @return [Hash] the transformed nested condition
       def convert(condition)
-        result = {}
+        return condition if condition.is_a?(Converted)
+
+        result = Converted::Hash.new
         condition.each_pair do |k, v|
           converted_value = value_converter.convert(v)
           converted_pair = key_converter.convert(k, converted_value)
-          result.merge!(converted_pair, &deep_merge_block)
+          result.deep_merge!(converted_pair)
         end
-        result
-      end
 
-      # Provides a block that merges values for overlapping keys in a deep way.
-      # When both values are hashes, recursively merges them.
-      # Otherwise, uses the second value.
-      #
-      # @return [Proc] a block for deep merging hash values
-      def deep_merge_block
-        @deep_merge_block ||= Proc.new do |_, a, b|
-          if a.is_a?(Hash) && b.is_a?(Hash)
-            a.merge(b, &deep_merge_block)
-          else
-            b
-          end
-        end
+        result
       end
 
       # @note Singleton instance, not configurable after initialization
@@ -65,7 +53,6 @@ module Mongory
       #
       # @return [void]
       def freeze
-        deep_merge_block
         super
         key_converter.freeze
         value_converter.freeze

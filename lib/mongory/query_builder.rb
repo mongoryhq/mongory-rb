@@ -228,7 +228,7 @@ module Mongory
     # @param conditions [Array<Hash>] the conditions to add
     # @return [void]
     def add_conditions(key, conditions)
-      condition_dup = @matcher.condition.dup
+      condition_dup = {}.merge!(@matcher.condition)
       condition_dup[key] ||= []
       condition_dup[key] += conditions
       set_matcher(condition_dup)
