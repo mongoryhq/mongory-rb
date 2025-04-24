@@ -14,9 +14,9 @@ module Mongory
         return other if other.is_a?(Converted)
 
         case other
-        when Hash
+        when ::Hash
           Converted::Hash.new(other)
-        when Array
+        when ::Array
           Converted::Array.new(other)
         else
           other
