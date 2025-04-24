@@ -26,10 +26,10 @@ module Mongory
       # @return [Object] the converted value
       def convert(target)
         case target
-        when String, Integer, Regexp
+        when String, Integer, Regexp, Converted
           target
         when Array
-          target.map { |x| convert(x) }
+          Converted::Array.new(target.map { |x| convert(x) })
         when Hash
           condition_converter.convert(target)
         else
