@@ -83,7 +83,6 @@ module Mongory
       #
       # @return [void]
       def freeze
-        super
         @registries.freeze
       end
 
