@@ -24,17 +24,23 @@ module Mongory
     #
     # @see AbstractMatcher
     class InMatcher < AbstractMatcher
+      def self.build(condition, *args)
+        return super unless condition.is_a?(Range)
+
+        end_op = condition.exclude_end? ? '$lt' : '$lte'
+        head, tail = [condition.first, condition.last].sort
+        AndMatcher.build([{ '$gte' => head }, { end_op => tail }], *args)
+      end
+
       # Creates a raw Proc that performs the in-matching operation.
       # The Proc checks if any element of the record is in the condition array.
       #
       # @return [Proc] a Proc that performs the in-matching operation
       def raw_proc
-        condition = @condition
+        condition = Set.new(@condition)
 
         Proc.new do |record|
           if record.is_a?(Array)
-            return false if condition.is_a?(Range)
-
             is_present?(condition & record)
           else
             condition.include?(record)
@@ -48,7 +54,6 @@ module Mongory
       # @return [void]
       def check_validity!
         return if @condition.is_a?(Array)
-        return if @condition.is_a?(Range)
 
         raise TypeError, '$in needs an array or range'
       end

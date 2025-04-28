@@ -24,17 +24,23 @@ module Mongory
     #
     # @see AbstractMatcher
     class NinMatcher < AbstractMatcher
+      def self.build(condition, *args)
+        return super unless condition.is_a?(Range)
+
+        end_op = condition.exclude_end? ? '$gte' : '$gt'
+        head, tail = [condition.first, condition.last].sort
+        OrMatcher.build([{ '$lt' => head }, { end_op => tail }], *args)
+      end
+
       # Creates a raw Proc that performs the not-in matching operation.
       # The Proc checks if the record has no elements in common with the condition array.
       #
       # @return [Proc] A proc that performs not-in matching
       def raw_proc
-        condition = @condition
+        condition = Set.new(@condition)
 
         Proc.new do |record|
           if record.is_a?(Array)
-            return true if condition.is_a?(Range)
-
             is_blank?(condition & record)
           else
             !condition.include?(record)
@@ -48,9 +54,8 @@ module Mongory
       # @return [void]
       def check_validity!
         return if @condition.is_a?(Array)
-        return if @condition.is_a?(Range)
 
-        raise TypeError, '$nin needs an array'
+        raise TypeError, '$nin needs an array or range'
       end
     end
 

@@ -46,7 +46,7 @@ module Mongory
       case obj
       when false, nil
         true
-      when Hash, Array, String
+      when Hash, Array, String, Set
         obj.empty?
       else
         false

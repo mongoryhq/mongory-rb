@@ -4,7 +4,7 @@ require 'spec_helper'
 
 RSpec.describe Mongory::Matchers::InMatcher do
   describe '#match?' do
-    subject { described_class.new(condition) }
+    subject { described_class.build(condition) }
 
     context 'when condition is array of values' do
       let(:condition) { [1, 2, 3] }
@@ -34,6 +34,26 @@ RSpec.describe Mongory::Matchers::InMatcher do
       it 'raises Mongory::TypeError' do
         expect { subject }.to raise_error(Mongory::TypeError)
       end
+    end
+
+    context 'when condition is range' do
+      let(:condition) { (1..5) }
+
+      it { is_expected.not_to be_match(0) }
+      it { is_expected.to be_match(1) }
+      it { is_expected.to be_match(3) }
+      it { is_expected.to be_match(5) }
+      it { is_expected.not_to be_match(6) }
+    end
+
+    context 'when condition is exclude end range' do
+      let(:condition) { (1...5) }
+
+      it { is_expected.not_to be_match(0) }
+      it { is_expected.to be_match(1) }
+      it { is_expected.to be_match(3) }
+      it { is_expected.not_to be_match(5) }
+      it { is_expected.not_to be_match(6) }
     end
   end
 end
