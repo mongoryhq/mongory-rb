@@ -36,6 +36,10 @@ module Mongory
         end
       end
 
+      def priority
+        3 + super
+      end
+
       # Ensures the condition is a Hash.
       #
       # @raise [Mongory::TypeError] if the condition is not a Hash

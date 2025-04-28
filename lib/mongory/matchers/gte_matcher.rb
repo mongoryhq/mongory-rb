@@ -30,6 +30,10 @@ module Mongory
           false
         end
       end
+
+      def priority
+        3
+      end
     end
 
     register(:gte, '$gte', GteMatcher)

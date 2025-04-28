@@ -59,6 +59,10 @@ module Mongory
         end
       end
 
+      def priority
+        @condition.source.start_with?('^') ? 8 : 20
+      end
+
       # Ensures the condition is a valid regex pattern (Regexp or String).
       #
       # @raise [TypeError] if condition is not a string or Regexp

@@ -48,6 +48,10 @@ module Mongory
         end
       end
 
+      def priority
+        1 + Math.log(@condition.size + 1, 1.5)
+      end
+
       # Ensures the condition is an array or range.
       #
       # @raise [TypeError] if condition is not an array nor a range

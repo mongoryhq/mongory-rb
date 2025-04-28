@@ -33,6 +33,10 @@ module Mongory
         end
       end
 
+      def priority
+        2
+      end
+
       # Ensures that the condition value is a valid boolean.
       #
       # @raise [TypeError] if condition is not true or false

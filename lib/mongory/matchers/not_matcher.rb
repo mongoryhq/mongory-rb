@@ -29,6 +29,10 @@ module Mongory
           !super_proc.call(record)
         end
       end
+
+      def priority
+        1 + super
+      end
     end
 
     register(:not, '$not', NotMatcher)

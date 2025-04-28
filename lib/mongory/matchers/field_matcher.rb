@@ -109,6 +109,10 @@ module Mongory
         end
       end
 
+      def priority
+        1 + super
+      end
+
       # Returns a unique key for this matcher, including the field name.
       # Used for deduplication in multi-matchers.
       #

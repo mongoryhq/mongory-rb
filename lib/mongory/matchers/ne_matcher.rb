@@ -27,6 +27,10 @@ module Mongory
           record != condition
         end
       end
+
+      def priority
+        1
+      end
     end
 
     register(:ne, '$ne', NeMatcher)

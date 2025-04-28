@@ -43,6 +43,10 @@ module Mongory
           super_proc.call(record.size)
         end
       end
+
+      def priority
+        2 + super
+      end
     end
 
     register(:size, '$size', SizeMatcher)

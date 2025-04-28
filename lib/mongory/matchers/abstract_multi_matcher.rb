@@ -76,6 +76,10 @@ module Mongory
         end
       end
 
+      def priority
+        1 + matchers.sum(&:priority)
+      end
+
       private
 
       # Recursively combines multiple matcher procs with AND logic.

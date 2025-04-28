@@ -161,6 +161,10 @@ module Mongory
         puts "#{prefix}#{is_last ? '└─ ' : '├─ '}#{tree_title}\n"
       end
 
+      def priority
+        20
+      end
+
       private
 
       # Returns a single-line string representing this matcher in the tree output.
