@@ -56,7 +56,7 @@ module Mongory
                   else
                     ElemMatchMatcher.build({ '$eq' => @condition }, context: @context)
                   end
-        result
+        result.sort_by(&:priority)
       end
 
       private

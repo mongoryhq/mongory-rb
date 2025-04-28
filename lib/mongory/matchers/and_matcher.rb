@@ -49,7 +49,7 @@ module Mongory
       define_instance_cache_method(:matchers) do
         @condition.flat_map do |condition|
           HashConditionMatcher.new(condition, context: @context).matchers
-        end.uniq(&:uniq_key)
+        end.uniq(&:uniq_key).sort_by(&:priority)
       end
 
       # Ensures the condition is an array of hashes.

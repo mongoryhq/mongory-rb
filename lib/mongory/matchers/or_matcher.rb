@@ -45,7 +45,7 @@ module Mongory
       define_instance_cache_method(:matchers) do
         @condition.map do |condition|
           HashConditionMatcher.build(condition, context: @context)
-        end
+        end.sort_by(&:priority)
       end
 
       # Ensures the condition is an array of hashes.

@@ -49,7 +49,7 @@ module Mongory
           else
             FieldMatcher.build(key, value, context: @context)
           end
-        end
+        end.sort_by(&:priority)
       end
 
       def check_validity!
