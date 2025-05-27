@@ -1,4 +1,24 @@
 # Changelog
+
+## [0.6.3] - 2025-05-27
+
+### Major Changes
+- Introduced `AbstractMultiMatcher` to unify logic for compound matchers (`$and`, `$or`, `$nor`)
+- Matchers are now sorted by `priority` to improve performance (early exit in `$and`, etc.)
+
+### Features
+- Each matcher can define its own `priority` to participate in execution optimization
+- `$in` and `$nin` matchers now normalize `Range` conditions into consistent matcher structures
+
+### Fixes
+- Explicitly use `::Hash` and `::Array` in `converted.rb` to avoid namespace conflicts
+
+### Tests
+- Added edge case specs for `$in` and `$nin` with `nil` and empty values
+
+### Chores
+- Ignore `.vscode/` in `.gitignore`
+
 ## [0.6.1] - 2025-04-24
 
 ### Major Changes
