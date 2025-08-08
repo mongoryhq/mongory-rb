@@ -4,7 +4,6 @@ require 'time'
 require 'date'
 require 'singleton'
 require_relative 'mongory/version'
-require_relative 'mongory/core_ext'
 require_relative 'mongory/utils'
 require_relative 'mongory/matchers'
 require_relative 'mongory/query_matcher'
@@ -115,3 +114,5 @@ module Mongory
     end
   end
 end
+
+require_relative '../ext/mongory_ext/mongory_ext'
