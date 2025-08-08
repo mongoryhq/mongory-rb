@@ -26,6 +26,28 @@ Mongory is designed to serve two types of users:
 - Ruby >= 2.6.0
 - No external database required
 
+### C Extension (Optional but Recommended)
+
+Mongory-rb includes an optional high-performance C extension powered by [mongory-core](https://github.com/mongoryhq/mongory-core):
+
+**System Dependencies:**
+- C99-compatible compiler (gcc/clang)
+- CMake >= 3.12
+
+**Installation:**
+```bash
+# macOS
+brew install cmake
+
+# Ubuntu/Debian
+sudo apt install cmake build-essential
+
+# CentOS/RHEL
+sudo yum install cmake gcc make
+```
+
+The C extension provides significant performance improvements for large datasets. If not available, Mongory-rb automatically falls back to pure Ruby implementation.
+
 ## Quick Start
 
 ### Installation
@@ -326,19 +348,25 @@ The debug output includes:
 
 ### Performance Considerations
 
-1. **Memory Usage**
+1. **C Extension vs Pure Ruby**
+   - C extension provides 3-10x performance improvement for large datasets
+   - Automatic fallback to pure Ruby if C extension unavailable
+   - Check availability: `Mongory::CoreInterface.c_extension_available?`
+   - Memory management handled by mongory-core's memory pool
+
+2. **Memory Usage**
    - Mongory operates entirely in memory
    - Consider your data size and memory constraints
    - Proc-based implementation reduces memory usage
    - Context system provides better memory management
 
-2. **Query Optimization**
+3. **Query Optimization**
    - Complex conditions are evaluated in sequence
    - Use `explain` to analyze query performance
    - Empty conditions are optimized with cached Procs
    - Context system allows fine-grained control over conversion
 
-3. **Benchmarks**
+4. **Benchmarks**
   ```ruby
     # Simple query (1000 records)
     records.mongory.where(:age.gte => 18) # ~0.8ms
