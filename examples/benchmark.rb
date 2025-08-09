@@ -102,4 +102,22 @@ end
       puts result
     end
   end
+
+  puts "\nComplex query (Mongory) use CMatcher (#{size} records):"
+  gc_handler do
+    5.times do
+      matcher = Mongory::CMatcher.new(
+        :$or => [
+          { age: { '$gte': 18 } },
+          { status: 'active' }
+        ]
+      )
+      result = Benchmark.measure do
+        records.select do |r|
+          matcher.match(r)
+        end
+      end
+      puts result
+    end
+  end
 end
