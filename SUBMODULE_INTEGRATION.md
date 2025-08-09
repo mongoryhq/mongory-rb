@@ -7,15 +7,15 @@
 ```
 mongory-rb/
 ├── lib/                    # Ruby 程式碼
-│   └── mongory/
-│       └── ...            # 其他 Ruby 模組
+│   ├── mongory.rb         # 入口，負責載入 C 擴展
+│   └── mongory/           # 其他 Ruby 模組
 ├── ext/                   # C 擴展
 │   └── mongory_ext/
-│       ├── mongory-core/  # Git submodule
-│       ├── extconf.rb     # 編譯配置
+│       ├── mongory-core/  # Git submodule（只需原始碼，不需事先用 CMake 建）
+│       ├── extconf.rb     # 編譯配置（直接編譯 submodule 的 .c 檔）
 │       └── mongory_ext.c  # Ruby C 包裝器
 └── scripts/
-    └── build_with_core.sh # 構建腳本
+    └── build_with_core.sh # （可選）構建腳本
 ```
 
 ## 快速開始
@@ -33,59 +33,44 @@ git submodule update --init --recursive
 
 ### 2. 安裝系統依賴
 
-一般安裝 `mongory-rb`（包含 C 擴充）只需要基本編譯工具：
+一般安裝 `mongory-rb`（包含 C 擴充）只需要基本編譯工具與 Ruby headers：
 
-**macOS (Homebrew):**
+**macOS:**
 ```bash
-brew install cmake
+xcode-select --install   # 安裝 Xcode Command Line Tools（含 clang）
 ```
 
 **Ubuntu/Debian:**
 ```bash
 sudo apt update
-sudo apt install cmake build-essential
+sudo apt install build-essential ruby-dev
 ```
 
 **CentOS/RHEL/Fedora:**
 ```bash
-# CentOS/RHEL
-sudo yum install cmake gcc make
-
-# Fedora
-sudo dnf install cmake gcc make
+sudo yum groupinstall "Development Tools" || sudo dnf groupinstall "Development Tools"
+sudo yum install ruby-devel          || sudo dnf install ruby-devel
 ```
 
-注意：cJSON 僅在你進入 `mongory-core` 子模組並執行其「測試或 benchmarks」時才需要（例如以 CMake/ctest 執行）。`mongory-rb` 的正常使用與擴充編譯不需要 cJSON。
+> 可選：只有在你要在 `mongory-core` 子模組內跑「核心測試/benchmarks」時才需要 CMake 與 cJSON（例如以 CMake/ctest 執行）。
 
 ### 3. 構建專案
 
-使用我們的自動化構建腳本：
+使用 Rake（推薦）：
 
 ```bash
-# 基本構建
-./scripts/build_with_core.sh
+# 會自動初始化 submodule，並編譯 C 擴充（不需要事先用 CMake 建 core）
+bundle exec rake build_all
 
-# 除錯模式構建
-./scripts/build_with_core.sh --debug
-
-# 強制重新構建
-./scripts/build_with_core.sh --force-rebuild
-
-# 查看所有選項
-./scripts/build_with_core.sh --help
+# 若無 rake-compiler，fallback 的 :compile 會直接執行 extconf.rb + make
 ```
 
-或者使用 Rake 任務：
+或使用我們的腳本（可選）：
 
 ```bash
-# 使用 rake-compiler（如果有安裝）
-rake build_all
-
-# 或使用我們的構建腳本
-rake build_with_script
-
-# 除錯模式
-rake build_debug
+./scripts/build_with_core.sh         # 基本構建
+./scripts/build_with_core.sh --debug # 除錯模式構建
+./scripts/build_with_core.sh --help  # 查看所有選項
 ```
 
 ## 詳細步驟說明
@@ -103,7 +88,7 @@ rake submodule:update
 git submodule update --remote
 ```
 
-### 手動構建流程
+### 手動構建流程（不依賴 rake-compiler）
 
 如果您想要手動控制構建過程：
 
@@ -111,13 +96,13 @@ git submodule update --remote
 # 1. 確保 submodule 已初始化
 git submodule update --init --recursive
 
-# 2.（可選）如果你要在子模組內跑測試或 benchmarks，才需要以 CMake 構建 mongory-core
-#    注意：此步驟才可能需要 cJSON；一般使用 mongory-rb 不需要。
+# 2.（可選）只有在子模組內跑核心測試/benchmarks 才需要以 CMake 構建 mongory-core
+#    注意：此步驟才會需要 cJSON；一般使用 mongory-rb 不需要。
 # cd ext/mongory_ext/mongory-core
 # ./build.sh --test
 # cd ../../..
 
-# 3. 構建 Ruby C 擴展
+# 3. 構建 Ruby C 擴展（直接以 extconf.rb 編譯 submodule 原始碼）
 cd ext/mongory_ext
 ruby extconf.rb
 make
@@ -186,24 +171,19 @@ make
 - 關閉最佳化 (`-O0`)
 - 啟用 `DEBUG` 巨集定義
 
-### C 擴展 API
-
-主要的 C 擴展類別：
+### C 擴展 API（目前對外）
 
 ```ruby
-# 記憶體池管理
-pool = Mongory::MemoryPool.new
+require 'mongory'
 
-# 建立匹配器
 condition = { "age" => { "$gt" => 18 } }
-matcher = Mongory::Matcher.new(pool, condition)
+matcher   = Mongory::CMatcher.new(condition)
 
-# 執行匹配
-data = { "name" => "John", "age" => 25 }
-result = matcher.match(data)  # => true
+data   = { "name" => "John", "age" => 25 }
+result = matcher.match(data)  # => true/false
 
-# 檢查 C 擴展是否可用
-Mongory::CoreInterface.c_extension_available?  # => true/false
+# 可選：取得解釋（會在 C 端跑 explain，目前回傳 nil）
+matcher.explain
 ```
 
 ## 故障排除
@@ -216,7 +196,7 @@ Mongory::CoreInterface.c_extension_available?  # => true/false
 git submodule update --init --recursive
 ```
 
-**2. 找不到 cjson 庫**
+**2. 找不到 cJSON 庫（僅在你要跑 mongory-core 的 CMake 測試時才需要）**
 ```bash
 # macOS
 brew install cjson
@@ -259,20 +239,7 @@ require 'mongory'
 
 records = 10000.times.map { |i| { "id" => i, "age" => rand(18..65) } }
 
-# 測試 C 擴展效能
-Benchmark.bm do |x|
-  x.report("Ruby DSL:") do
-    records.mongory.where(:age.gte => 30).to_a
-  end
 
-  if Mongory::CoreInterface.c_extension_available?
-    x.report("C Extension:") do
-      pool = Mongory::MemoryPool.new
-      matcher = Mongory::Matcher.new(pool, { "age" => { "$gte" => 30 } })
-      records.select { |r| matcher.match(r) }
-    end
-  end
-end
 ```
 
 ## CI/CD 整合
@@ -305,17 +272,17 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt update
-        sudo apt install cmake build-essential
+        sudo apt install -y build-essential ruby-dev
 
     - name: Build with C extension
-      run: ./scripts/build_with_core.sh
+      run: bundle exec rake build_all
 
     - name: Run tests
       run: bundle exec rspec
 
-    # 如果你需要在 CI 中跑 mongory-core 的測試/benchmarks（可選），才需要安裝 cJSON 並呼叫其 CMake 流程。
-    # - name: Install cJSON (only if running core tests)
-    #   run: sudo apt install libcjson-dev
+    # 若需要在 CI 中跑 mongory-core 的 C 測試/benchmarks（可選），才需要 CMake/cJSON：
+    # - name: Install CMake & cJSON (only if running core tests)
+    #   run: sudo apt install -y cmake libcjson-dev
     # - name: Build mongory-core tests (optional)
     #   run: |
     #     cd ext/mongory_ext/mongory-core
@@ -348,7 +315,7 @@ jobs:
 
 ## 參考資源
 
-- [mongory-core 文檔](ext/mongory_ext/mongory-core/README.md)
+- [mongory-core 文檔](https://github.com/mongoryhq/mongory-core)
 - [Ruby C 擴展指南](https://docs.ruby-lang.org/en/master/extension_rdoc.html)
 - [Git Submodules 文檔](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
 - [CMake 文檔](https://cmake.org/documentation/)
