@@ -1,43 +1,43 @@
 # Mongory-rb Submodule Integration Guide
 
-這份文檔說明了如何使用 `mongory-core` 作為 Git submodule 整合到 `mongory-rb` 中，實現高效能的 C 擴展支援。
+This document describes how to integrate `mongory-core` as a Git submodule into `mongory-rb` to enable a high-performance C extension.
 
-## 架構概述
+## Architecture Overview
 
 ```
 mongory-rb/
-├── lib/                    # Ruby 程式碼
-│   ├── mongory.rb         # 入口，負責載入 C 擴展
-│   └── mongory/           # 其他 Ruby 模組
-├── ext/                   # C 擴展
+├── lib/                    # Ruby code
+│   ├── mongory.rb         # Entry, loads the C extension
+│   └── mongory/           # Other Ruby modules
+├── ext/                   # C extension
 │   └── mongory_ext/
-│       ├── mongory-core/  # Git submodule（只需原始碼，不需事先用 CMake 建）
-│       ├── extconf.rb     # 編譯配置（直接編譯 submodule 的 .c 檔）
-│       └── mongory_ext.c  # Ruby C 包裝器
+│       ├── mongory-core/  # Git submodule (sources only; no prior CMake build required)
+│       ├── extconf.rb     # Build configuration (compiles submodule .c sources directly)
+│       └── mongory_ext.c  # Ruby C wrapper
 └── scripts/
-    └── build_with_core.sh # （可選）構建腳本
+    └── build_with_core.sh # (Optional) build script
 ```
 
-## 快速開始
+## Quick Start
 
-### 1. 複製和初始化
+### 1. Clone and initialize
 
 ```bash
-# 複製專案
+# Clone the project
 git clone <your-mongory-rb-repo>
 cd mongory-rb
 
-# 初始化 submodule
+# Initialize the submodule
 git submodule update --init --recursive
 ```
 
-### 2. 安裝系統依賴
+### 2. Install system dependencies
 
-一般安裝 `mongory-rb`（包含 C 擴充）只需要基本編譯工具與 Ruby headers：
+Installing `mongory-rb` (with the C extension) only requires basic build tools and Ruby headers:
 
 **macOS:**
 ```bash
-xcode-select --install   # 安裝 Xcode Command Line Tools（含 clang）
+xcode-select --install   # Install Xcode Command Line Tools (includes clang)
 ```
 
 **Ubuntu/Debian:**
@@ -52,126 +52,126 @@ sudo yum groupinstall "Development Tools" || sudo dnf groupinstall "Development 
 sudo yum install ruby-devel          || sudo dnf install ruby-devel
 ```
 
-> 可選：只有在你要在 `mongory-core` 子模組內跑「核心測試/benchmarks」時才需要 CMake 與 cJSON（例如以 CMake/ctest 執行）。
+> Optional: CMake and cJSON are only needed if you want to run the core tests/benchmarks inside the `mongory-core` submodule (e.g., via CMake/ctest).
 
-### 3. 構建專案
+### 3. Build the project
 
-使用 Rake（推薦）：
+Using Rake (recommended):
 
 ```bash
-# 會自動初始化 submodule，並編譯 C 擴充（不需要事先用 CMake 建 core）
+# Automatically initializes the submodule and builds the C extension (no prior CMake build needed)
 bundle exec rake build_all
 
-# 若無 rake-compiler，fallback 的 :compile 會直接執行 extconf.rb + make
+# If rake-compiler is not available, the fallback :compile will directly run extconf.rb + make
 ```
 
-或使用我們的腳本（可選）：
+Or use the script (optional):
 
 ```bash
-./scripts/build_with_core.sh         # 基本構建
-./scripts/build_with_core.sh --debug # 除錯模式構建
-./scripts/build_with_core.sh --help  # 查看所有選項
+./scripts/build_with_core.sh         # Basic build
+./scripts/build_with_core.sh --debug # Debug build
+./scripts/build_with_core.sh --help  # Show all options
 ```
 
-## 詳細步驟說明
+## Detailed Steps
 
-### Submodule 管理
+### Submodule management
 
 ```bash
-# 初始化 submodule
+# Initialize submodule
 rake submodule:init
 
-# 更新 submodule 到最新版本
+# Update submodule to latest
 rake submodule:update
 
-# 手動更新 submodule
+# Manually update submodule
 git submodule update --remote
 ```
 
-### 手動構建流程（不依賴 rake-compiler）
+### Manual build flow (without rake-compiler)
 
-如果您想要手動控制構建過程：
+If you prefer to control the build manually:
 
 ```bash
-# 1. 確保 submodule 已初始化
+# 1. Ensure submodule is initialized
 git submodule update --init --recursive
 
-# 2.（可選）只有在子模組內跑核心測試/benchmarks 才需要以 CMake 構建 mongory-core
-#    注意：此步驟才會需要 cJSON；一般使用 mongory-rb 不需要。
+# 2. (Optional) Only needed if you run core tests/benchmarks inside the submodule
+#    Note: This step requires cJSON; typical mongory-rb usage does not.
 # cd ext/mongory_ext/mongory-core
 # ./build.sh --test
 # cd ../../..
 
-# 3. 構建 Ruby C 擴展（直接以 extconf.rb 編譯 submodule 原始碼）
+# 3. Build the Ruby C extension (compiles submodule sources directly via extconf.rb)
 cd ext/mongory_ext
 ruby extconf.rb
 make
 cd ../..
 
-# 4. 運行測試
+# 4. Run tests
 bundle exec rspec
 ```
 
-### 清理構建
+### Clean builds
 
 ```bash
-# 清理所有構建產物
+# Clean all build artifacts
 rake clean_all
 
-# 或使用構建腳本
+# Or use the build script
 ./scripts/build_with_core.sh --clean
 ```
 
-## 開發指南
+## Development Guide
 
-### 修改 C 擴展
+### Modify the C extension
 
-1. 編輯 `ext/mongory_ext/mongory_ext.c`
-2. 重新編譯：
+1. Edit `ext/mongory_ext/mongory_ext.c`
+2. Rebuild:
    ```bash
    cd ext/mongory_ext
    make
    ```
 
-### 更新 mongory-core
+### Update mongory-core
 
-1. 進入 submodule 目錄：
+1. Enter the submodule directory:
    ```bash
    cd ext/mongory_ext/mongory-core
    ```
 
-2. 檢出想要的版本或分支：
+2. Checkout the desired version or branch:
    ```bash
    git checkout main
    git pull origin main
    ```
 
-3. 回到主專案並提交 submodule 更新：
+3. Return to the main project and commit the submodule update:
    ```bash
    cd ../../..
    git add ext/mongory_ext/mongory-core
    git commit -m "Update mongory-core submodule"
    ```
 
-### 除錯 C 擴展
+### Debug the C extension
 
 ```bash
-# 使用除錯模式構建
+# Build in debug mode
 export DEBUG=1
 cd ext/mongory_ext
 ruby extconf.rb
 make
 
-# 或使用構建腳本
+# Or use the build script
 ./scripts/build_with_core.sh --debug
 ```
 
-除錯模式會：
-- 啟用除錯符號 (`-g`)
-- 關閉最佳化 (`-O0`)
-- 啟用 `DEBUG` 巨集定義
+Debug mode will:
+- Enable debug symbols (`-g`)
+- Disable optimizations (`-O0`)
+- Define the `DEBUG` macro
 
-### C 擴展 API（目前對外）
+### C extension API (current public surface)
 
 ```ruby
 require 'mongory'
@@ -182,21 +182,21 @@ matcher   = Mongory::CMatcher.new(condition)
 data   = { "name" => "John", "age" => 25 }
 result = matcher.match(data)  # => true/false
 
-# 可選：取得解釋（會在 C 端跑 explain，目前回傳 nil）
+# Optional: get explanation (runs explain on the C side, currently returns nil)
 matcher.explain
 ```
 
-## 故障排除
+## Troubleshooting
 
-### 常見問題
+### Common issues
 
-**1. Submodule 是空的**
+**1. Submodule is empty**
 ```bash
-# 解決方案
+# Fix
 git submodule update --init --recursive
 ```
 
-**2. 找不到 cJSON 庫（僅在你要跑 mongory-core 的 CMake 測試時才需要）**
+**2. cJSON library not found (only required if you run mongory-core CMake tests)**
 ```bash
 # macOS
 brew install cjson
@@ -204,34 +204,34 @@ brew install cjson
 # Ubuntu/Debian
 sudo apt install libcjson-dev
 
-# 檢查安裝
+# Verify installation
 pkg-config --exists libcjson && echo "Found" || echo "Not found"
 ```
 
-**3. 編譯錯誤**
+**3. Build errors**
 ```bash
-# 清理並重新構建
+# Clean and rebuild
 ./scripts/build_with_core.sh --clean
 ./scripts/build_with_core.sh --debug
 ```
 
-**4. C 擴展無法載入**
-- 檢查 Ruby 版本相容性 (>= 2.6.0)
-- 確認所有依賴庫已安裝
-- 查看錯誤訊息並檢查編譯警告
+**4. C extension fails to load**
+- Check Ruby version compatibility (>= 2.6.0)
+- Ensure all system deps are installed
+- Inspect error messages and compiler warnings
 
-### 日誌和除錯
+### Logging and debugging
 
-啟用詳細輸出：
+Enable verbose output:
 ```bash
-# 構建時顯示詳細訊息
+# Verbose during build
 VERBOSE=1 ./scripts/build_with_core.sh
 
-# Ruby 載入時顯示除錯資訊
+# Debug info when loading Ruby
 RUBY_DEBUG=1 ruby -rmongory -e "puts Mongory::CoreInterface.version"
 ```
 
-### 效能驗證
+### Performance check
 
 ```ruby
 require 'benchmark'
@@ -242,9 +242,9 @@ records = 10000.times.map { |i| { "id" => i, "age" => rand(18..65) } }
 
 ```
 
-## CI/CD 整合
+## CI/CD integration
 
-### GitHub Actions 範例
+### GitHub Actions example
 
 ```yaml
 name: Build and Test
@@ -280,7 +280,7 @@ jobs:
     - name: Run tests
       run: bundle exec rspec
 
-    # 若需要在 CI 中跑 mongory-core 的 C 測試/benchmarks（可選），才需要 CMake/cJSON：
+    # Only needed if you also run mongory-core C tests/benchmarks (optional):
     # - name: Install CMake & cJSON (only if running core tests)
     #   run: sudo apt install -y cmake libcjson-dev
     # - name: Build mongory-core tests (optional)
@@ -289,37 +289,37 @@ jobs:
     #     ./build.sh --test
 ```
 
-## 貢獻指南
+## Contributing Guide
 
-### 開發流程
+### Development workflow
 
 1. Fork 這個 repository
-2. 建立功能分支：`git checkout -b feature/amazing-feature`
-3. 如果修改了 C 程式碼，確保同時更新測試
-4. 執行完整的測試套件：`./scripts/build_with_core.sh`
-5. 提交變更：`git commit -m 'Add amazing feature'`
-6. 推送到分支：`git push origin feature/amazing-feature`
-7. 建立 Pull Request
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. If you modify C code, make sure to update tests
+4. Run the full test suite: `./scripts/build_with_core.sh`
+5. Commit changes: `git commit -m 'Add amazing feature'`
+6. Push the branch: `git push origin feature/amazing-feature`
+7. Open a Pull Request
 
-### 編碼標準
+### Coding standards
 
-- **C 程式碼**: 遵循 C99 標準，使用 mongory-core 的編碼風格
-- **Ruby 程式碼**: 遵循專案的 RuboCop 配置
-- **文檔**: 為所有公共 API 提供文檔
+- **C code**: C99, follow mongory-core style
+- **Ruby code**: follow project RuboCop config
+- **Docs**: document all public APIs
 
-### 測試要求
+### Testing requirements
 
-- 為所有新功能添加測試
-- 確保 C 擴展和 Ruby fallback 都有測試覆蓋
-- 運行效能基準測試確認沒有回歸
+- Add tests for all new features
+- Ensure both C extension and Ruby fallback are covered
+- Run benchmarks to prevent regressions
 
-## 參考資源
+## References
 
 - [mongory-core 文檔](https://github.com/mongoryhq/mongory-core)
 - [Ruby C 擴展指南](https://docs.ruby-lang.org/en/master/extension_rdoc.html)
 - [Git Submodules 文檔](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
 - [CMake 文檔](https://cmake.org/documentation/)
 
-## 授權
+## License
 
-這個整合遵循 MIT 授權條款，與 mongory-core 和 mongory-rb 保持一致。
+This integration follows the MIT license, consistent with mongory-core and mongory-rb.
