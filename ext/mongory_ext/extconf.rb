@@ -19,48 +19,43 @@ end
 # 添加包含路徑
 $INCFLAGS << " -I#{core_include_dir}"
 
-# 添加源文件
+# 收集需要編譯的源文件（直接編進擴充套件）
 foundations_src = Dir.glob(File.join(core_src_dir, 'foundations', '*.c'))
 matchers_src = Dir.glob(File.join(core_src_dir, 'matchers', '*.c'))
 
 # 設置編譯選項
-$CFLAGS << ' -std=c99 -Wall -Wextra'
+$CFLAGS << ' -std=c99 -Wall -Wextra -Wno-incompatible-pointer-types -Wno-int-conversion'
 $CFLAGS << ' -O2' unless ENV['DEBUG']
 $CFLAGS << ' -g -O0 -DDEBUG' if ENV['DEBUG']
 
-# 創建所有源文件的編譯規則
-all_sources = foundations_src + matchers_src
+# 交給 mkmf 自動產生規則：指定所有來源與對應目標
+$INCFLAGS << " -I."
+$INCFLAGS << " -I#{File.join(core_src_dir, 'foundations')}"
+$INCFLAGS << " -I#{File.join(core_src_dir, 'matchers')}"
+all_sources = ['mongory_ext.c'] + foundations_src + matchers_src
+$srcs = all_sources
+$objs = all_sources.map { |src| File.basename(src, '.c') + '.o' }
 
-# 為每個 C 源文件創建對象文件
-objects = all_sources.map do |src|
-  obj = src.sub(/\.c$/, '.o').sub(core_src_dir, '.')
-  obj_dir = File.dirname(obj)
-  FileUtils.mkdir_p(obj_dir) unless Dir.exist?(obj_dir)
-
-  # 添加編譯規則
-  rule obj => src do
-    sh "#{CONFIG['CC']} #{$CFLAGS} #{$INCFLAGS} -c #{src} -o #{obj}"
-  end
-
-  obj
-end
-
-# 設置對象文件
-$objs = objects + ['mongory_ext.o']
-
-# 創建 Makefile
+# 產生 Makefile
 create_makefile('mongory_ext')
-
-# 添加清理任務
-makefile_content = File.read('Makefile')
-makefile_content << "\n"
-makefile_content << "clean: clean-so clean-static clean-objs\n"
-makefile_content << "\t@rm -f *.o foundations/*.o matchers/*.o\n"
-makefile_content << "\n"
-
-File.write('Makefile', makefile_content)
 
 puts "extconf.rb completed successfully"
 puts "Found #{foundations_src.length} foundation sources"
 puts "Found #{matchers_src.length} matcher sources"
 puts "Use 'make' to build the extension"
+
+# 補充 Makefile：為 submodule 內的來源建立顯式編譯規則，避免複製或連結檔案
+mk = File.read('Makefile')
+
+rules = +"\n# --- custom rules for mongory-core submodule sources ---\n"
+(foundations_src + matchers_src).each do |src|
+  obj = File.basename(src, '.c') + '.o'
+  rules << <<~MAKE
+  #{obj}: #{src}
+	$(ECHO) compiling $<
+	$(Q) $(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) $(COUTFLAG)$@ -c $(CSRCFLAG)$<
+
+  MAKE
+end
+
+File.write('Makefile', mk + rules)

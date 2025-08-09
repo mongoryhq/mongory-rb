@@ -40,8 +40,8 @@ Gem::Specification.new do |spec|
 
 
   # Ensure submodule files are included
-  spec.files += Dir['ext/mongory_ext/mongory-core/src/**/*.{c,h}']
+  spec.files += Dir['ext/mongory_ext/mongory-core/src/foundations/*.{c,h}']
+  spec.files += Dir['ext/mongory_ext/mongory-core/src/matchers/*.{c,h}']
   spec.files += Dir['ext/mongory_ext/mongory-core/include/**/*.h']
   spec.files += ['ext/mongory_ext/mongory-core/LICENSE']
-  spec.files += ['ext/mongory_ext/mongory-core/README.md']
 end
