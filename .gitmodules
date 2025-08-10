@@ -1,0 +1,3 @@
+[submodule "ext/mongory_ext/mongory-core"]
+	path = ext/mongory_ext/mongory-core
+	url = git@github.com:mongoryhq/mongory-core.git
