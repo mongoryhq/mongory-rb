@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'mkmf'
+require 'rbconfig'
 
 # Set the path to mongory-core
 core_dir = File.expand_path('mongory-core', __dir__)
@@ -16,6 +17,28 @@ end
 
 # mongory-rb does not require cJSON; only mongory-core's tests use it, so we don't check cJSON here
 
+# Normalize compiler flags across GCC/Clang on CI (Ruby 2.6 on Ubuntu may inject clang-only warn flags)
+def scrub_flags_from_config!(keys, patterns)
+  [RbConfig::CONFIG, RbConfig::MAKEFILE_CONFIG].uniq.each do |cfg|
+    keys.each do |k|
+      next unless cfg[k]
+      patterns.each do |pat|
+        cfg[k] = cfg[k].gsub(/\b#{Regexp.escape(pat)}\b/, '')
+      end
+      cfg[k] = cfg[k].squeeze(' ').strip
+    end
+  end
+end
+
+gcc_like = RbConfig::CONFIG['GCC'] == 'yes' || RbConfig::CONFIG['CC'].to_s =~ /(gcc|cc)/
+if gcc_like
+  scrub_flags_from_config!(%w[warnflags cflags optflags debugflags], [
+    '-Wno-self-assign',
+    '-Wno-parentheses-equality',
+    '-Wno-constant-logical-operand'
+  ])
+end
+
 # Add include paths
 $INCFLAGS << " -I#{core_include_dir}"
 
@@ -23,8 +46,9 @@ $INCFLAGS << " -I#{core_include_dir}"
 foundations_src = Dir.glob(File.join(core_src_dir, 'foundations', '*.c'))
 matchers_src = Dir.glob(File.join(core_src_dir, 'matchers', '*.c'))
 
-# Compiler flags
 $CFLAGS << ' -std=c99 -Wall -Wextra -Wno-incompatible-pointer-types -Wno-int-conversion'
+# Silence C90-style warnings on older GCC when standard flags are not fully applied by toolchains
+$CFLAGS << ' -Wno-declaration-after-statement -Wno-discarded-qualifiers'
 $CFLAGS << ' -O2' unless ENV['DEBUG']
 $CFLAGS << ' -g -O0 -DDEBUG' if ENV['DEBUG']
 

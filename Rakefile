@@ -14,7 +14,7 @@ begin
   require 'rake/extensiontask'
 
   Rake::ExtensionTask.new('mongory_ext') do |ext|
-    ext.lib_dir = 'lib'
+    ext.lib_dir = 'ext/mongory_ext'
     ext.ext_dir = 'ext/mongory_ext'
     ext.source_pattern = '*.c'
   end

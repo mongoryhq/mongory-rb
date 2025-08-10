@@ -6,7 +6,7 @@
  * allowing Ruby applications to use high-performance C-based matching
  * operations while maintaining the elegant Ruby DSL.
  */
-
+#include <time.h>
 #include "mongory-core.h"
 #include <ruby.h>
 #include <ruby/encoding.h>
