@@ -38,7 +38,6 @@ Gem::Specification.new do |spec|
   # Add development dependencies for C extension
   spec.add_development_dependency 'rake-compiler', '~> 1.0'
 
-
   # Ensure submodule files are included
   spec.files += Dir['ext/mongory_ext/mongory-core/src/foundations/*.{c,h}']
   spec.files += Dir['ext/mongory_ext/mongory-core/src/matchers/*.{c,h}']

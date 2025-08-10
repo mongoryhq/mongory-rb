@@ -49,13 +49,12 @@ begin
   end
 
   desc 'Build the project (without standalone mongory-core build)'
-  task :build_all => ['submodule:init', :compile]
+  task build_all: ['submodule:init', :compile]
 
   desc 'Clean all build artifacts including submodule'
-  task :clean_all => :clean do
+  task clean_all: :clean do
     sh 'rm -rf ext/mongory_ext/mongory-core/build' if Dir.exist?('ext/mongory_ext/mongory-core/build')
   end
-
 rescue LoadError
   puts 'rake-compiler not available. Install it with: gem install rake-compiler'
 

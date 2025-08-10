@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# rubocop:disable Style/GlobalVars
+
 require 'mkmf'
 require 'rbconfig'
 
@@ -11,7 +13,7 @@ core_include_dir = File.join(core_dir, 'include')
 # Check if mongory-core submodule exists
 unless Dir.exist?(core_dir)
   puts "Error: mongory-core submodule not found at #{core_dir}"
-  puts "Please run: git submodule update --init --recursive"
+  puts 'Please run: git submodule update --init --recursive'
   exit 1
 end
 
@@ -22,6 +24,7 @@ def scrub_flags_from_config!(keys, patterns)
   [RbConfig::CONFIG, RbConfig::MAKEFILE_CONFIG].uniq.each do |cfg|
     keys.each do |k|
       next unless cfg[k]
+
       patterns.each do |pat|
         cfg[k] = cfg[k].gsub(/\b#{Regexp.escape(pat)}\b/, '')
       end
@@ -32,7 +35,7 @@ end
 
 gcc_like = RbConfig::CONFIG['GCC'] == 'yes' || RbConfig::CONFIG['CC'].to_s =~ /(gcc|cc)/
 if gcc_like
-  scrub_flags_from_config!(%w[warnflags cflags optflags debugflags], [
+  scrub_flags_from_config!(%w(warnflags cflags optflags debugflags), [
     '-Wno-self-assign',
     '-Wno-parentheses-equality',
     '-Wno-constant-logical-operand'
@@ -53,17 +56,17 @@ $CFLAGS << ' -O2' unless ENV['DEBUG']
 $CFLAGS << ' -g -O0 -DDEBUG' if ENV['DEBUG']
 
 # Let mkmf generate rules by listing all sources and corresponding objects
-$INCFLAGS << " -I."
+$INCFLAGS << ' -I.'
 $INCFLAGS << " -I#{File.join(core_src_dir, 'foundations')}"
 $INCFLAGS << " -I#{File.join(core_src_dir, 'matchers')}"
 all_sources = ['mongory_ext.c'] + foundations_src + matchers_src
 $srcs = all_sources
-$objs = all_sources.map { |src| File.basename(src, '.c') + '.o' }
+$objs = all_sources.map { |src| "#{File.basename(src, '.c')}.o" }
 
 # Generate Makefile
 create_makefile('mongory_ext')
 
-puts "extconf.rb completed successfully"
+puts 'extconf.rb completed successfully'
 puts "Found #{foundations_src.length} foundation sources"
 puts "Found #{matchers_src.length} matcher sources"
 puts "Use 'make' to build the extension"
@@ -71,9 +74,10 @@ puts "Use 'make' to build the extension"
 # Append Makefile rules: explicit compilation rules for submodule sources to avoid copying/linking files
 mk = File.read('Makefile')
 
+# rubocop:disable Layout/HeredocIndentation
 rules = +"\n# --- custom rules for mongory-core submodule sources ---\n"
 (foundations_src + matchers_src).each do |src|
-  obj = File.basename(src, '.c') + '.o'
+  obj = "#{File.basename(src, '.c')}.o"
   rules << <<~MAKE
   #{obj}: #{src}
 	$(ECHO) compiling $<
@@ -83,3 +87,5 @@ rules = +"\n# --- custom rules for mongory-core submodule sources ---\n"
 end
 
 File.write('Makefile', mk + rules)
+# rubocop:enable Layout/HeredocIndentation
+# rubocop:enable Style/GlobalVars
