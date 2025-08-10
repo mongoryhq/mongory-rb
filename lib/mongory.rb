@@ -114,3 +114,5 @@ module Mongory
     end
   end
 end
+
+require_relative '../ext/mongory_ext/mongory_ext'

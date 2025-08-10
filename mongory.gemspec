@@ -32,9 +32,16 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  # Uncomment to register a new dependency of your gem
-  # spec.add_dependency 'example-gem', '~> 1.0'
+  # C extension configuration
+  spec.extensions = ['ext/mongory_ext/extconf.rb']
 
-  # For more information and examples about making a new gem, check out our
-  # guide at: https://bundler.io/guides/creating_gem.html
+  # Add development dependencies for C extension
+  spec.add_development_dependency 'rake-compiler', '~> 1.0'
+
+
+  # Ensure submodule files are included
+  spec.files += Dir['ext/mongory_ext/mongory-core/src/**/*.{c,h}']
+  spec.files += Dir['ext/mongory_ext/mongory-core/include/**/*.h']
+  spec.files += ['ext/mongory_ext/mongory-core/LICENSE']
+  spec.files += ['ext/mongory_ext/mongory-core/README.md']
 end
