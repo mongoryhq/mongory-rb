@@ -69,8 +69,10 @@ static int hash_foreach_cb(VALUE key, VALUE val, VALUE ptr) {
   return ST_CONTINUE;
 }
 
-// Deep conversion: Convert Ruby value to mongory_value (fully materialize arrays/tables)
-static mongory_value *ruby_to_mongory_value(VALUE rb_value, mongory_memory_pool *pool, mongory_value *(*convert_func)(mongory_memory_pool *pool, void *value)) {
+mongory_value *ruby_mongory_table_wrap(VALUE rb_hash, mongory_memory_pool *pool);
+mongory_value *ruby_mongory_array_wrap(VALUE rb_array, mongory_memory_pool *pool);
+
+static mongory_value *ruby_to_mongory_value_primitive(mongory_memory_pool *pool, VALUE rb_value) {
   mongory_value *mg_value = NULL;
   switch (TYPE(rb_value)) {
   case T_NIL:
@@ -103,14 +105,48 @@ static mongory_value *ruby_to_mongory_value(VALUE rb_value, mongory_memory_pool 
     mg_value = mongory_value_wrap_s(pool, (char *)rb_id2name(rb_sym2id(rb_value)));
     break;
   }
+  }
+  return mg_value;
+}
 
+// Shallow conversion: Convert Ruby value to mongory_value (fully materialize arrays/tables)
+mongory_value *ruby_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb_value) {
+  mongory_value *mg_value = ruby_to_mongory_value_primitive(pool, rb_value);
+  if (mg_value) {
+    mg_value->origin = rb_value;
+    return mg_value;
+  }
+
+  switch (TYPE(rb_value)) {
+  case T_ARRAY: {
+    mg_value = ruby_mongory_array_wrap(rb_value, pool);
+    break;
+  }
+
+  case T_HASH: {
+    mg_value = ruby_mongory_table_wrap(rb_value, pool);
+    break;
+  }
+
+  default:
+    rb_raise(eMongoryTypeError, "Unsupported Ruby type for conversion to mongory_value");
+  }
+  mg_value->origin = rb_value;
+  return mg_value;
+}
+
+mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value) {
+  mongory_value *mg_value = ruby_to_mongory_value_primitive(pool, rb_value);
+  if (mg_value) {
+    mg_value->origin = rb_value;
+    return mg_value;
+  }
+  switch (TYPE(rb_value)) {
   case T_ARRAY: {
     mongory_array *array = mongory_array_new(pool);
-    long len = RARRAY_LEN(rb_value);
 
-    for (long i = 0; i < len; i++) {
-      VALUE element = RARRAY_AREF(rb_value, i);
-      array->push(array, convert_func(pool, element));
+    for (long i = 0; i < RARRAY_LEN(rb_value); i++) {
+      array->push(array, ruby_to_mongory_value_deep(pool, RARRAY_AREF(rb_value, i)));
     }
     mg_value = mongory_value_wrap_a(pool, array);
     break;
@@ -119,7 +155,7 @@ static mongory_value *ruby_to_mongory_value(VALUE rb_value, mongory_memory_pool 
   case T_HASH: {
     mongory_table *table = mongory_table_new(pool);
 
-    hash_conv_ctx ctx = {table, pool, convert_func};
+    hash_conv_ctx ctx = {table, pool, ruby_to_mongory_value_deep};
     rb_hash_foreach(rb_value, hash_foreach_cb, (VALUE)&ctx);
 
     mg_value = mongory_value_wrap_t(pool, table);
@@ -133,16 +169,50 @@ static mongory_value *ruby_to_mongory_value(VALUE rb_value, mongory_memory_pool 
   return mg_value;
 }
 
-// Shallow conversion: only materialize scalars; arrays/hashes remain as POINTER to Ruby VALUE
-static mongory_value *ruby_to_mongory_value_shallow(mongory_memory_pool *pool, void *value) {
-  return ruby_to_mongory_value(value, pool, mongory_value_wrap_ptr);
+typedef struct ruby_mongory_table_t {
+  mongory_table base;
+  VALUE rb_hash;
+} ruby_mongory_table_t;
+
+mongory_value *ruby_mongory_table_get(mongory_table *self, char *key) {
+  ruby_mongory_table_t *table = (ruby_mongory_table_t *)self;
+  VALUE rb_hash = table->rb_hash;
+  VALUE rb_value = rb_hash_aref(rb_hash, rb_str_new2(key));
+  return ruby_to_mongory_value_shallow(self->pool, rb_value);
 }
-static mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, void *value) {
-  return ruby_to_mongory_value(value, pool, ruby_to_mongory_value_deep);
+
+mongory_value *ruby_mongory_table_wrap(VALUE rb_hash, mongory_memory_pool *pool) {
+  ruby_mongory_table_t *table = pool->alloc(pool->ctx, sizeof(ruby_mongory_table_t));
+  table->base.pool = pool;
+  table->base.get = ruby_mongory_table_get;
+  table->rb_hash = rb_hash;
+  table->base.count = RHASH_SIZE(rb_hash);
+  return mongory_value_wrap_t(pool, &table->base);
+}
+
+typedef struct ruby_mongory_array_t {
+  mongory_array base;
+  VALUE rb_array;
+} ruby_mongory_array_t;
+
+mongory_value *ruby_mongory_array_get(mongory_array *self, size_t index) {
+  ruby_mongory_array_t *array = (ruby_mongory_array_t *)self;
+  VALUE rb_array = array->rb_array;
+  VALUE rb_value = rb_ary_entry(rb_array, index);
+  return ruby_to_mongory_value_shallow(self->pool, rb_value);
+}
+
+mongory_value *ruby_mongory_array_wrap(VALUE rb_array, mongory_memory_pool *pool) {
+  ruby_mongory_array_t *array = pool->alloc(pool->ctx, sizeof(ruby_mongory_array_t));
+  array->base.pool = pool;
+  array->base.get = ruby_mongory_array_get;
+  array->rb_array = rb_array;
+  array->base.count = RARRAY_LEN(rb_array);
+  return mongory_value_wrap_a(pool, &array->base);
 }
 
 // Convert mongory_value to Ruby value
-static void *mongory_value_to_ruby(mongory_memory_pool *pool, mongory_value *value) {
+void *mongory_value_to_ruby(mongory_memory_pool *pool, mongory_value *value) {
   (void)pool;
   if (!value)
     return NULL;
