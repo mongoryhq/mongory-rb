@@ -23,7 +23,16 @@ static VALUE eMongoryTypeError;
 typedef struct {
   mongory_matcher *matcher;
   mongory_memory_pool *pool;
+  mongory_table *string_map;
+  mongory_table *symbol_map;
 } ruby_mongory_matcher_t;
+
+// Thread-local current matcher wrapper for callbacks
+#if defined(__STDC_NO_THREADS__) || defined(_WIN32)
+static __thread ruby_mongory_matcher_t *g_current_wrapper;
+#else
+static _Thread_local ruby_mongory_matcher_t *g_current_wrapper;
+#endif
 
 /**
  * Ruby GC management functions
@@ -36,10 +45,12 @@ static void ruby_mongory_matcher_free(void *ptr) {
   xfree(wrapper);
 }
 
+static void ruby_mongory_matcher_mark(void *ptr);
+
 static const rb_data_type_t ruby_mongory_matcher_type = {
   .wrap_struct_name = "mongory_matcher",
   .function = {
-    .dmark = NULL,
+    .dmark = ruby_mongory_matcher_mark,
     .dfree = ruby_mongory_matcher_free,
     .dsize = NULL,
   },
@@ -71,6 +82,10 @@ static int hash_foreach_cb(VALUE key, VALUE val, VALUE ptr) {
 
 mongory_value *ruby_mongory_table_wrap(VALUE rb_hash, mongory_memory_pool *pool);
 mongory_value *ruby_mongory_array_wrap(VALUE rb_array, mongory_memory_pool *pool);
+
+// Cache helpers forward declarations
+static VALUE cache_fetch_string(ruby_mongory_matcher_t *owner, const char *key);
+static VALUE cache_fetch_symbol(ruby_mongory_matcher_t *owner, const char *key);
 
 static mongory_value *ruby_to_mongory_value_primitive(mongory_memory_pool *pool, VALUE rb_value) {
   mongory_value *mg_value = NULL;
@@ -179,16 +194,13 @@ mongory_value *ruby_mongory_table_get(mongory_table *self, char *key) {
   VALUE rb_hash = table->rb_hash;
   VALUE rb_value = Qundef;
 
-  VALUE key_str = rb_str_new_cstr(key);
+  // Use cached Ruby String key if possible
+  VALUE key_str = cache_fetch_string(g_current_wrapper, key);
   rb_value = rb_hash_lookup2(rb_hash, key_str, Qundef);
 
   if (rb_value == Qundef) {
-    rb_encoding *enc = rb_utf8_encoding();
-    ID id = rb_check_id_cstr(key, (long)strlen(key), enc);
-    if (!id) {
-      id = rb_intern3(key, (long)strlen(key), enc);
-    }
-    VALUE key_sym = ID2SYM(id);
+    // Fallback to Symbol key, using cache
+    VALUE key_sym = cache_fetch_symbol(g_current_wrapper, key);
     rb_value = rb_hash_lookup2(rb_hash, key_sym, Qnil);
   }
   return ruby_to_mongory_value_shallow(self->pool, rb_value);
@@ -249,6 +261,8 @@ static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
   ruby_mongory_matcher_t *wrapper = ALLOC(ruby_mongory_matcher_t);
   wrapper->matcher = matcher;
   wrapper->pool = matcher_pool;
+  wrapper->string_map = mongory_table_new(matcher_pool);
+  wrapper->symbol_map = mongory_table_new(matcher_pool);
 
   return TypedData_Wrap_Struct(class, &ruby_mongory_matcher_type, wrapper);
 }
@@ -259,8 +273,11 @@ static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
 
   mongory_memory_pool *temp_pool = mongory_memory_pool_new();
+  ruby_mongory_matcher_t *prev = g_current_wrapper;
+  g_current_wrapper = wrapper;
   mongory_value *data_value = ruby_to_mongory_value_shallow(temp_pool, data);
   bool result = mongory_matcher_match(wrapper->matcher, data_value);
+  g_current_wrapper = prev;
 
   temp_pool->free(temp_pool);
   return result ? Qtrue : Qfalse;
@@ -274,6 +291,58 @@ static VALUE ruby_mongory_matcher_explain(VALUE self) {
   mongory_matcher_explain(wrapper->matcher, temp_pool);
   temp_pool->free(temp_pool);
   return Qnil;
+}
+
+// ===== Key cache helpers and GC marking =====
+static bool gc_mark_table_cb(char *key, mongory_value *value, void *acc) {
+  (void)key; (void)acc;
+  if (value && value->origin) rb_gc_mark((VALUE)value->origin);
+  return true;
+}
+
+static void ruby_mongory_matcher_mark_table(mongory_table *table) {
+  if (table && table->each) {
+    table->each(table, NULL, gc_mark_table_cb);
+  }
+}
+
+static void ruby_mongory_matcher_mark(void *ptr) {
+  ruby_mongory_matcher_t *wrapper = (ruby_mongory_matcher_t *)ptr;
+  if (!wrapper) return;
+  ruby_mongory_matcher_mark_table(wrapper->string_map);
+  ruby_mongory_matcher_mark_table(wrapper->symbol_map);
+}
+
+// ===== Cache helper implementations =====
+static VALUE cache_fetch_string(ruby_mongory_matcher_t *owner, const char *key) {
+  if (!owner || !owner->string_map) return rb_utf8_str_new_cstr(key);
+  mongory_value *v = owner->string_map->get(owner->string_map, (char *)key);
+  if (v && v->origin) return (VALUE)v->origin;
+  VALUE s = rb_utf8_str_new_cstr(key);
+  mongory_value *store = mongory_value_wrap_u(owner->pool, NULL);
+  store->origin = (void *)s;
+  owner->string_map->set(owner->string_map, (char *)key, store);
+  return s;
+}
+
+static inline VALUE char_key_to_symbol(const char *key, rb_encoding *enc) {
+  ID id = rb_check_id_cstr(key, (long)strlen(key), enc);
+  if (!id) id = rb_intern3(key, (long)strlen(key), enc);
+  return ID2SYM(id);
+}
+
+static VALUE cache_fetch_symbol(ruby_mongory_matcher_t *owner, const char *key) {
+  rb_encoding *enc = rb_utf8_encoding();
+  if (!owner || !owner->symbol_map) {
+    return char_key_to_symbol(key, enc);
+  }
+  mongory_value *v = owner->symbol_map->get(owner->symbol_map, (char *)key);
+  if (v && v->origin) return (VALUE)v->origin;
+  VALUE sym = char_key_to_symbol(key, enc);
+  mongory_value *store = mongory_value_wrap_u(owner->pool, NULL);
+  store->origin = (void *)sym;
+  owner->symbol_map->set(owner->symbol_map, (char *)key, store);
+  return sym;
 }
 
 /**
