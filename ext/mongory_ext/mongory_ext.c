@@ -6,10 +6,10 @@
  * allowing Ruby applications to use high-performance C-based matching
  * operations while maintaining the elegant Ruby DSL.
  */
-#include <time.h>
 #include "mongory-core.h"
 #include <ruby.h>
 #include <ruby/encoding.h>
+#include <string.h>
 
 // Ruby module and class definitions
 static VALUE mMongory;
@@ -177,7 +177,20 @@ typedef struct ruby_mongory_table_t {
 mongory_value *ruby_mongory_table_get(mongory_table *self, char *key) {
   ruby_mongory_table_t *table = (ruby_mongory_table_t *)self;
   VALUE rb_hash = table->rb_hash;
-  VALUE rb_value = rb_hash_aref(rb_hash, rb_str_new2(key));
+  VALUE rb_value = Qundef;
+
+  VALUE key_str = rb_str_new_cstr(key);
+  rb_value = rb_hash_lookup2(rb_hash, key_str, Qundef);
+
+  if (rb_value == Qundef) {
+    rb_encoding *enc = rb_utf8_encoding();
+    ID id = rb_check_id_cstr(key, (long)strlen(key), enc);
+    if (!id) {
+      id = rb_intern3(key, (long)strlen(key), enc);
+    }
+    VALUE key_sym = ID2SYM(id);
+    rb_value = rb_hash_lookup2(rb_hash, key_sym, Qnil);
+  }
   return ruby_to_mongory_value_shallow(self->pool, rb_value);
 }
 
