@@ -293,7 +293,7 @@ jobs:
 
 ### Development workflow
 
-1. Fork 這個 repository
+1. Fork this repository
 2. Create a feature branch: `git checkout -b feature/amazing-feature`
 3. If you modify C code, make sure to update tests
 4. Run the full test suite: `./scripts/build_with_core.sh`
@@ -315,10 +315,10 @@ jobs:
 
 ## References
 
-- [mongory-core 文檔](https://github.com/mongoryhq/mongory-core)
-- [Ruby C 擴展指南](https://docs.ruby-lang.org/en/master/extension_rdoc.html)
-- [Git Submodules 文檔](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
-- [CMake 文檔](https://cmake.org/documentation/)
+- [mongory-core doc](https://github.com/mongoryhq/mongory-core)
+- [Ruby C extension doc](https://docs.ruby-lang.org/en/master/extension_rdoc.html)
+- [Git Submodules doc](https://git-scm.com/book/en/v2/Git-Tools-Submodules)
+- [CMake doc](https://cmake.org/documentation/)
 
 ## License
 
