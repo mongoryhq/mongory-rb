@@ -240,11 +240,25 @@ mongory_value *ruby_mongory_array_get(mongory_array *self, size_t index) {
   return ruby_to_mongory_value_shallow(array->base.pool, rb_value);
 }
 
+static bool ruby_mongory_array_each(mongory_array *self, void *acc, mongory_array_callback_func func) {
+  ruby_mongory_array_t *array = (ruby_mongory_array_t *)self;
+  VALUE rb_array = array->rb_array;
+  for (long i = 0; i < RARRAY_LEN(rb_array); i++) {
+    VALUE rb_value = rb_ary_entry(rb_array, i);
+    mongory_value *cval = ruby_to_mongory_value_shallow(array->base.pool, rb_value);
+    if (!func(cval, acc)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 mongory_value *ruby_mongory_array_wrap(VALUE rb_array, mongory_memory_pool *pool) {
   ruby_mongory_array_t *array = pool->alloc(pool->ctx, sizeof(ruby_mongory_array_t));
   ruby_mongory_memory_pool_t *rb_pool = (ruby_mongory_memory_pool_t *)pool;
   array->base.pool = pool;
   array->base.get = ruby_mongory_array_get;
+  array->base.each = ruby_mongory_array_each;
   array->rb_array = rb_array;
   array->base.count = RARRAY_LEN(rb_array);
   array->owner = rb_pool->owner;
