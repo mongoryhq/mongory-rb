@@ -23,6 +23,7 @@ static VALUE eMongoryTypeError;
 typedef struct ruby_mongory_matcher_t {
   mongory_matcher *matcher;
   mongory_memory_pool *pool;
+  mongory_memory_pool *scratch_pool;
   mongory_table *string_map;
   mongory_table *symbol_map;
 } ruby_mongory_matcher_t;
@@ -265,6 +266,7 @@ void *mongory_value_to_ruby(mongory_memory_pool *pool, mongory_value *value) {
 // Mongory::CMatcher.new(condition)
 static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
   ruby_mongory_memory_pool_t *matcher_pool = ruby_mongory_memory_pool_new();
+  ruby_mongory_memory_pool_t *scratch_pool = ruby_mongory_memory_pool_new();
   mongory_value *condition_value = ruby_to_mongory_value_deep(&matcher_pool->base, condition);
   mongory_matcher *matcher = mongory_matcher_new(&matcher_pool->base, condition_value);
 
@@ -275,9 +277,11 @@ static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
   ruby_mongory_matcher_t *wrapper = ALLOC(ruby_mongory_matcher_t);
   wrapper->matcher = matcher;
   wrapper->pool = &matcher_pool->base;
+  wrapper->scratch_pool = &scratch_pool->base;
   wrapper->string_map = mongory_table_new(&matcher_pool->base);
   wrapper->symbol_map = mongory_table_new(&matcher_pool->base);
   matcher_pool->owner = wrapper;
+  scratch_pool->owner = wrapper;
 
   return TypedData_Wrap_Struct(class, &ruby_mongory_matcher_type, wrapper);
 }
@@ -287,9 +291,9 @@ static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
 
-  mongory_value *data_value = ruby_to_mongory_value_shallow(wrapper->pool, data);
+  mongory_value *data_value = ruby_to_mongory_value_shallow(wrapper->scratch_pool, data);
   bool result = mongory_matcher_match(wrapper->matcher, data_value);
-
+  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
   return result ? Qtrue : Qfalse;
 }
 
@@ -297,9 +301,8 @@ static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
 static VALUE ruby_mongory_matcher_explain(VALUE self) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
-  mongory_memory_pool *temp_pool = mongory_memory_pool_new();
-  mongory_matcher_explain(wrapper->matcher, temp_pool);
-  temp_pool->free(temp_pool);
+  mongory_matcher_explain(wrapper->matcher, wrapper->scratch_pool);
+  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
   return Qnil;
 }
 
