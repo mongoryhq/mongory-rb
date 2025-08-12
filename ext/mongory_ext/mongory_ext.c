@@ -284,8 +284,8 @@ static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
   mongory_value *condition_value = ruby_to_mongory_value_deep(&matcher_pool->base, condition);
   mongory_matcher *matcher = mongory_matcher_new(&matcher_pool->base, condition_value);
 
-  if (!matcher) {
-    rb_raise(eMongoryError, "Failed to create matcher");
+  if (matcher_pool->base.error) {
+    rb_raise(eMongoryError, "Failed to create matcher: %s", matcher_pool->base.error->message);
   }
 
   ruby_mongory_matcher_t *wrapper = ALLOC(ruby_mongory_matcher_t);
