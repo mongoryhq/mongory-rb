@@ -172,8 +172,11 @@ static mongory_value *ruby_to_mongory_value_primitive(mongory_memory_pool *pool,
     break;
 
   case T_TRUE:
+    mg_value = mongory_value_wrap_b(pool, true);
+    break;
+
   case T_FALSE:
-    mg_value = mongory_value_wrap_b(pool, RTEST(rb_value));
+    mg_value = mongory_value_wrap_b(pool, false);
     break;
 
   case T_FIXNUM:
@@ -296,7 +299,11 @@ mongory_value *ruby_mongory_table_get(mongory_table *self, char *key) {
   if (rb_value == Qundef) {
     // Fallback to Symbol key, using cache
     VALUE key_sym = cache_fetch_symbol(table->owner, key);
-    rb_value = rb_hash_lookup2(rb_hash, key_sym, Qnil);
+    rb_value = rb_hash_lookup2(rb_hash, key_sym, Qundef);
+  }
+
+  if (rb_value == Qundef) {
+    return NULL;
   }
   return ruby_to_mongory_value_shallow(table->base.pool, rb_value);
 }
@@ -315,6 +322,9 @@ mongory_value *ruby_mongory_table_wrap(mongory_memory_pool *pool, VALUE rb_hash)
 static mongory_value *ruby_mongory_array_get(mongory_array *self, size_t index) {
   ruby_mongory_array_t *array = (ruby_mongory_array_t *)self;
   VALUE rb_array = array->rb_array;
+  if (index >= RARRAY_LEN(rb_array)) {
+    return NULL;
+  }
   VALUE rb_value = rb_ary_entry(rb_array, index);
   return ruby_to_mongory_value_shallow(array->base.pool, rb_value);
 }
