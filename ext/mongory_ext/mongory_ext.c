@@ -57,8 +57,10 @@ static void ruby_mongory_matcher_free(void *ptr);
 mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value);
 mongory_value *ruby_mongory_table_wrap(mongory_memory_pool *pool, VALUE rb_hash);
 mongory_value *ruby_mongory_array_wrap(mongory_memory_pool *pool, VALUE rb_array);
+mongory_value *ruby_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb_value);
 static VALUE cache_fetch_string(ruby_mongory_matcher_t *owner, const char *key);
 static VALUE cache_fetch_symbol(ruby_mongory_matcher_t *owner, const char *key);
+static ruby_mongory_memory_pool_t *ruby_mongory_memory_pool_new();
 
 static const rb_data_type_t ruby_mongory_matcher_type = {
   .wrap_struct_name = "mongory_matcher",
@@ -71,7 +73,53 @@ static const rb_data_type_t ruby_mongory_matcher_type = {
 };
 
 /**
- * Ruby GC management functions
+ * Ruby method implementations
+ */
+
+// Mongory::CMatcher.new(condition)
+static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
+  ruby_mongory_memory_pool_t *matcher_pool = ruby_mongory_memory_pool_new();
+  ruby_mongory_memory_pool_t *scratch_pool = ruby_mongory_memory_pool_new();
+  ruby_mongory_matcher_t *wrapper = ALLOC(ruby_mongory_matcher_t);
+  wrapper->pool = &matcher_pool->base;
+  wrapper->scratch_pool = &scratch_pool->base;
+  wrapper->string_map = mongory_table_new(&matcher_pool->base);
+  wrapper->symbol_map = mongory_table_new(&matcher_pool->base);
+  wrapper->mark_list = mongory_array_new(&matcher_pool->base);
+  matcher_pool->owner = wrapper;
+  scratch_pool->owner = wrapper;
+  mongory_value *condition_value = ruby_to_mongory_value_deep(&matcher_pool->base, condition);
+  mongory_matcher *matcher = mongory_matcher_new(&matcher_pool->base, condition_value);
+  if (matcher_pool->base.error) {
+    rb_raise(eMongoryError, "Failed to create matcher: %s", matcher_pool->base.error->message);
+  }
+
+  wrapper->matcher = matcher;
+  return TypedData_Wrap_Struct(class, &ruby_mongory_matcher_type, wrapper);
+}
+
+// Mongory::CMatcher#match(data)
+static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
+  ruby_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+
+  mongory_value *data_value = ruby_to_mongory_value_shallow(wrapper->scratch_pool, data);
+  bool result = mongory_matcher_match(wrapper->matcher, data_value);
+  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  return result ? Qtrue : Qfalse;
+}
+
+// Mongory::CMatcher#explain
+static VALUE ruby_mongory_matcher_explain(VALUE self) {
+  ruby_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+  mongory_matcher_explain(wrapper->matcher, wrapper->scratch_pool);
+  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  return Qnil;
+}
+
+/**
+ * Create a new memory pool
  */
 static ruby_mongory_memory_pool_t *ruby_mongory_memory_pool_new() {
   ruby_mongory_memory_pool_t *pool = malloc(sizeof(ruby_mongory_memory_pool_t));
@@ -82,6 +130,9 @@ static ruby_mongory_memory_pool_t *ruby_mongory_memory_pool_new() {
   return pool;
 }
 
+/**
+ * Ruby GC management functions
+ */
 static void ruby_mongory_matcher_free(void *ptr) {
   ruby_mongory_matcher_t *wrapper = (ruby_mongory_matcher_t *)ptr;
   mongory_memory_pool *pool = wrapper->pool;
@@ -89,6 +140,24 @@ static void ruby_mongory_matcher_free(void *ptr) {
   pool->free(pool);
   scratch_pool->free(scratch_pool);
   xfree(wrapper);
+}
+
+/**
+ * GC marking callback for mongory_array
+ */
+static bool gc_mark_array_cb(mongory_value *value, void *acc) {
+  (void)acc;
+  if (value && value->origin) rb_gc_mark((VALUE)value->origin);
+  return true;
+}
+
+/**
+ * GC marking callback for mongory_matcher
+ */
+static void ruby_mongory_matcher_mark(void *ptr) {
+  ruby_mongory_matcher_t *wrapper = (ruby_mongory_matcher_t *)ptr;
+  if (!wrapper) return;
+  wrapper->mark_list->each(wrapper->mark_list, NULL, gc_mark_array_cb);
 }
 
 /**
@@ -243,7 +312,7 @@ mongory_value *ruby_mongory_table_wrap(mongory_memory_pool *pool, VALUE rb_hash)
   return mongory_value_wrap_t(pool, &table->base);
 }
 
-mongory_value *ruby_mongory_array_get(mongory_array *self, size_t index) {
+static mongory_value *ruby_mongory_array_get(mongory_array *self, size_t index) {
   ruby_mongory_array_t *array = (ruby_mongory_array_t *)self;
   VALUE rb_array = array->rb_array;
   VALUE rb_value = rb_ary_entry(rb_array, index);
@@ -281,65 +350,6 @@ void *mongory_value_to_ruby(mongory_memory_pool *pool, mongory_value *value) {
   if (!value)
     return NULL;
   return value->origin;
-}
-
-/**
- * Ruby method implementations
- */
-
-// Mongory::CMatcher.new(condition)
-static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
-  ruby_mongory_memory_pool_t *matcher_pool = ruby_mongory_memory_pool_new();
-  ruby_mongory_memory_pool_t *scratch_pool = ruby_mongory_memory_pool_new();
-  ruby_mongory_matcher_t *wrapper = ALLOC(ruby_mongory_matcher_t);
-  wrapper->pool = &matcher_pool->base;
-  wrapper->scratch_pool = &scratch_pool->base;
-  wrapper->string_map = mongory_table_new(&matcher_pool->base);
-  wrapper->symbol_map = mongory_table_new(&matcher_pool->base);
-  wrapper->mark_list = mongory_array_new(&matcher_pool->base);
-  matcher_pool->owner = wrapper;
-  scratch_pool->owner = wrapper;
-  mongory_value *condition_value = ruby_to_mongory_value_deep(&matcher_pool->base, condition);
-  mongory_matcher *matcher = mongory_matcher_new(&matcher_pool->base, condition_value);
-  if (matcher_pool->base.error) {
-    rb_raise(eMongoryError, "Failed to create matcher: %s", matcher_pool->base.error->message);
-  }
-
-  wrapper->matcher = matcher;
-  return TypedData_Wrap_Struct(class, &ruby_mongory_matcher_type, wrapper);
-}
-
-// Mongory::CMatcher#match(data)
-static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
-
-  mongory_value *data_value = ruby_to_mongory_value_shallow(wrapper->scratch_pool, data);
-  bool result = mongory_matcher_match(wrapper->matcher, data_value);
-  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
-  return result ? Qtrue : Qfalse;
-}
-
-// Mongory::CMatcher#explain
-static VALUE ruby_mongory_matcher_explain(VALUE self) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
-  mongory_matcher_explain(wrapper->matcher, wrapper->scratch_pool);
-  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
-  return Qnil;
-}
-
-// ===== Key cache helpers and GC marking =====
-static bool gc_mark_array_cb(mongory_value *value, void *acc) {
-  (void)acc;
-  if (value && value->origin) rb_gc_mark((VALUE)value->origin);
-  return true;
-}
-
-static void ruby_mongory_matcher_mark(void *ptr) {
-  ruby_mongory_matcher_t *wrapper = (ruby_mongory_matcher_t *)ptr;
-  if (!wrapper) return;
-  wrapper->mark_list->each(wrapper->mark_list, NULL, gc_mark_array_cb);
 }
 
 // ===== Cache helper implementations =====
