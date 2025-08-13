@@ -14,15 +14,15 @@
 // Ruby module and class definitions
 static VALUE mMongory;
 static VALUE cMongoryMatcher;
-static VALUE cMongoryMatchers;
+static VALUE mMongoryMatchers;
 
 // Error classes
 static VALUE eMongoryError;
 static VALUE eMongoryTypeError;
 
 // Converter instance
-static VALUE cMongoryDataConverter;
-static VALUE cMongoryConditionConverter;
+static VALUE inMongoryDataConverter;
+static VALUE inMongoryConditionConverter;
 
 // Matcher wrapper structure
 typedef struct ruby_mongory_matcher_t {
@@ -94,7 +94,7 @@ static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
   wrapper->mark_list = mongory_array_new(&matcher_pool->base);
   matcher_pool->owner = wrapper;
   scratch_pool->owner = wrapper;
-  VALUE converted_condition = rb_funcall(cMongoryConditionConverter, rb_intern("convert"), 1, condition);
+  VALUE converted_condition = rb_funcall(inMongoryConditionConverter, rb_intern("convert"), 1, condition);
   wrapper->condition = ruby_to_mongory_value_deep(&matcher_pool->base, converted_condition);
   mongory_matcher *matcher = mongory_matcher_new(&matcher_pool->base, wrapper->condition);
   if (matcher_pool->base.error) {
@@ -245,7 +245,7 @@ static mongory_value *ruby_to_mongory_value_shallow_rec(mongory_memory_pool *poo
     if (converted) {
       return mongory_value_wrap_u(pool, (void *)rb_value);
     } else {
-      VALUE converted_value = rb_funcall(cMongoryDataConverter, rb_intern("convert"), 1, rb_value);
+      VALUE converted_value = rb_funcall(inMongoryDataConverter, rb_intern("convert"), 1, rb_value);
       return ruby_to_mongory_value_shallow_rec(pool, converted_value, true);
     }
   }
@@ -460,7 +460,7 @@ static mongory_matcher_custom_context *ruby_custom_matcher_build(char *key, mong
   mongory_memory_pool *pool = condition->pool;
   ruby_mongory_memory_pool_t *rb_pool = (ruby_mongory_memory_pool_t *)pool;
   ruby_mongory_matcher_t *owner = rb_pool->owner;
-  VALUE matcher_class = rb_funcall(cMongoryMatchers, rb_intern("lookup"), 1, cache_fetch_string(owner, key));
+  VALUE matcher_class = rb_funcall(mMongoryMatchers, rb_intern("lookup"), 1, cache_fetch_string(owner, key));
   if (matcher_class == Qnil) {
     return NULL;
   }
@@ -488,7 +488,7 @@ static bool ruby_custom_matcher_match(void *ruby_matcher, mongory_value *value) 
 }
 
 static bool ruby_custom_matcher_lookup(char *key) {
-  VALUE matcher_class = rb_funcall(cMongoryMatchers, rb_intern("lookup"), 1, rb_str_new_cstr(key));
+  VALUE matcher_class = rb_funcall(mMongoryMatchers, rb_intern("lookup"), 1, rb_str_new_cstr(key));
   return RTEST(matcher_class);
 }
 
@@ -502,10 +502,10 @@ void Init_mongory_ext(void) {
   // Define modules and classes
   mMongory = rb_define_module("Mongory");
   cMongoryMatcher = rb_define_class_under(mMongory, "CMatcher", rb_cObject);
-  cMongoryMatchers = rb_define_module_under(mMongory, "Matchers");
+  mMongoryMatchers = rb_define_module_under(mMongory, "Matchers");
   // Mongory converters
-  cMongoryDataConverter = rb_funcall(mMongory, rb_intern("data_converter"), 0);
-  cMongoryConditionConverter = rb_funcall(mMongory, rb_intern("condition_converter"), 0);
+  inMongoryDataConverter = rb_funcall(mMongory, rb_intern("data_converter"), 0);
+  inMongoryConditionConverter = rb_funcall(mMongory, rb_intern("condition_converter"), 0);
 
   // Define error classes
   eMongoryError = rb_define_class_under(mMongory, "Error", rb_eStandardError);
