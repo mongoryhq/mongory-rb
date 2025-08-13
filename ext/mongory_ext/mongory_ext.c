@@ -85,7 +85,9 @@ static ruby_mongory_memory_pool_t *ruby_mongory_memory_pool_new() {
 static void ruby_mongory_matcher_free(void *ptr) {
   ruby_mongory_matcher_t *wrapper = (ruby_mongory_matcher_t *)ptr;
   mongory_memory_pool *pool = wrapper->pool;
+  mongory_memory_pool *scratch_pool = wrapper->scratch_pool;
   pool->free(pool);
+  scratch_pool->free(scratch_pool);
   xfree(wrapper);
 }
 
