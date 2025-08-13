@@ -19,6 +19,10 @@ static VALUE cMongoryMatcher;
 static VALUE eMongoryError;
 static VALUE eMongoryTypeError;
 
+// Converter instance
+static VALUE cMongoryDataConverter;
+static VALUE cMongoryConditionConverter;
+
 // Matcher wrapper structure
 typedef struct ruby_mongory_matcher_t {
   mongory_matcher *matcher;
@@ -90,7 +94,8 @@ static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
   wrapper->mark_list = mongory_array_new(&matcher_pool->base);
   matcher_pool->owner = wrapper;
   scratch_pool->owner = wrapper;
-  wrapper->condition = ruby_to_mongory_value_deep(&matcher_pool->base, condition);
+  VALUE converted_condition = rb_funcall(cMongoryConditionConverter, rb_intern("convert"), 1, condition);
+  wrapper->condition = ruby_to_mongory_value_deep(&matcher_pool->base, converted_condition);
   mongory_matcher *matcher = mongory_matcher_new(&matcher_pool->base, wrapper->condition);
   if (matcher_pool->base.error) {
     rb_raise(eMongoryError, "Failed to create matcher: %s", matcher_pool->base.error->message);
@@ -218,8 +223,11 @@ static mongory_value *ruby_to_mongory_value_primitive(mongory_memory_pool *pool,
   return mg_value;
 }
 
+static mongory_value *ruby_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb_value) {
+  return ruby_to_mongory_value_shallow_rec(pool, rb_value, false);
+}
 // Shallow conversion: Convert Ruby value to mongory_value (fully materialize arrays/tables)
-mongory_value *ruby_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb_value) {
+static mongory_value *ruby_to_mongory_value_shallow_rec(mongory_memory_pool *pool, VALUE rb_value, bool converted) {
   mongory_value *mg_value = ruby_to_mongory_value_primitive(pool, rb_value);
   if (mg_value) {
     mg_value->origin = rb_value;
@@ -238,7 +246,12 @@ mongory_value *ruby_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb
   }
 
   default:
-    rb_raise(eMongoryTypeError, "Unsupported Ruby type for conversion to mongory_value");
+    if (converted) {
+      rb_raise(eMongoryTypeError, "Unsupported Ruby type for conversion to mongory_value");
+    } else {
+      VALUE converted_value = rb_funcall(cMongoryDataConverter, rb_intern("convert"), 1, rb_value);
+      return ruby_to_mongory_value_shallow_rec(pool, converted_value, true);
+    }
   }
   mg_value->origin = rb_value;
   return mg_value;
@@ -452,6 +465,10 @@ void Init_mongory_ext(void) {
   // Define modules and classes
   mMongory = rb_define_module("Mongory");
   cMongoryMatcher = rb_define_class_under(mMongory, "CMatcher", rb_cObject);
+  
+  // Mongory converters
+  cMongoryDataConverter = rb_funcall(mMongory, rb_intern("data_converter"), 0);
+  cMongoryConditionConverter = rb_funcall(mMongory, rb_intern("condition_converter"), 0);
 
   // Define error classes
   eMongoryError = rb_define_class_under(mMongory, "Error", rb_eStandardError);
