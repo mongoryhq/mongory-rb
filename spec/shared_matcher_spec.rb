@@ -3,17 +3,6 @@
 require 'spec_helper'
 
 RSpec.shared_examples 'matcher behavior' do
-  DummyModel = Struct.new(:as_json)
-  FakeBsonId = Struct.new(:to_s)
-  
-  converter = Mongory.data_converter
-  
-  converter.register(DummyModel) do
-    converter.convert(as_json)
-  end
-  
-  converter.register(FakeBsonId, :to_s)
-
   context 'basic condition' do
     context 'match all document when condition is empty' do
       let(:condition) { {} }
