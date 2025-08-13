@@ -36,6 +36,13 @@ module Mongory
         new_context.config = @config.dup
         new_context
       end
+
+      def to_hash
+        {
+          config: @config,
+          need_convert: @need_convert
+        }
+      end
     end
   end
 end

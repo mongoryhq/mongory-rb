@@ -199,6 +199,12 @@ module Mongory
       nil
     end
 
+    def c
+      c_builder = CQueryBuilder.new(@records, context: @context)
+      c_builder.send(:set_matcher, @matcher.condition)
+      c_builder
+    end
+
     private
 
     # @private
