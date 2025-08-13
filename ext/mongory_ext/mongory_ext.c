@@ -243,7 +243,7 @@ static mongory_value *ruby_to_mongory_value_shallow_rec(mongory_memory_pool *poo
 
   default:
     if (converted) {
-      rb_raise(eMongoryTypeError, "Unsupported Ruby type for conversion to mongory_value");
+      return mongory_value_wrap_u(pool, (void *)rb_value);
     } else {
       VALUE converted_value = rb_funcall(cMongoryDataConverter, rb_intern("convert"), 1, rb_value);
       return ruby_to_mongory_value_shallow_rec(pool, converted_value, true);
