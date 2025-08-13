@@ -114,7 +114,7 @@ end
       )
       result = Benchmark.measure do
         records.select do |r|
-          matcher.match(r)
+          matcher.match?(r)
         end
       end
       puts result
