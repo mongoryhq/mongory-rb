@@ -402,6 +402,16 @@ static bool ruby_regex_match_adapter(mongory_memory_pool *pool, mongory_value *p
   return RTEST(matched);
 }
 
+static char *ruby_regex_stringify_adapter(mongory_memory_pool *pool, mongory_value *pattern) {
+  (void)pool;
+  if (pattern->type != MONGORY_TYPE_REGEX) {
+    return NULL;
+  }
+  VALUE rb_re = (VALUE)pattern->data.regex;
+  VALUE rb_str = rb_funcall(rb_re, rb_intern("inspect"), 0);
+  return StringValueCStr(rb_str);
+}
+
 /**
  * Extension initialization
  */
@@ -423,6 +433,7 @@ void Init_mongory_ext(void) {
   rb_define_method(cMongoryMatcher, "explain", ruby_mongory_matcher_explain, 0);
   // Set regex adapter to use Ruby's Regexp
   mongory_regex_func_set(ruby_regex_match_adapter);
+  mongory_regex_stringify_func_set(ruby_regex_stringify_adapter);
   // Set value converter functions
   mongory_value_converter_deep_convert_set(ruby_to_mongory_value_deep);
   mongory_value_converter_shallow_convert_set(ruby_to_mongory_value_shallow);
