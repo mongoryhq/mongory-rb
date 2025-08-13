@@ -3,6 +3,8 @@
 require_relative 'query_builder'
 
 module Mongory
+  # Mongory::CQueryBuilder is a query builder for Mongory::CMatcher.
+  # It is used to build a query for a Mongory::CMatcher.
   class CQueryBuilder < QueryBuilder
     def each
       @records.each do |record|
