@@ -376,7 +376,6 @@ static VALUE cache_fetch_symbol(ruby_mongory_matcher_t *owner, const char *key) 
 
 // Regex adapter bridging to Ruby's Regexp
 static bool ruby_regex_match_adapter(mongory_memory_pool *pool, mongory_value *pattern, mongory_value *value) {
-  (void)pool;
   if (!pattern || !value) {
     return false;
   }
@@ -391,8 +390,8 @@ static bool ruby_regex_match_adapter(mongory_memory_pool *pool, mongory_value *p
     rb_re = (VALUE)pattern->data.regex;
   } else if (pattern->type == MONGORY_TYPE_STRING) {
     rb_re = rb_funcall(rb_cRegexp, rb_intern("new"), 1, (VALUE)pattern->origin);
-    pattern->type = MONGORY_TYPE_REGEX;
-    pattern->data.regex = (void *)rb_re;
+    mongory_value *temp_value = mongory_value_wrap_regex(pool, (void *)rb_re);
+    memcpy(pattern, temp_value, sizeof(mongory_value));
     pattern->origin = (void *)rb_re;
   } else {
     return false;
