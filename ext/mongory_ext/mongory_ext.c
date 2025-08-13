@@ -26,6 +26,7 @@ typedef struct ruby_mongory_matcher_t {
   mongory_memory_pool *scratch_pool;
   mongory_table *string_map;
   mongory_table *symbol_map;
+  mongory_array *mark_list;
 } ruby_mongory_matcher_t;
 
 typedef struct ruby_mongory_memory_pool_t {
@@ -81,25 +82,6 @@ static void ruby_mongory_matcher_free(void *ptr) {
 /**
  * Helper functions for Ruby/C conversion
  */
-
-typedef struct {
-  mongory_table *table;
-  mongory_memory_pool *pool;
-  mongory_value *(*convert_func)(mongory_memory_pool *pool, void *value);
-} hash_conv_ctx;
-
-static int hash_foreach_cb(VALUE key, VALUE val, VALUE ptr) {
-  hash_conv_ctx *ctx = (hash_conv_ctx *)ptr;
-  char *key_str;
-  if (SYMBOL_P(key)) {
-    key_str = (char *)rb_id2name(SYM2ID(key));
-  } else {
-    key_str = StringValueCStr(key);
-  }
-  mongory_value *cval = ctx->convert_func(ctx->pool, (void *)val);
-  ctx->table->set(ctx->table, key_str, cval);
-  return ST_CONTINUE;
-}
 
 mongory_value *ruby_mongory_table_wrap(VALUE rb_hash, mongory_memory_pool *pool);
 mongory_value *ruby_mongory_array_wrap(VALUE rb_array, mongory_memory_pool *pool);
@@ -171,10 +153,33 @@ mongory_value *ruby_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb
   return mg_value;
 }
 
+typedef struct {
+  mongory_table *table;
+  mongory_memory_pool *pool;
+} hash_conv_ctx;
+
+mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value);
+static int hash_foreach_deep_convert_cb(VALUE key, VALUE val, VALUE ptr) {
+  hash_conv_ctx *ctx = (hash_conv_ctx *)ptr;
+  char *key_str;
+  if (SYMBOL_P(key)) {
+    key_str = (char *)rb_id2name(SYM2ID(key));
+  } else {
+    key_str = StringValueCStr(key);
+  }
+  mongory_value *cval = ruby_to_mongory_value_deep(ctx->pool, val);
+  ctx->table->set(ctx->table, key_str, cval);
+  return ST_CONTINUE;
+}
+
 mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value) {
+  ruby_mongory_memory_pool_t *rb_pool = (ruby_mongory_memory_pool_t *)pool;
+  ruby_mongory_matcher_t *owner = rb_pool->owner;
+
   mongory_value *mg_value = ruby_to_mongory_value_primitive(pool, rb_value);
   if (mg_value) {
     mg_value->origin = rb_value;
+    owner->mark_list->push(owner->mark_list, mg_value);
     return mg_value;
   }
   switch (TYPE(rb_value)) {
@@ -191,8 +196,8 @@ mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_va
   case T_HASH: {
     mongory_table *table = mongory_table_new(pool);
 
-    hash_conv_ctx ctx = {table, pool, ruby_to_mongory_value_deep};
-    rb_hash_foreach(rb_value, hash_foreach_cb, (VALUE)&ctx);
+    hash_conv_ctx ctx = {table, pool};
+    rb_hash_foreach(rb_value, hash_foreach_deep_convert_cb, (VALUE)&ctx);
 
     mg_value = mongory_value_wrap_t(pool, table);
     break;
@@ -202,6 +207,7 @@ mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_va
     rb_raise(eMongoryTypeError, "Unsupported Ruby type for conversion to mongory_value");
   }
   mg_value->origin = rb_value;
+  owner->mark_list->push(owner->mark_list, mg_value);
   return mg_value;
 }
 
@@ -281,22 +287,21 @@ void *mongory_value_to_ruby(mongory_memory_pool *pool, mongory_value *value) {
 static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
   ruby_mongory_memory_pool_t *matcher_pool = ruby_mongory_memory_pool_new();
   ruby_mongory_memory_pool_t *scratch_pool = ruby_mongory_memory_pool_new();
-  mongory_value *condition_value = ruby_to_mongory_value_deep(&matcher_pool->base, condition);
-  mongory_matcher *matcher = mongory_matcher_new(&matcher_pool->base, condition_value);
-
-  if (matcher_pool->base.error) {
-    rb_raise(eMongoryError, "Failed to create matcher: %s", matcher_pool->base.error->message);
-  }
-
   ruby_mongory_matcher_t *wrapper = ALLOC(ruby_mongory_matcher_t);
-  wrapper->matcher = matcher;
   wrapper->pool = &matcher_pool->base;
   wrapper->scratch_pool = &scratch_pool->base;
   wrapper->string_map = mongory_table_new(&matcher_pool->base);
   wrapper->symbol_map = mongory_table_new(&matcher_pool->base);
+  wrapper->mark_list = mongory_array_new(&matcher_pool->base);
   matcher_pool->owner = wrapper;
   scratch_pool->owner = wrapper;
+  mongory_value *condition_value = ruby_to_mongory_value_deep(&matcher_pool->base, condition);
+  mongory_matcher *matcher = mongory_matcher_new(&matcher_pool->base, condition_value);
+  if (matcher_pool->base.error) {
+    rb_raise(eMongoryError, "Failed to create matcher: %s", matcher_pool->base.error->message);
+  }
 
+  wrapper->matcher = matcher;
   return TypedData_Wrap_Struct(class, &ruby_mongory_matcher_type, wrapper);
 }
 
@@ -321,23 +326,16 @@ static VALUE ruby_mongory_matcher_explain(VALUE self) {
 }
 
 // ===== Key cache helpers and GC marking =====
-static bool gc_mark_table_cb(char *key, mongory_value *value, void *acc) {
-  (void)key; (void)acc;
+static bool gc_mark_array_cb(mongory_value *value, void *acc) {
+  (void)acc;
   if (value && value->origin) rb_gc_mark((VALUE)value->origin);
   return true;
-}
-
-static void ruby_mongory_matcher_mark_table(mongory_table *table) {
-  if (table && table->each) {
-    table->each(table, NULL, gc_mark_table_cb);
-  }
 }
 
 static void ruby_mongory_matcher_mark(void *ptr) {
   ruby_mongory_matcher_t *wrapper = (ruby_mongory_matcher_t *)ptr;
   if (!wrapper) return;
-  ruby_mongory_matcher_mark_table(wrapper->string_map);
-  ruby_mongory_matcher_mark_table(wrapper->symbol_map);
+  wrapper->mark_list->each(wrapper->mark_list, NULL, gc_mark_array_cb);
 }
 
 // ===== Cache helper implementations =====
@@ -349,6 +347,7 @@ static VALUE cache_fetch_string(ruby_mongory_matcher_t *owner, const char *key) 
   mongory_value *store = mongory_value_wrap_u(owner->pool, NULL);
   store->origin = (void *)s;
   owner->string_map->set(owner->string_map, (char *)key, store);
+  owner->mark_list->push(owner->mark_list, store);
   return s;
 }
 
@@ -369,6 +368,7 @@ static VALUE cache_fetch_symbol(ruby_mongory_matcher_t *owner, const char *key) 
   mongory_value *store = mongory_value_wrap_u(owner->pool, NULL);
   store->origin = (void *)sym;
   owner->symbol_map->set(owner->symbol_map, (char *)key, store);
+  owner->mark_list->push(owner->mark_list, store);
   return sym;
 }
 
