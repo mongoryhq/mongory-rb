@@ -7,6 +7,8 @@ module Mongory
   # It is used to build a query for a Mongory::CMatcher.
   class CQueryBuilder < QueryBuilder
     def each
+      return to_enum(:each) unless block_given?
+
       @records.each do |record|
         yield record if @matcher.match?(record)
       end
