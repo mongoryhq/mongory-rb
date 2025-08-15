@@ -76,11 +76,9 @@ end
   gc_handler do
     5.times do
       result = Benchmark.measure do
-        records.mongory.where(
-          :$or => [
-            { :age.gte => 18 },
-            { status: 'active' }
-          ]
+        records.mongory.or(
+          { :age.gte => 18 },
+          { status: 'active' }
         ).to_a
       end
       puts result
@@ -92,11 +90,9 @@ end
   gc_handler do
     5.times do
       result = Benchmark.measure do
-        records.mongory.where(
-          :$or => [
-            { :age.gte => 18 },
-            { status: 'active' }
-          ]
+        records.mongory.or(
+          { :age.gte => 18 },
+          { status: 'active' }
         ).fast.to_a
       end
       puts result
@@ -106,16 +102,11 @@ end
   puts "\nComplex query (Mongory) use CMatcher (#{size} records):"
   gc_handler do
     5.times do
-      matcher = Mongory::CMatcher.new(
-        :$or => [
-          { age: { '$gte': 18 } },
-          { status: 'active' }
-        ]
-      )
       result = Benchmark.measure do
-        records.select do |r|
-          matcher.match?(r)
-        end
+        records.mongory.c.or(
+          { :age.gte => 18 },
+          { status: 'active' }
+        ).to_a
       end
       puts result
     end
