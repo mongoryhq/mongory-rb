@@ -483,7 +483,7 @@ static mongory_matcher_custom_context *ruby_custom_matcher_build(char *key, mong
     return NULL;
   }
   return_ctx->name = StringValueCStr(class_name);
-  return_ctx->external_ref = (void *)matcher;
+  return_ctx->external_matcher = (void *)matcher;
   return return_ctx;
 }
 
