@@ -21,6 +21,17 @@ module Mongory
       @matcher.explain
     end
 
+    def trace
+      return to_enum(:trace) unless block_given?
+
+      @matcher.enable_trace
+      @records.each do |record|
+        yield record if @matcher.match?(record)
+      end
+      @matcher.print_trace
+      @matcher.disable_trace
+    end
+
     private
 
     def set_matcher(condition = {})
