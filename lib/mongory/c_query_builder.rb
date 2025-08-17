@@ -10,6 +10,7 @@ module Mongory
       return to_enum(:each) unless block_given?
 
       @records.each do |record|
+        @context.current_record = record
         yield record if @matcher.match?(record)
       end
     end
@@ -26,6 +27,7 @@ module Mongory
 
       @matcher.enable_trace
       @records.each do |record|
+        @context.current_record = record
         yield record if @matcher.match?(record)
       end
       @matcher.print_trace
@@ -35,7 +37,7 @@ module Mongory
     private
 
     def set_matcher(condition = {})
-      @matcher = CMatcher.new(condition)
+      @matcher = CMatcher.new(condition, context: @context)
     end
   end
 end
