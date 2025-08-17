@@ -30,6 +30,7 @@ module Mongory
         @context.current_record = record
         yield record if @matcher.match?(record)
       end
+    ensure
       @matcher.print_trace
       @matcher.disable_trace
     end

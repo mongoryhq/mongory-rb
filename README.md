@@ -4,53 +4,52 @@ A Mongo-like in-memory query DSL for Ruby.
 
 Mongory lets you filter and query in-memory collections using syntax and semantics similar to MongoDB. It is designed for expressive chaining, symbolic operators, and composable matchers.
 
-## Positioning
+## Table of Contents
 
-Mongory is designed to serve two types of users:
-
-1. For MongoDB users:
-   - Seamless integration with familiar query syntax
-   - Extends query capabilities for non-indexed fields
-   - No additional learning cost
-
-2. For non-MongoDB users:
-   - Initial learning cost for MongoDB-style syntax
-   - Long-term benefits:
-     - Improved code readability
-     - Better development efficiency
-     - Lower maintenance costs
-   - Ideal for teams valuing code quality and maintainability
+- Overview & Positioning
+  - [Positioning](#positioning)
+- Getting Started
+  - [Requirements](#requirements)
+  - [Installation & Quick Start](#installation--quick-start)
+  - [Integration with MongoDB](#integration-with-mongodb)
+- Usage & Concepts
+  - [Core Concepts & API Reference](#core-concepts--api-reference)
+  - [Handling Dots in Field Names](docs/field_names.md)
+  - [Advanced Usage](docs/advanced_usage.md)
+  - [Debugging](#debugging)
+  - [Clang Bridge (C Extension)](docs/clang_bridge.md)
+- Performance
+  - [Performance & Benchmarks](docs/performance.md)
+  - [Supported Operators](#supported-operators)
+- Guides
+  - [Best Practices](#best-practices)
+  - [Limitations](#limitations)
+  - [FAQ](#faq)
+  - [Troubleshooting](#troubleshooting)
+  - [Migration Guide](docs/migration.md)
+- Project
+  - [Contributing](#contributing)
+  - [Code of Conduct](#code-of-conduct)
+  - [License](#license)
 
 ## Requirements
 
 - Ruby >= 2.6.0
 - No external database required
 
-### C Extension (Optional but Recommended)
-
-Mongory-rb includes an optional high-performance C extension powered by [mongory-core](https://github.com/mongoryhq/mongory-core):
-
-**System Dependencies:**
-- C99-compatible compiler (gcc/clang)
-- CMake >= 3.12
-
-**Installation:**
-```bash
-# macOS
-brew install cmake
-
-# Ubuntu/Debian
-sudo apt install cmake build-essential
-
-# CentOS/RHEL
-sudo yum install cmake gcc make
-```
-
-The C extension provides significant performance improvements for large datasets. If not available, Mongory-rb automatically falls back to pure Ruby implementation.
-
-## Quick Start
+## Installation & Quick Start
 
 ### Installation
+Install manually:
+```bash
+gem install mongory
+```
+
+Or add to your Gemfile:
+```ruby
+gem 'mongory'
+```
+
 #### Rails Generator
 
 You can install a starter configuration with:
@@ -63,16 +62,6 @@ This will generate `config/initializers/mongory.rb` and set up:
 - Optional symbol operator snippets (e.g. `:age.gt => 18`)
 - Class registration (e.g. `Array`, `ActiveRecord::Relation`, etc.)
 - Custom value/key converters for your ORM
-
-Or install manually:
-```bash
-gem install mongory
-```
-
-Or add to your Gemfile:
-```ruby
-gem 'mongory'
-```
 
 ### Basic Usage
 ```ruby
@@ -94,6 +83,47 @@ limited = records.mongory
   .limit(2)                    # Only process first 2 records
   .where(:age.gte => 18)       # Conditions apply to limited set
 ```
+
+### C Extension (Optional but Recommended)
+
+Mongory-rb includes an optional high-performance C extension powered by [mongory-core](https://github.com/mongoryhq/mongory-core):
+
+**System Dependencies:**
+- C99-compatible compiler (gcc/clang)
+- CMake >= 3.12 (optional; only needed if you want to build `mongory-core` standalone or run its native tests)
+
+**Installation:**
+```bash
+# macOS
+brew install cmake
+
+# Ubuntu/Debian
+sudo apt install cmake build-essential
+
+# CentOS/RHEL
+sudo yum install cmake gcc make
+```
+
+The C extension provides significant performance improvements for large datasets. If not available, Mongory-rb automatically falls back to pure Ruby implementation.
+
+Note: The Ruby C extension is built via Ruby's `mkmf` (see `ext/mongory_ext/extconf.rb`) and compiles `mongory-core` sources directly. You do not need CMake for normal gem installation.
+
+## Positioning
+
+Mongory is designed to serve two types of users:
+
+1. For MongoDB users:
+   - Seamless integration with familiar query syntax
+   - Extends query capabilities for non-indexed fields
+   - No additional learning cost
+
+2. For non-MongoDB users:
+   - Initial learning cost for MongoDB-style syntax
+   - Long-term benefits:
+     - Improved code readability
+     - Better development efficiency
+     - Lower maintenance costs
+   - Ideal for teams valuing code quality and maintainability
 
 ### Integration with MongoDB
 
@@ -171,77 +201,7 @@ Mongory::Matchers.register(:class_in, '$classIn', ClassInMatcher)
 You can define any matcher behavior and attach it to a `$operator` of your choice.
 Matchers can be composed, validated, and traced just like built-in ones.
 
-### Handling Dots in Field Names
-
-Mongory supports field names containing dots, which require escaping:
-
-```ruby
-# Sample data
-records = [
-  { "user.name" => "John", "age" => 25 },  # Field name contains a dot
-  { "user" => { "name" => "Bob" }, "age" => 30 }  # Nested field
-]
-
-# Field name contains a dot
-records.mongory.where("user\\.name" => "John")  # Two backslashes needed with double quotes
-# => [{ "user.name" => "John", "age" => 25 }]
-
-# or
-records.mongory.where('user\.name' => "John")   # One backslash needed with single quotes
-# => [{ "user.name" => "John", "age" => 25 }]
-
-# Nested field (no escaping needed)
-records.mongory.where("user.name" => "Bob")
-# => [{ "user" => { "name" => "Bob" }, "age" => 30 }]
-```
-
-Note:
-- With double quotes, backslashes need to be escaped (`\\`)
-- With single quotes, backslashes don't need to be escaped (`\`)
-- This behavior is consistent with MongoDB's query syntax
-- The escaped dot pattern (`\.`) matches fields where the dot is part of the field name
-- The unescaped dot pattern (`.`) matches nested fields in the document structure
-
-### Advanced Usage
-
-#### Complex Queries
-```ruby
-# Nested conditions
-users.mongory
-  .where(
-    :age.gte => 18,
-    :$or => [
-      { :status => 'active' },
-      { :status => 'pending', :created_at.gte => 1.week.ago }
-    ]
-  )
-
-# Using any_of for nested OR conditions
-users.mongory
-  .where(:age.gte => 18)
-  .any_of(
-    { :status => 'active' },
-    { :status => 'pending', :created_at.gte => 1.week.ago }
-  )
-
-# Array operations
-posts.mongory
-  .where(:tags.elem_match => { :name => 'ruby', :priority.gt => 5 })
-  .where(:comments.every => { :approved => true })
-```
-
-#### Integration with ActiveRecord
-```ruby
-class User < ActiveRecord::Base
-  def active_friends
-    friends.mongory
-      .where(:status => 'active')
-      .where(:last_seen.gte => 1.day.ago)
-  end
-end
-```
-
-### Query API Reference
+## Core Concepts & API Reference
 #### Registering Models
 
 To allow calling `.mongory` on collections, use `register`:
@@ -284,7 +244,7 @@ records.mongory
 This will share a mutatable, but stable context object to all matchers in matcher tree.
 To get your custom option, using `@context.config` in your custom matcher.
 
-### Debugging Queries
+## Debugging
 
 You can use `explain` to visualize the matcher tree structure:
 ```ruby
@@ -346,58 +306,6 @@ The debug output includes:
 - Field names highlighted in gray background
 - Detailed matching process for each record
 
-### Performance Considerations
-
-1. **C Extension vs Pure Ruby**
-   - C extension provides 3-10x performance improvement for large datasets
-   - Automatic fallback to pure Ruby if C extension unavailable
-   - Check availability: `Mongory::CoreInterface.c_extension_available?`
-   - Memory management handled by mongory-core's memory pool
-
-2. **Memory Usage**
-   - Mongory operates entirely in memory
-   - Consider your data size and memory constraints
-   - Proc-based implementation reduces memory usage
-   - Context system provides better memory management
-
-3. **Query Optimization**
-   - Complex conditions are evaluated in sequence
-   - Use `explain` to analyze query performance
-   - Empty conditions are optimized with cached Procs
-   - Context system allows fine-grained control over conversion
-
-4. **Benchmarks**
-  ```ruby
-    # Simple query (1000 records)
-    records.mongory.where(:age.gte => 18) # ~0.8ms
-
-    # Complex query (1000 records)
-    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~0.9ms
-
-    # Simple query (10000 records)
-    records.mongory.where(:age.gte => 18) # ~6.5ms
-
-    # Complex query (10000 records)
-    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~7.5ms
-
-    # Simple query (100000 records)
-    records.mongory.where(:age.gte => 18) # ~64.7ms
-
-    # Complex query (100000 records)
-    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]) # ~75.0ms
-
-    # Complex query with fast mode (100000 records)
-    records.mongory.where(:$or => [{:age.gte => 18}, {:status => 'active'}]).fast # ~42.8ms, about 3x of plain ruby
-  ```
-
-   Note: Performance varies based on:
-   - Data size
-   - Query complexity
-   - Hardware specifications
-   - Ruby version
-
-   Test in your environment to determine if performance meets your needs.
-
 ### Supported Operators
 
 | Category     | Operators                           |
@@ -415,6 +323,7 @@ Note: Some operators are Mongory-specific and not available in MongoDB:
   - Example: `where(:name.present => true)`
 - `$every`: Checks if all elements in an array match the given condition
   - Similar to `$elemMatch` but requires all elements to match
+  - At least one element in an array, or returns false
   - Example: `where(:tags.every => { :priority.gt => 5 })`
 
 Example:
@@ -523,37 +432,6 @@ end
 3. **Memory Usage**
    - All operations are performed in memory
    - Consider memory constraints
-
-## Migration Guide
-
-1. **From Array#select**
-  ```ruby
-    # Before
-    records.select { |r| r['age'] >= 18 && r['status'] == 'active' }
-
-    # After
-    records.mongory.where(:age.gte => 18, status: 'active')
-  ```
-
-2. **From ActiveRecord**
-  ```ruby
-    # Before
-    indexed_query.where("age >= ? AND status = ?", 18, 'active')
-
-    # After
-    indexed_query.mongory.where(:age.gte => 18, status: 'active')
-  ```
-
-3. **From MongoDB**
-  ```ruby
-    # Before (MongoDB)
-    users.where(:age.gte => 18, status: 'active')
-
-    # After (Mongory)
-    users.mongory.where(:age.gte => 18, status: 'active')
-
-    # Just the same.
-  ```
 
 ## Contributing
 

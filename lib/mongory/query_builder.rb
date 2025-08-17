@@ -200,6 +200,8 @@ module Mongory
     end
 
     def c
+      return self unless defined?(Mongory::CMatcher)
+
       c_builder = CQueryBuilder.new(@records, context: @context)
       c_builder.send(:set_matcher, @matcher.condition)
       c_builder
