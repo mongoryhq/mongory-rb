@@ -13,6 +13,7 @@ Mongory lets you filter and query in-memory collections using syntax and semanti
   - [Installation & Quick Start](#installation--quick-start)
   - [Integration with MongoDB](#integration-with-mongodb)
 - Usage & Concepts
+  - [Creating Custom Matchers](#creating-custom-matchers)
   - [Core Concepts & API Reference](#core-concepts--api-reference)
   - [Handling Dots in Field Names](docs/field_names.md)
   - [Advanced Usage](docs/advanced_usage.md)
