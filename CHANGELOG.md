@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.7.0] - 2025-08-17
+
+### Major Changes
+- Introduced Clang bridge for the C extension, wiring Ruby DSL to `mongory-core` via `Mongory::CMatcher` and `CQueryBuilder`.
+
+### Features
+- New `Mongory::CMatcher` with `match?`, `explain`, `trace`, `enable_trace`, `disable_trace`, and `print_trace`.
+- New `QueryBuilder#c` to switch a Ruby query into the C fast path seamlessly.
+- Regex bridging uses Ruby's `Regexp` under the hood for compatibility.
+- Custom matcher bridge: core can delegate to Ruby matchers (build/match/lookup) when needed.
+- Context bridge: shares `Utils::Context` between Ruby and C during matching.
+
+### Performance
+- Significant speedups for large datasets when using `CMatcher`/`CQueryBuilder`.
+
+### Build & Tooling
+- `ext/mongory_ext/extconf.rb` compiles `mongory-core` sources directly and normalizes GCC/Clang flags.
+- Added explicit submodule build rules to avoid copying/linking extra artifacts.
+
+### Docs
+- Updated README to document Clang bridge usage, availability checks, and examples.
+
 ## [0.6.3] - 2025-05-27
 
 ### Major Changes
