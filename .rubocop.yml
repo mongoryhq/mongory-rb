@@ -5,6 +5,8 @@ AllCops:
     - 'vendor/**/*'
     - 'node_modules/**/*'
     - 'tmp/**/*'
+    - 'examples/**/*'
+    - 'ext/**/*'
   TargetRubyVersion: 2.6
 
 Style/StringLiterals:

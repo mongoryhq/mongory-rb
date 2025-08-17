@@ -103,7 +103,7 @@ static VALUE ruby_mongory_matcher_new(int argc, VALUE *argv, VALUE class) {
 
   mongory_matcher *matcher = mongory_matcher_new(wrapper->pool, wrapper->condition, wrapper->ctx);
   if (wrapper->pool->error) {
-    rb_raise(eMongoryError, "Failed to create matcher: %s", wrapper->pool->error->message);
+    rb_raise(eMongoryTypeError, "Failed to create matcher: %s", wrapper->pool->error->message);
     return Qnil;
   }
 
