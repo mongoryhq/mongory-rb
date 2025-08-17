@@ -1,4 +1,8 @@
 # Changelog
+## [0.7.1] - 2025-08-17
+### Fixes
+- Linter error
+- CMatcher get crash if print trace when not enable trace yet 
 
 ## [0.7.0] - 2025-08-17
 
