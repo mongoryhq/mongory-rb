@@ -167,4 +167,18 @@ end
     end
     raise "count mismatch" if builder.count != count_of_complex_query
   end
+
+  puts "\nTest Mongory::CMatcher#trace"
+  matcher = Mongory::CMatcher.new(
+    '$or' => [
+      { :age.gte => 18 },
+      { status: 'active' }
+    ]
+  )
+  # matcher.enable_trace
+  records.sample(30).each do |r|
+    matcher.trace(r)
+  end
+  # matcher.print_trace
+  # matcher.disable_trace
 end

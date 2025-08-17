@@ -33,6 +33,7 @@ typedef struct ruby_mongory_matcher_t {
   mongory_table *string_map;
   mongory_table *symbol_map;
   mongory_array *mark_list;
+  bool trace_enabled;
 } ruby_mongory_matcher_t;
 
 typedef struct ruby_mongory_memory_pool_t {
@@ -92,10 +93,12 @@ static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
   wrapper->string_map = mongory_table_new(&matcher_pool->base);
   wrapper->symbol_map = mongory_table_new(&matcher_pool->base);
   wrapper->mark_list = mongory_array_new(&matcher_pool->base);
+  wrapper->trace_enabled = false;
   matcher_pool->owner = wrapper;
   scratch_pool->owner = wrapper;
   VALUE converted_condition = rb_funcall(inMongoryConditionConverter, rb_intern("convert"), 1, condition);
   wrapper->condition = ruby_to_mongory_value_deep(&matcher_pool->base, converted_condition);
+  wrapper->mark_list->push(wrapper->mark_list, wrapper->condition);
   mongory_matcher *matcher = mongory_matcher_new(&matcher_pool->base, wrapper->condition);
   if (matcher_pool->base.error) {
     rb_raise(eMongoryError, "Failed to create matcher: %s", matcher_pool->base.error->message);
@@ -109,9 +112,16 @@ static VALUE ruby_mongory_matcher_new(VALUE class, VALUE condition) {
 static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
-  mongory_value *data_value = ruby_to_mongory_value_shallow(wrapper->scratch_pool, data);
+  mongory_value *data_value;
+  if (wrapper->trace_enabled) {
+    data_value = ruby_to_mongory_value_deep(wrapper->scratch_pool, data);
+  } else {
+    data_value = ruby_to_mongory_value_shallow(wrapper->scratch_pool, data);
+  }
   bool result = mongory_matcher_match(wrapper->matcher, data_value);
-  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  if (!wrapper->trace_enabled) {
+    wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  }
   return result ? Qtrue : Qfalse;
 }
 
@@ -121,6 +131,43 @@ static VALUE ruby_mongory_matcher_explain(VALUE self) {
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
   mongory_matcher_explain(wrapper->matcher, wrapper->scratch_pool);
   wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  return Qnil;
+}
+
+// Mongory::CMatcher#trace(data)
+static VALUE ruby_mongory_matcher_trace(VALUE self, VALUE data) {
+  ruby_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+  mongory_value *data_value = ruby_to_mongory_value_deep(wrapper->scratch_pool, data);
+  mongory_matcher_trace(wrapper->matcher, data_value);
+  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  return Qnil;
+}
+
+// Mongory::CMatcher#enable_trace
+static VALUE ruby_mongory_matcher_enable_trace(VALUE self) {
+  ruby_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+  mongory_matcher_enable_trace(wrapper->matcher, wrapper->scratch_pool);
+  wrapper->trace_enabled = true;
+  return Qnil;
+}
+
+// Mongory::CMatcher#disable_trace
+static VALUE ruby_mongory_matcher_disable_trace(VALUE self) {
+  ruby_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+  mongory_matcher_disable_trace(wrapper->matcher);
+  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  wrapper->trace_enabled = false;
+  return Qnil;
+}
+
+// Mongory::CMatcher#print_trace
+static VALUE ruby_mongory_matcher_print_trace(VALUE self) {
+  ruby_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+  mongory_matcher_print_trace(wrapper->matcher);
   return Qnil;
 }
 
@@ -270,21 +317,16 @@ static int hash_foreach_deep_convert_cb(VALUE key, VALUE val, VALUE ptr) {
   }
   mongory_value *store = mongory_value_wrap_u(ctx->pool, NULL);
   store->origin = (void *)key;
-  owner->mark_list->push(owner->mark_list, store);
   store_map->set(store_map, key_str, store);
   mongory_value *cval = ruby_to_mongory_value_deep(ctx->pool, val);
   ctx->table->set(ctx->table, key_str, cval);
   return ST_CONTINUE;
 }
 
-mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value) {
-  ruby_mongory_memory_pool_t *rb_pool = (ruby_mongory_memory_pool_t *)pool;
-  ruby_mongory_matcher_t *owner = rb_pool->owner;
-
+static mongory_value *ruby_to_mongory_value_deep_rec(mongory_memory_pool *pool, VALUE rb_value, bool converted) {
   mongory_value *mg_value = ruby_to_mongory_value_primitive(pool, rb_value);
   if (mg_value) {
     mg_value->origin = rb_value;
-    owner->mark_list->push(owner->mark_list, mg_value);
     return mg_value;
   }
   switch (TYPE(rb_value)) {
@@ -309,11 +351,21 @@ mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_va
   }
 
   default:
-    rb_raise(eMongoryTypeError, "Unsupported Ruby type for conversion to mongory_value");
+    if (converted) {
+      mg_value = mongory_value_wrap_u(pool, (void *)rb_value);
+      break;
+    } else {
+      VALUE converted_value = rb_funcall(inMongoryDataConverter, rb_intern("convert"), 1, rb_value);
+      mg_value = ruby_to_mongory_value_deep_rec(pool, converted_value, true);
+      break;
+    }
   }
   mg_value->origin = rb_value;
-  owner->mark_list->push(owner->mark_list, mg_value);
   return mg_value;
+}
+
+mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value) {
+  return ruby_to_mongory_value_deep_rec(pool, rb_value, false);
 }
 
 mongory_value *ruby_mongory_table_get(mongory_table *self, char *key) {
@@ -522,6 +574,10 @@ void Init_mongory_ext(void) {
   rb_define_method(cMongoryMatcher, "match?", ruby_mongory_matcher_match, 1);
   rb_define_method(cMongoryMatcher, "explain", ruby_mongory_matcher_explain, 0);
   rb_define_method(cMongoryMatcher, "condition", ruby_mongory_matcher_condition, 0);
+  rb_define_method(cMongoryMatcher, "trace", ruby_mongory_matcher_trace, 1);
+  rb_define_method(cMongoryMatcher, "enable_trace", ruby_mongory_matcher_enable_trace, 0);
+  rb_define_method(cMongoryMatcher, "disable_trace", ruby_mongory_matcher_disable_trace, 0);
+  rb_define_method(cMongoryMatcher, "print_trace", ruby_mongory_matcher_print_trace, 0);
   // Set regex adapter to use Ruby's Regexp
   mongory_regex_func_set(ruby_regex_match_adapter);
   mongory_regex_stringify_func_set(ruby_regex_stringify_adapter);
