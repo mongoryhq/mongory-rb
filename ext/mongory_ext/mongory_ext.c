@@ -139,9 +139,9 @@ static VALUE ruby_mongory_matcher_trace(VALUE self, VALUE data) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
   mongory_value *data_value = ruby_to_mongory_value_deep(wrapper->scratch_pool, data);
-  mongory_matcher_trace(wrapper->matcher, data_value);
+  bool matched = mongory_matcher_trace(wrapper->matcher, data_value);
   wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
-  return Qnil;
+  return matched ? Qtrue : Qfalse;
 }
 
 // Mongory::CMatcher#enable_trace
