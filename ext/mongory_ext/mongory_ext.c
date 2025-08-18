@@ -143,7 +143,7 @@ static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
   }
   bool result = mongory_matcher_match(wrapper->matcher, data_value);
   if (!wrapper->trace_enabled) {
-    wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+    wrapper->scratch_pool->reset(wrapper->scratch_pool);
   }
   return result ? Qtrue : Qfalse;
 }
@@ -156,7 +156,7 @@ static VALUE ruby_mongory_matcher_explain(VALUE self) {
   if (mongory_error_handling(wrapper->scratch_pool, "Explain failed")) {
     return Qnil;
   }
-  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  wrapper->scratch_pool->reset(wrapper->scratch_pool);
   return Qnil;
 }
 
@@ -169,7 +169,7 @@ static VALUE ruby_mongory_matcher_trace(VALUE self, VALUE data) {
     return Qnil;
   }
   bool matched = mongory_matcher_trace(wrapper->matcher, data_value);
-  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  wrapper->scratch_pool->reset(wrapper->scratch_pool);
   return matched ? Qtrue : Qfalse;
 }
 
@@ -193,7 +193,7 @@ static VALUE ruby_mongory_matcher_disable_trace(VALUE self) {
   if (mongory_error_handling(wrapper->scratch_pool, "Disable trace failed")) {
     return Qnil;
   }
-  wrapper->scratch_pool->reset(wrapper->scratch_pool->ctx);
+  wrapper->scratch_pool->reset(wrapper->scratch_pool);
   wrapper->trace_enabled = false;
   return Qnil;
 }
@@ -621,7 +621,7 @@ static bool mongory_error_handling(mongory_memory_pool *pool, char *error_messag
   if (pool->error) {
     rb_raise(eMongoryTypeError, "%s: %s", error_message, pool->error->message);
     pool->error = NULL;
-    pool->reset(pool->ctx);
+    pool->reset(pool);
     return true;
   }
   return false;
