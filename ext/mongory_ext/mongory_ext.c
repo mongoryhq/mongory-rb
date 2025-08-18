@@ -221,6 +221,13 @@ static VALUE ruby_mongory_matcher_context(VALUE self) {
   return wrapper->ctx ? wrapper->ctx : Qnil;
 }
 
+// Mongory::CMatcher.trace_result_colorful=(colorful)
+static VALUE ruby_mongory_matcher_trace_result_colorful(VALUE self, VALUE colorful) {
+  (void)self;
+  mongory_matcher_trace_result_colorful_set(RTEST(colorful));
+  return Qnil;
+}
+
 /**
  * Create a new memory pool
  */
@@ -650,6 +657,7 @@ void Init_mongory_ext(void) {
 
   // Define Matcher methods
   rb_define_singleton_method(cMongoryMatcher, "new", ruby_mongory_matcher_new, -1);
+  rb_define_singleton_method(cMongoryMatcher, "trace_result_colorful=", ruby_mongory_matcher_trace_result_colorful, 1);
   rb_define_method(cMongoryMatcher, "match?", ruby_mongory_matcher_match, 1);
   rb_define_method(cMongoryMatcher, "explain", ruby_mongory_matcher_explain, 0);
   rb_define_method(cMongoryMatcher, "condition", ruby_mongory_matcher_condition, 0);
@@ -658,13 +666,16 @@ void Init_mongory_ext(void) {
   rb_define_method(cMongoryMatcher, "enable_trace", ruby_mongory_matcher_enable_trace, 0);
   rb_define_method(cMongoryMatcher, "disable_trace", ruby_mongory_matcher_disable_trace, 0);
   rb_define_method(cMongoryMatcher, "print_trace", ruby_mongory_matcher_print_trace, 0);
+
   // Set regex adapter to use Ruby's Regexp
   mongory_regex_func_set(ruby_regex_match_adapter);
   mongory_regex_stringify_func_set(ruby_regex_stringify_adapter);
+
   // Set value converter functions
   mongory_value_converter_deep_convert_set(ruby_to_mongory_value_deep);
   mongory_value_converter_shallow_convert_set(ruby_to_mongory_value_shallow);
   mongory_value_converter_recover_set(mongory_value_to_ruby);
+
   // Set custom matcher adapter
   mongory_custom_matcher_match_func_set(ruby_custom_matcher_match);
   mongory_custom_matcher_build_func_set(ruby_custom_matcher_build);
