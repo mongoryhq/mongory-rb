@@ -54,7 +54,7 @@ PLATFORMS
 DEPENDENCIES
   mongory!
   rake (~> 13.0)
-  rake-compiler (~> 1.0)
+  rake-compiler (>= 1.2)
   rspec (~> 3.0)
   rubocop (~> 1.28.2)
   rubocop-rspec (~> 2.10.0)

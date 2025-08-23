@@ -13,7 +13,7 @@
 .vscode
 
 ext/mongory_ext/Makefile
-ext/mongory_ext/*.o
-ext/mongory_ext/*.so
-ext/mongory_ext/*.bundle
-ext/mongory_ext/mkmf.log
+*.o
+*.so
+*.bundle
+mkmf.log

@@ -42,5 +42,12 @@ Gem::Specification.new do |spec|
   spec.files += Dir['ext/mongory_ext/mongory-core/src/foundations/*.{c,h}']
   spec.files += Dir['ext/mongory_ext/mongory-core/src/matchers/*.{c,h}']
   spec.files += Dir['ext/mongory_ext/mongory-core/include/**/*.h']
-  spec.files += ['ext/mongory_ext/mongory-core/LICENSE']
+
+  # Include compiled native binaries when present (for native/platform gems)
+  spec.files += Dir['lib/**/*.{so,bundle,dll}']
+
+  # When building a native/platform gem, set platform to current
+  if ENV['NATIVE_BUILD'] == '1'
+    spec.platform = Gem::Platform::CURRENT
+  end
 end

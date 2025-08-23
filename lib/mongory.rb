@@ -116,7 +116,7 @@ module Mongory
 end
 
 begin
-  require_relative '../ext/mongory_ext/mongory_ext'
+  require 'mongory_ext'
   require_relative 'mongory/c_query_builder'
 rescue LoadError
   warn('Mongory::CQueryBuilder is disabled because mongory_ext is not loaded')

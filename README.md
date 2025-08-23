@@ -51,6 +51,40 @@ Or add to your Gemfile:
 gem 'mongory'
 ```
 
+#### Before installing: install build tools
+
+Mongory ships with an optional native extension. Before installing the gem, make sure your system has a C build toolchain (gcc/clang and make). Install the toolchain with the following commands for your platform:
+
+- Debian/Ubuntu (including ruby:*-slim base images)
+```bash
+apt-get update && apt-get install -y build-essential
+```
+
+- Alpine
+```bash
+apk add --no-cache build-base
+```
+
+- CentOS/RHEL
+```bash
+yum groupinstall -y "Development Tools"
+```
+
+- Fedora
+```bash
+dnf groupinstall -y "Development Tools"
+```
+
+- Amazon Linux
+```bash
+yum groupinstall -y "Development Tools"
+```
+
+- macOS
+```bash
+xcode-select --install
+```
+
 #### Rails Generator
 
 You can install a starter configuration with:
