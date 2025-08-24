@@ -29,7 +29,7 @@ begin
       'aarch64-linux',
       'x86_64-darwin',
       'arm64-darwin',
-      'arm64-mingw-ucrt',
+      # 'arm64-mingw-ucrt', # TODO: add this when we have a mingw-ucrt rake-compiler-dock image
       'x64-mingw32',
       'x64-mingw-ucrt',
       'x86_64-linux-musl',
