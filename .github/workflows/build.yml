@@ -1,0 +1,208 @@
+name: Build & Release mongory native gems
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  id-token: write
+
+env:
+  RUBY_CC_VERSION: "2.6.0:2.7.0:3.0.0:3.1.0:3.2.0:3.3.0"
+
+jobs:
+  linux_windows_glibc:
+    name: Linux/Windows (glibc & mingw/ucrt via rake-compiler-dock) – ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: [x86_64-linux, aarch64-linux, x64-mingw32, x64-mingw-ucrt]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - run: gem install rake-compiler-dock
+
+      - name: Cross-compile (glibc + mingw/ucrt)
+        env:
+          RUBY_CC_VERSION: ${{ env.RUBY_CC_VERSION }}
+          RCD_PLATFORM: ${{ matrix.platform }}
+        run: |
+          echo "==> build $RCD_PLATFORM"
+          bundle exec rake-compiler-dock bash -lc '
+            set -euo pipefail
+            export RCD_PLATFORM="'$RCD_PLATFORM'"
+
+            bundle config set path vendor/bundle
+            bundle config set without "test"
+            bundle config set deployment false
+            bundle config set frozen false
+            bundle install --jobs 4
+
+            echo "== Clean =="
+            bundle exec rake clean
+
+            echo "== Compile (native, current container platform) =="
+            bundle exec rake compile
+
+            echo "== Build gem (platform-specific) =="
+            NATIVE_BUILD=1 gem build mongory.gemspec
+            mkdir -p pkg
+            mv -f *.gem pkg/
+          '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gems-linux-windows-${{ matrix.platform }}
+          path: pkg/*.gem
+
+  linux_musl:
+    name: Linux (musl) – ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: [x86_64-linux-musl, aarch64-linux-musl]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - run: gem install rake-compiler-dock
+
+      - name: Cross-compile (musl)
+        env:
+          RUBY_CC_VERSION: ${{ env.RUBY_CC_VERSION }}
+          RCD_PLATFORM: ${{ matrix.platform }}
+        run: |
+          echo "==> build $RCD_PLATFORM"
+          bundle exec rake-compiler-dock bash -lc '
+            set -euo pipefail
+            export RCD_PLATFORM="'$RCD_PLATFORM'"
+
+            bundle config set path vendor/bundle
+            bundle config set without "test"
+            bundle config set deployment false
+            bundle config set frozen false
+            bundle install --jobs 4
+
+            echo "== Clean =="
+            bundle exec rake clean
+
+            echo "== Compile (native, current container platform) =="
+            bundle exec rake compile
+
+            echo "== Build gem (platform-specific) =="
+            NATIVE_BUILD=1 gem build mongory.gemspec
+            mkdir -p pkg
+            mv -f *.gem pkg/
+          '
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gems-linux-musl-${{ matrix.platform }}
+          path: pkg/*.gem
+
+  macos:
+    name: macOS (${{ matrix.label }})
+    strategy:
+      matrix:
+        include:
+          - runner: macos-13
+            label: x86_64-darwin
+          - runner: macos-14
+            label: arm64-darwin
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - name: Build native gem (darwin)
+        run: |
+          bundle install
+          bundle exec rake clean
+          bundle exec rake native gem
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gems-${{ matrix.label }}
+          path: pkg/*.gem
+
+  release:
+    name: Release to RubyGems (Trusted Publishing)
+    needs: [linux_windows_glibc, linux_musl, macos]
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Show built gems
+        run: find ./artifacts -name "*.gem" -maxdepth 3 -print
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - name: Release (source gem) via official action
+        uses: rubygems/release-gem@v1
+
+      - name: Push precompiled platform gems
+        run: |
+          set -euo pipefail
+          shopt -s nullglob globstar
+          declare -A seen
+          # 收集所有 artifacts 下的 .gem，依檔名去重，避免重覆推送
+          while IFS= read -r -d '' g; do
+            base="$(basename "$g")"
+            if [[ -n "${seen[$base]:-}" ]]; then
+              echo "Skip duplicate $base (already pushed from ${seen[$base]})"
+              continue
+            fi
+            echo "Pushing $g"
+            gem push "$g"
+            seen["$base"]="$g"
+          done < <(find ./artifacts -type f -name '*.gem' -print0 | sort -z)

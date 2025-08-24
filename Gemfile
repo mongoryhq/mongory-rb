@@ -9,6 +9,10 @@ gem 'rake', '~> 13.0'
 
 gem 'rspec', '~> 3.0'
 
-gem 'rake-compiler', '>= 1.2'
+group :development do
+  gem 'rake-compiler', '>= 1.2'
+  gem 'rake-compiler-dock'
+end
+
 gem 'rubocop', '~> 1.28.2', require: false
 gem 'rubocop-rspec', '~> 2.10.0', require: false
