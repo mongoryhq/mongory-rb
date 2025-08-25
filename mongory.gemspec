@@ -46,6 +46,7 @@ Gem::Specification.new do |spec|
   # When building a native/platform gem, set platform to current
   if ENV['NATIVE_BUILD'] == '1'
     plat = ENV['RCD_PLATFORM'].to_s
+    spec.extensions = []
     spec.platform =
       case plat
       when /x86_64-linux-musl/  then Gem::Platform.new('x86_64-linux-musl')
@@ -58,5 +59,7 @@ Gem::Specification.new do |spec|
       when /x86_64-darwin/      then Gem::Platform.new('x86_64-darwin')
       else                           Gem::Platform::CURRENT
       end
+  else
+    spec.extensions = ['ext/mongory_ext/extconf.rb']
   end
 end
