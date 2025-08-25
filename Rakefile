@@ -19,7 +19,8 @@ begin
   spec = Gem::Specification.load('mongory.gemspec')
 
   Rake::ExtensionTask.new('mongory_ext', spec) do |ext|
-    ext.lib_dir = 'lib'
+    abi = RUBY_VERSION.split('.').first(2).join('.')
+    ext.lib_dir = "lib/core/#{abi}"
     ext.ext_dir = 'ext/mongory_ext'
     ext.source_pattern = '*.c'
     ext.gem_spec = spec

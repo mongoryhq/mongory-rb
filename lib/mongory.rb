@@ -116,7 +116,8 @@ module Mongory
 end
 
 begin
-  require 'mongory_ext'
+  abi = RUBY_VERSION.split('.').first(2).join('.')
+  require "core/#{abi}/mongory_ext"
   require_relative 'mongory/c_query_builder'
 rescue LoadError
   warn('Mongory::CQueryBuilder is disabled because mongory_ext is not loaded')

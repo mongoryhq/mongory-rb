@@ -2,23 +2,43 @@ name: Build & Release mongory native gems
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - "feature/cross-platform-build" # for testing
+    # tags:
+    #   - "v*"
   workflow_dispatch:
 
 permissions:
   contents: write
   id-token: write
 
-env:
-  RUBY_CC_VERSION: "2.6.0:2.7.0:3.0.0:3.1.0:3.2.0:3.3.0"
-
 jobs:
-  linux_windows_glibc:
-    name: Linux/Windows (glibc & mingw/ucrt via rake-compiler-dock) – ${{ matrix.platform }}
+  ubuntu-runners:
+    name: Linux/Windows – ${{ matrix.ruby.version }}
     strategy:
       matrix:
-        platform: [x86_64-linux, aarch64-linux, x64-mingw32, x64-mingw-ucrt]
+        ruby: &ruby-versions
+          - version: '2.6'
+            bundler: '2.1.4'
+          - version: '2.7'
+            bundler: '2.1.4'
+          - version: '3.0'
+            bundler: '2.5.6'
+          - version: '3.1'
+            bundler: '2.5.6'
+          - version: '3.2'
+            bundler: '2.5.6'
+          - version: '3.3'
+            bundler: '2.5.6'
+          - version: '3.4'
+            bundler: '2.5.6'
+        # platform: &linux-platforms
+        #   - x86_64-linux
+        #   - aarch64-linux
+        #   - x64-mingw32
+        #   - x64-mingw-ucrt
+        #   - x86_64-linux-musl
+        #   - aarch64-linux-musl
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,20 +53,18 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.2"
+          ruby-version: ${{ matrix.ruby.version }}
+          bundler: ${{ matrix.ruby.bundler }}
           bundler-cache: true
 
       - run: gem install rake-compiler-dock
 
-      - name: Cross-compile (glibc + mingw/ucrt)
+      - name: Compile C extension
         env:
-          RUBY_CC_VERSION: ${{ env.RUBY_CC_VERSION }}
-          RCD_PLATFORM: ${{ matrix.platform }}
+          RUBY_VERSION: ${{ matrix.ruby.version }}
         run: |
-          echo "==> build $RCD_PLATFORM"
-          bundle exec rake-compiler-dock bash -lc '
+          RUBY_VERSION=$RUBY_VERSION bundle exec rake-compiler-dock bash -lc '
             set -euo pipefail
-            export RCD_PLATFORM="'$RCD_PLATFORM'"
 
             bundle config set path vendor/bundle
             bundle config set without "test"
@@ -59,29 +77,45 @@ jobs:
 
             echo "== Compile (native, current container platform) =="
             bundle exec rake compile
-
-            echo "== Build gem (platform-specific) =="
-            NATIVE_BUILD=1 gem build mongory.gemspec
-            mkdir -p pkg
-            mv -f *.gem pkg/
           '
+      - name: Install tree
+        run: apt-get update && apt-get install -y tree
 
-      - uses: actions/upload-artifact@v4
+      - name: Show files
+        run: tree
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: gems-linux-windows-${{ matrix.platform }}
-          path: pkg/*.gem
+          name: gems-ubuntu-latest-${{ matrix.ruby.version }}
+          path: tmp/x86_64-linux/stage/lib/core/${{ matrix.ruby.version }}/mongory_ext.so
+          if-no-files-found: error
+          retention-days: 1
 
-  linux_musl:
-    name: Linux (musl) – ${{ matrix.platform }}
+  macos-runners:
+    name: macOS (${{ matrix.runner.env }}) – ${{ matrix.ruby.version }}
     strategy:
       matrix:
-        platform: [x86_64-linux-musl, aarch64-linux-musl]
-    runs-on: ubuntu-latest
+        ruby: *ruby-versions
+        runner:
+          - env: macos-13
+            platform: x86_64-darwin
+          - env: macos-14
+            platform: arm64-darwin
+    runs-on: ${{ matrix.runner.env }}
+
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
           submodules: recursive
+      - name: Show Info
+        run: |
+          uname -a
+          which sh
+          system_profiler
+          xcodebuild -version
+          xcodebuild -showsdks
 
       - name: Ensure submodules
         run: |
@@ -90,84 +124,88 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.2"
+          ruby-version: ${{ matrix.ruby.version }}
+          bundler: ${{ matrix.ruby.bundler }}
           bundler-cache: true
 
-      - run: gem install rake-compiler-dock
-
-      - name: Cross-compile (musl)
-        env:
-          RUBY_CC_VERSION: ${{ env.RUBY_CC_VERSION }}
-          RCD_PLATFORM: ${{ matrix.platform }}
-        run: |
-          echo "==> build $RCD_PLATFORM"
-          bundle exec rake-compiler-dock bash -lc '
-            set -euo pipefail
-            export RCD_PLATFORM="'$RCD_PLATFORM'"
-
-            bundle config set path vendor/bundle
-            bundle config set without "test"
-            bundle config set deployment false
-            bundle config set frozen false
-            bundle install --jobs 4
-
-            echo "== Clean =="
-            bundle exec rake clean
-
-            echo "== Compile (native, current container platform) =="
-            bundle exec rake compile
-
-            echo "== Build gem (platform-specific) =="
-            NATIVE_BUILD=1 gem build mongory.gemspec
-            mkdir -p pkg
-            mv -f *.gem pkg/
-          '
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: gems-linux-musl-${{ matrix.platform }}
-          path: pkg/*.gem
-
-  macos:
-    name: macOS (${{ matrix.label }})
-    strategy:
-      matrix:
-        include:
-          - runner: macos-13
-            label: x86_64-darwin
-          - runner: macos-14
-            label: arm64-darwin
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          submodules: recursive
-
-      - name: Ensure submodules
-        run: |
-          git submodule sync --recursive
-          git submodule update --init --recursive
-
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: "3.2"
-          bundler-cache: true
-
-      - name: Build native gem (darwin)
+      - name: Compile C extension
         run: |
           bundle install
           bundle exec rake clean
-          bundle exec rake native gem
+          bundle exec rake compile
+
+      - name: Install tree
+        run: apt-get update && apt-get install -y tree
+
+      - name: Show files
+        run: tree
 
       - uses: actions/upload-artifact@v4
         with:
-          name: gems-${{ matrix.label }}
-          path: pkg/*.gem
+          name: gems-${{ matrix.runner.env }}-${{ matrix.ruby.version }}
+          path: tmp/${{ matrix.runner.platform }}/stage/lib/core/${{ matrix.ruby.version }}/mongory_ext.bundle
+          if-no-files-found: error
+          retention-days: 1
 
+  native-build:
+    name: Native build (${{ matrix.platform.name }})
+    strategy:
+      matrix:
+        platform:
+          - name: x86_64-darwin
+            env: macos-13
+            runner: macos-13
+          - name: arm64-darwin
+            env: macos-14
+            runner: macos-14
+          - name: x86_64-linux
+            env: windows
+            runner: ubuntu-latest
+          - name: aarch64-linux
+            env: windows
+            runner: ubuntu-latest
+          - name: x64-mingw32
+            env: windows
+            runner: ubuntu-latest
+          - name: x64-mingw-ucrt
+            env: windows
+            runner: ubuntu-latest
+          - name: x86_64-linux-musl
+            env: ubuntu
+            runner: ubuntu-latest
+          - name: aarch64-linux-musl
+            env: ubuntu
+            runner: ubuntu-latest
+    needs: [ubuntu-runners, macos-runners]
+    runs-on: ${{ matrix.platform.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: gems-${{ matrix.platform.runner }}*
+          path: ./artifacts
+          merge-multiple: true
+
+      - name: Install tree
+        run: apt-get update && apt-get install -y tree
+
+      - name: Show files
+        run: tree
+
+      - name: Show compiled files
+        run: find ./artifacts -name "mongory_ext.*" -maxdepth 5 -print
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
   release:
     name: Release to RubyGems (Trusted Publishing)
-    needs: [linux_windows_glibc, linux_musl, macos]
+    needs: [native-build]
     runs-on: ubuntu-latest
     environment: release
     steps:
@@ -187,8 +225,8 @@ jobs:
           ruby-version: "3.2"
           bundler-cache: true
 
-      - name: Release (source gem) via official action
-        uses: rubygems/release-gem@v1
+      # - name: Release (source gem) via official action
+      #   uses: rubygems/release-gem@v1
 
       - name: Push precompiled platform gems
         run: |
@@ -203,6 +241,6 @@ jobs:
               continue
             fi
             echo "Pushing $g"
-            gem push "$g"
+            # gem push "$g"
             seen["$base"]="$g"
           done < <(find ./artifacts -type f -name '*.gem' -print0 | sort -z)
