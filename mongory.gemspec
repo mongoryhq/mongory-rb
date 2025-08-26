@@ -35,12 +35,31 @@ Gem::Specification.new do |spec|
   # C extension configuration
   spec.extensions = ['ext/mongory_ext/extconf.rb']
 
-  # Add development dependencies for C extension
-  spec.add_development_dependency 'rake-compiler', '~> 1.0'
-
   # Ensure submodule files are included
   spec.files += Dir['ext/mongory_ext/mongory-core/src/foundations/*.{c,h}']
   spec.files += Dir['ext/mongory_ext/mongory-core/src/matchers/*.{c,h}']
   spec.files += Dir['ext/mongory_ext/mongory-core/include/**/*.h']
-  spec.files += ['ext/mongory_ext/mongory-core/LICENSE']
+
+  # Include compiled native binaries when present (for native/platform gems)
+  spec.files += Dir['lib/**/*.{so,bundle,dll}']
+
+  # When building a native/platform gem, set platform to current
+  if ENV['NATIVE_BUILD'] == '1'
+    plat = ENV['RCD_PLATFORM'].to_s
+    spec.extensions = []
+    spec.platform =
+      case plat
+      when /x86_64-linux-musl/  then Gem::Platform.new('x86_64-linux-musl')
+      when /aarch64-linux-musl/ then Gem::Platform.new('aarch64-linux-musl')
+      when /x86_64-linux/       then Gem::Platform.new('x86_64-linux')
+      when /aarch64-linux/      then Gem::Platform.new('aarch64-linux')
+      when /x64-mingw-ucrt/     then Gem::Platform.new('x64-mingw-ucrt')
+      when /x64-mingw32/        then Gem::Platform.new('x64-mingw32')
+      when /arm64-darwin/       then Gem::Platform.new('arm64-darwin')
+      when /x86_64-darwin/      then Gem::Platform.new('x86_64-darwin')
+      else                           Gem::Platform::CURRENT
+      end
+  else
+    spec.extensions = ['ext/mongory_ext/extconf.rb']
+  end
 end

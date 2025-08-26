@@ -1,0 +1,25 @@
+name: Release Mongory
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  linux-runners:
+    name: Linux – ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform:
+          - x86_64-linux-musl
+          - aarch64-linux-musl
+          - x86_64-linux
+          - aarch64-linux
+    uses: ./.github/workflows/_linux_cross_compile.yml
+    with:
+      platform: ${{ matrix.platform }}
+      dry-run: 'false'
