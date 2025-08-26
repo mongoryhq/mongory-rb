@@ -1,9 +1,11 @@
-name: Release Mongory
+name: Test cross compile
 
 on:
   push:
-    tags:
-      - "v*"
+    branches:
+      - "feature/cross-platform-build" # for testing
+    # tags:
+    #   - "v*"
 
 permissions:
   contents: write
@@ -22,4 +24,4 @@ jobs:
     uses: ./.github/workflows/_linux_cross_compile.yml
     with:
       platform: ${{ matrix.platform }}
-      dry-run: 'false'
+      dry-run: 'true'
