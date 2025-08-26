@@ -125,6 +125,7 @@ jobs:
           echo $g
 
       - name: Configure RubyGems Credentials (OIDC)
+        if: ${{ inputs.dry-run == 'false' }}
         uses: rubygems/configure-rubygems-credentials@main
 
       - name: Push gem
