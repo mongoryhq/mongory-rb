@@ -20,12 +20,12 @@ RSpec.shared_examples 'matcher behavior' do
         }
       end
 
-      it { is_expected.to be_match(name: 'Bruno Mars') }
-      it { is_expected.to be_match(name: 'Bruno Mars', other: anything) }
-      it { is_expected.to be_match(DummyModel.new(name: 'Bruno Mars', other: anything)) }
-      it { is_expected.not_to be_match(name: 'bruno mars') }
-      it { is_expected.not_to be_match(name: 'Marco Polo') }
-      it { is_expected.not_to be_match(DummyModel.new(name: 'Marco Polo')) }
+      it { is_expected.to be_match({ name: 'Bruno Mars' }) }
+      it { is_expected.to be_match({ name: 'Bruno Mars', other: anything }) }
+      it { is_expected.to be_match(DummyModel.new({ name: 'Bruno Mars', other: anything })) }
+      it { is_expected.not_to be_match({ name: 'bruno mars' }) }
+      it { is_expected.not_to be_match({ name: 'Marco Polo' }) }
+      it { is_expected.not_to be_match(DummyModel.new({ name: 'Marco Polo' })) }
     end
 
     context 'match with different type key' do
@@ -35,12 +35,12 @@ RSpec.shared_examples 'matcher behavior' do
         }
       end
 
-      it { is_expected.to be_match('name' => 'Bruno Mars') }
-      it { is_expected.to be_match('name' => 'Bruno Mars', 'other' => anything) }
-      it { is_expected.to be_match(DummyModel.new('name' => 'Bruno Mars', 'other' => anything)) }
-      it { is_expected.not_to be_match('name' => 'bruno mars') }
-      it { is_expected.not_to be_match('name' => 'Marco Polo') }
-      it { is_expected.not_to be_match(DummyModel.new('name' => 'Marco Polo')) }
+      it { is_expected.to be_match({ 'name' => 'Bruno Mars' }) }
+      it { is_expected.to be_match({ 'name' => 'Bruno Mars', 'other' => anything }) }
+      it { is_expected.to be_match(DummyModel.new({ 'name' => 'Bruno Mars', 'other' => anything })) }
+      it { is_expected.not_to be_match({ 'name' => 'bruno mars' }) }
+      it { is_expected.not_to be_match({ 'name' => 'Marco Polo' }) }
+      it { is_expected.not_to be_match(DummyModel.new({ 'name' => 'Marco Polo' })) }
     end
 
     context '2 layer match' do
@@ -52,10 +52,10 @@ RSpec.shared_examples 'matcher behavior' do
         }
       end
 
-      it { is_expected.to be_match(name: anything, profile: { age: 18 }) }
-      it { is_expected.to be_match(name: anything, profile: { age: 18, other: anything }) }
-      it { is_expected.not_to be_match(name: anything, profile: { age: anything }) }
-      it { is_expected.not_to be_match(name: anything, profile: { age: anything, other: anything }) }
+      it { is_expected.to be_match({ name: anything, profile: { age: 18 } }) }
+      it { is_expected.to be_match({ name: anything, profile: { age: 18, other: anything } }) }
+      it { is_expected.not_to be_match({ name: anything, profile: { age: anything } }) }
+      it { is_expected.not_to be_match({ name: anything, profile: { age: anything, other: anything } }) }
     end
 
     context 'more layer match' do
@@ -67,12 +67,12 @@ RSpec.shared_examples 'matcher behavior' do
         end
 
         it {
-          is_expected.to be_match(name: anything,
-                                  do: { you: { want: { to: { build: { a: { snow: { man: 'No!' } } } } } } })
+          is_expected.to be_match({ name: anything,
+                                    do: { you: { want: { to: { build: { a: { snow: { man: 'No!' } } } } } } } })
         }
         it {
-          is_expected.not_to be_match(name: anything,
-                                      do: { you: { want: { to: { build: { a: { snow: { man: 'Yes!' } } } } } } })
+          is_expected.not_to be_match({ name: anything,
+                                        do: { you: { want: { to: { build: { a: { snow: { man: 'Yes!' } } } } } } } })
         }
         it { is_expected.not_to be_match(anything) }
       end
@@ -85,8 +85,8 @@ RSpec.shared_examples 'matcher behavior' do
         end
 
         it {
-          is_expected.to be_match(name: anything,
-                                  do: { you: { want: { to: { build: { a: { snow: { man: 'No!' } } } } } } })
+          is_expected.to be_match({ name: anything,
+                                    do: { you: { want: { to: { build: { a: { snow: { man: 'No!' } } } } } } } })
         }
         it {
           is_expected.not_to be_match(name: anything,
@@ -202,7 +202,7 @@ RSpec.shared_examples 'matcher behavior' do
 
     context 'fake model behavior' do
       let(:id) { FakeBsonId.new('67d3def21177ff005e59e0a4') }
-      let(:model) { DummyModel.new(id: id, name: 'Frank') }
+      let(:model) { DummyModel.new({ id: id, name: 'Frank' }) }
 
       context 'will be match eq' do
         let(:condition) { { id: '67d3def21177ff005e59e0a4' } }
@@ -248,14 +248,14 @@ RSpec.shared_examples 'matcher behavior' do
         }
       end
 
-      it { is_expected.to be_match(email: 'bruno_mars@mongory.com') }
-      it { is_expected.to be_match(email: 'bruno.mars@mongoryapp.com') }
-      it { is_expected.to be_match(email: 'vocano@mongory.com') }
-      it { is_expected.not_to be_match(email: 'vocano@@mongory.com') }
-      it { is_expected.not_to be_match(email: 'anyone@mongoryppap.com') }
-      it { is_expected.not_to be_match(email: 'anyone@mongory.com.tw') }
-      it { is_expected.not_to be_match(email: 'anyone#mongory.com') }
-      it { is_expected.not_to be_match(email: nil) }
+      it { is_expected.to be_match({ email: 'bruno_mars@mongory.com' }) }
+      it { is_expected.to be_match({ email: 'bruno.mars@mongoryapp.com' }) }
+      it { is_expected.to be_match({ email: 'vocano@mongory.com' }) }
+      it { is_expected.not_to be_match({ email: 'vocano@@mongory.com' }) }
+      it { is_expected.not_to be_match({ email: 'anyone@mongoryppap.com' }) }
+      it { is_expected.not_to be_match({ email: 'anyone@mongory.com.tw' }) }
+      it { is_expected.not_to be_match({ email: 'anyone#mongory.com' }) }
+      it { is_expected.not_to be_match({ email: nil }) }
       it { is_expected.not_to be_match(nil) }
       it { is_expected.not_to be_match(anything) }
     end
@@ -281,11 +281,11 @@ RSpec.shared_examples 'matcher behavior' do
     context 'with true' do
       let(:presence) { true }
 
-      it { is_expected.to be_match(profile: { address: { key: anything } }) }
-      it { is_expected.to be_match(DummyModel.new(profile: { address: { key: anything } })) }
-      it { is_expected.not_to be_match(profile: { address: {} }) }
-      it { is_expected.not_to be_match(profile: {}) }
-      it { is_expected.not_to be_match(DummyModel.new(profile: {})) }
+      it { is_expected.to be_match({ profile: { address: { key: anything } } }) }
+      it { is_expected.to be_match(DummyModel.new({ profile: { address: { key: anything } } })) }
+      it { is_expected.not_to be_match({ profile: { address: {} } }) }
+      it { is_expected.not_to be_match({ profile: {} }) }
+      it { is_expected.not_to be_match(DummyModel.new({ profile: {} })) }
       it { is_expected.not_to be_match({}) }
       it { is_expected.not_to be_match(nil) }
     end
@@ -293,11 +293,11 @@ RSpec.shared_examples 'matcher behavior' do
     context 'with false' do
       let(:presence) { false }
 
-      it { is_expected.to be_match(profile: { address: {} }) }
-      it { is_expected.to be_match(profile: {}) }
-      it { is_expected.to be_match(DummyModel.new(profile: {})) }
-      it { is_expected.not_to be_match(profile: { address: { key: anything } }) }
-      it { is_expected.not_to be_match(DummyModel.new(profile: { address: { key: anything } })) }
+      it { is_expected.to be_match({ profile: { address: {} } }) }
+      it { is_expected.to be_match({ profile: {} }) }
+      it { is_expected.to be_match(DummyModel.new({ profile: {} })) }
+      it { is_expected.not_to be_match({ profile: { address: { key: anything } } }) }
+      it { is_expected.not_to be_match(DummyModel.new({ profile: { address: { key: anything } } })) }
       it { is_expected.not_to be_match({}) }
       it { is_expected.not_to be_match(nil) }
     end
@@ -311,20 +311,20 @@ RSpec.shared_examples 'matcher behavior' do
     context 'when exists' do
       let(:exists) { true }
 
-      it { is_expected.to be_match(a: 123, b: nil, c: anything) }
-      it { is_expected.to be_match(a: 123, c: anything) }
-      it { is_expected.to be_match(DummyModel.new(a: 123, b: nil, c: anything)) }
-      it { is_expected.not_to be_match(a: 123, b: nil) }
-      it { is_expected.not_to be_match(DummyModel.new(a: 123, b: nil)) }
+      it { is_expected.to be_match({ a: 123, b: nil, c: anything }) }
+      it { is_expected.to be_match({ a: 123, c: anything }) }
+      it { is_expected.to be_match(DummyModel.new({ a: 123, b: nil, c: anything })) }
+      it { is_expected.not_to be_match({ a: 123, b: nil }) }
+      it { is_expected.not_to be_match(DummyModel.new({ a: 123, b: nil })) }
     end
 
     context 'when not exists' do
       let(:exists) { false }
 
-      it { is_expected.to be_match(a: 123, b: nil) }
-      it { is_expected.to be_match(DummyModel.new(a: 123, b: nil)) }
-      it { is_expected.not_to be_match(a: 123, b: nil, c: anything) }
-      it { is_expected.not_to be_match(DummyModel.new(a: 123, b: nil, c: anything)) }
+      it { is_expected.to be_match({ a: 123, b: nil }) }
+      it { is_expected.to be_match(DummyModel.new({ a: 123, b: nil })) }
+      it { is_expected.not_to be_match({ a: 123, b: nil, c: anything }) }
+      it { is_expected.not_to be_match(DummyModel.new({ a: 123, b: nil, c: anything })) }
     end
   end
 

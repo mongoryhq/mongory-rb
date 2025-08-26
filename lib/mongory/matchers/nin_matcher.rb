@@ -24,12 +24,12 @@ module Mongory
     #
     # @see AbstractMatcher
     class NinMatcher < AbstractMatcher
-      def self.build(condition, *args)
+      def self.build(condition, context: Context.new)
         return super unless condition.is_a?(Range)
 
         end_op = condition.exclude_end? ? '$gte' : '$gt'
         head, tail = [condition.first, condition.last].sort
-        OrMatcher.build([{ '$lt' => head }, { end_op => tail }], *args)
+        OrMatcher.build([{ '$lt' => head }, { end_op => tail }], context: context)
       end
 
       # Creates a raw Proc that performs the not-in matching operation.

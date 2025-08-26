@@ -24,12 +24,12 @@ module Mongory
     #
     # @see AbstractMatcher
     class InMatcher < AbstractMatcher
-      def self.build(condition, *args)
+      def self.build(condition, context: Context.new)
         return super unless condition.is_a?(Range)
 
         end_op = condition.exclude_end? ? '$lt' : '$lte'
         head, tail = [condition.first, condition.last].sort
-        AndMatcher.build([{ '$gte' => head }, { end_op => tail }], *args)
+        AndMatcher.build([{ '$gte' => head }, { end_op => tail }], context: context)
       end
 
       # Creates a raw Proc that performs the in-matching operation.
