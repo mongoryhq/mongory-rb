@@ -118,7 +118,11 @@ jobs:
           tree ./lib/core
 
       - name: Native build Gem
-        run: NATIVE_BUILD=1 gem build mongory.gemspec
+        run: |
+          export RCD_PLATFORM=$PLATFORM
+          NATIVE_BUILD=1 gem build mongory.gemspec
+          g=$(find -name "*.gem")
+          echo $g
 
       - name: Configure RubyGems Credentials (OIDC)
         uses: rubygems/configure-rubygems-credentials@main
