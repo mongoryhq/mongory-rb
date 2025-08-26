@@ -26,7 +26,6 @@ jobs:
 
   release-gem:
     name: Release (source gem) via official action
-    needs: linux-runners
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -120,6 +120,9 @@ jobs:
       - name: Native build Gem
         run: NATIVE_BUILD=1 gem build mongory.gemspec
 
+      - name: Configure RubyGems Credentials (OIDC)
+        uses: rubygems/configure-rubygems-credentials@main
+
       - name: Push gem
         if: ${{ inputs.dry-run == 'false' }}
         run: |
