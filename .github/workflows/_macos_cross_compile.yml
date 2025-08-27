@@ -17,6 +17,7 @@ jobs:
   c-extension-compile:
     name: C Extension Compile RB ${{matrix.ruby}}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - ruby: "2.6"

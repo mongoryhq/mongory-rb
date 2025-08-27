@@ -9,6 +9,7 @@ jobs:
   linux-runners:
     name: Linux – ${{ matrix.platform }}
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - x86_64-linux-musl
@@ -22,6 +23,7 @@ jobs:
   macos-runners:
     name: MacOS - ${{ matrix.platform }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - platform: x86_64-darwin
@@ -36,6 +38,7 @@ jobs:
   windows-runners:
     name: Windows - ${{ matrix.platform }}
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - x64-mingw32
