@@ -37,9 +37,20 @@ jobs:
       platform: ${{ matrix.platform }}
       runner: ${{ matrix.runner }}
 
+  windows-runners:
+    name: Windows - ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform:
+          - x64-mingw32
+          - x64-mingw-ucrt
+    uses: ./.github/workflows/_windows_cross_compile.yml
+    with:
+      platform: ${{ matrix.platform }}
+
   release-gem:
     name: Release gem
-    needs: [linux-runners, macos-runners]
+    needs: [linux-runners, macos-runners, windows-runners]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

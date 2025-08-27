@@ -6,17 +6,6 @@ on:
       - "feature/cross-platform-build" # for testing
 
 jobs:
-  windows-runners:
-    name: Windows - ${{ matrix.platform }}
-    strategy:
-      matrix:
-        platform:
-          - x64-mingw32
-          - x64-mingw-ucrt
-    uses: ./.github/workflows/_windows_cross_compile.yml
-    with:
-      platform: ${{ matrix.platform }}
-
   linux-runners:
     name: Linux – ${{ matrix.platform }}
     strategy:
@@ -43,6 +32,17 @@ jobs:
     with:
       platform: ${{ matrix.platform }}
       runner: ${{ matrix.runner }}
+
+  windows-runners:
+    name: Windows - ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform:
+          - x64-mingw32
+          - x64-mingw-ucrt
+    uses: ./.github/workflows/_windows_cross_compile.yml
+    with:
+      platform: ${{ matrix.platform }}
 
   display-gem:
     name: Display gems
@@ -71,3 +71,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y tree
           tree ./artifacts
+
+      - name: Dry run artifacts
+        run: |
+          set -euo pipefail
+          shopt -s nullglob globstar
+          declare -A seen
+
+          while IFS= read -r -d '' g; do
+            base="$(basename "$g")"
+            if [[ -n "${seen[$base]:-}" ]]; then
+              echo "Skip duplicate $base (already Detect from ${seen[$base]})"
+              continue
+            fi
+            echo "Detect $g"
+            seen["$base"]="$g"
+          done < <(find ./artifacts -type f -name '*.gem' -print0 | sort -z)
