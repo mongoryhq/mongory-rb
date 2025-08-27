@@ -95,14 +95,18 @@ jobs:
             mv -f ./artifacts/compiled-$PLATFORM-$ruby/mongory_ext.so ./lib/core/$ruby/
           done
 
-          tree ./lib/core
+      - name: List lib/core
+        shell: pwsh
+        run: tree /F ./lib/core
 
       - name: Native build Gem
+        env:
+          RCD_PLATFORM: ${{ inputs.platform }}
+          NATIVE_BUILD: 1
+        shell: pwsh
         run: |
-          export RCD_PLATFORM=$PLATFORM
-          NATIVE_BUILD=1 gem build mongory.gemspec
-          g=$(find -name "*.gem")
-          echo $g
+          gem build mongory.gemspec
+          Get-ChildItem -Recurse -Filter *.gem | ForEach-Object { $_.FullName }
 
       - name: Upload gem to artifacts
         uses: actions/upload-artifact@v4
