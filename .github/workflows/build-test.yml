@@ -19,9 +19,23 @@ jobs:
     with:
       platform: ${{ matrix.platform }}
 
+  macos-runners:
+    name: MacOS - ${{ matrix.platform }}
+    strategy:
+      matrix:
+        include:
+          - platform: x86_64-darwin
+            runner: macos-13
+          - platform: arm64-darwin
+            runner: macos-14
+    uses: ./.github/workflows/_macos_cross_compile.yml
+    with:
+      platform: ${{ matrix.platform }}
+      runner: ${{ matrix.runner }}
+
   display-gem:
     name: Display gems
-    needs: linux-runners
+    needs: [linux-runners, macos-runners]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,0 +1,124 @@
+name: _macos_cross_compile
+on:
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+
+env:
+  PLATFORM: ${{ inputs.platform }}
+  RUBIES: "2.6 2.7 3.0 3.1 3.2 3.3 3.4"
+
+jobs:
+  c-extension-compile:
+    name: C Extension Compile RB ${{matrix.ruby}}
+    strategy:
+      matrix:
+        include:
+          - ruby: "2.6"
+            bundler: "2.1.4"
+          - ruby: "2.7"
+            bundler: "2.1.4"
+          - ruby: "3.0"
+            bundler: "2.5.6"
+          - ruby: "3.1"
+            bundler: "2.5.6"
+          - ruby: "3.2"
+            bundler: "2.5.6"
+          - ruby: "3.3"
+            bundler: "2.5.6"
+          - ruby: "3.4"
+            bundler: "2.5.6"
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Ensure submodules
+        run: |
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler: ${{ matrix.bundler }}
+          bundler-cache: true
+
+      - name: Compiling
+        run: |
+          bundle install --jobs 4
+
+          echo "== Clean =="
+          bundle exec rake clean
+
+          echo "== Compile (native, current container platform) =="
+          bundle exec rake compile
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-${{ inputs.platform }}-${{ matrix.ruby }}
+          path: lib/core/${{ matrix.ruby }}/mongory_ext.bundle
+          if-no-files-found: error
+          retention-days: 1
+
+  build-gem:
+    name: Build gem
+    needs: c-extension-compile
+    runs-on: ${{ inputs.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: compiled-${{ inputs.platform }}-*
+          path: ./artifacts
+
+      - name: Install tree
+        run: |
+          brew update
+          brew install tree
+
+      - name: List artifacts
+        run: tree ./artifacts
+
+      - name: Move files to lib/core
+        run: |
+          echo $(find ./artifacts/**/*.bundle)
+          IFS=' ' read -r -a ruby_versions <<< "$RUBIES"
+          for ruby in "${ruby_versions[@]}"; do
+            mkdir -p lib/core/$ruby
+            mv -f ./artifacts/compiled-$PLATFORM-$ruby/mongory_ext.bundle ./lib/core/$ruby/
+          done
+
+          tree ./lib/core
+
+      - name: Native build Gem
+        run: |
+          export RCD_PLATFORM=$PLATFORM
+          NATIVE_BUILD=1 gem build mongory.gemspec
+          g=$(find *.gem)
+          echo $g
+
+      - name: Upload gem to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gem-${{ inputs.platform }}
+          path: "*.gem"
+          if-no-files-found: error
+          retention-days: 1
