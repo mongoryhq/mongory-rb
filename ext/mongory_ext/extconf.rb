@@ -55,6 +55,13 @@ $CFLAGS << ' -Wno-declaration-after-statement -Wno-discarded-qualifiers'
 $CFLAGS << ' -O2' unless ENV['DEBUG']
 $CFLAGS << ' -g -O0 -DDEBUG' if ENV['DEBUG']
 
+# --- macOS (darwin) linking: avoid hard-linking libruby, let symbols resolve at load time
+if RbConfig::CONFIG['host_os'] =~ /darwin/
+  # Use dynamic_lookup so Ruby symbols (rb_*) are resolved by the host interpreter at dlopen time
+  $LDFLAGS  << ' -Wl,-undefined,dynamic_lookup'
+  $DLDFLAGS << ' -Wl,-undefined,dynamic_lookup'
+end
+
 # Let mkmf generate rules by listing all sources and corresponding objects
 $INCFLAGS << ' -I.'
 $INCFLAGS << " -I#{File.join(core_src_dir, 'foundations')}"
@@ -73,6 +80,18 @@ puts "Use 'make' to build the extension"
 
 # Append Makefile rules: explicit compilation rules for submodule sources to avoid copying/linking files
 mk = File.read('Makefile')
+
+if RbConfig::CONFIG['host_os'] =~ /darwin/
+  # --- sanitize Makefile to ensure no hard link against Ruby framework/libruby ---
+  mk << <<~'MAKE'
+  # --- darwin: force unlink from libruby (final override) ---
+  LIBRUBYARG =
+  LIBRUBYARG_SHARED =
+  LIBRUBYARG_STATIC =
+  LIBRUBY =
+  LIBS =
+  MAKE
+end
 
 # rubocop:disable Layout/HeredocIndentation
 rules = +"\n# --- custom rules for mongory-core submodule sources ---\n"
