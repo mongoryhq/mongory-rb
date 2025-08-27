@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - "feature/cross-platform-build" # for testing
-    # tags:
-    #   - "v*"
 
 permissions:
   contents: write
@@ -24,4 +22,32 @@ jobs:
     uses: ./.github/workflows/_linux_cross_compile.yml
     with:
       platform: ${{ matrix.platform }}
-      dry-run: 'true'
+
+  display-gem:
+    name: Display gems
+    needs: linux-runners
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.2"
+          bundler-cache: true
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: gem-*
+          path: ./artifacts
+          merge-multiple: true
+
+      - name: Show artifacts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tree
+          tree ./artifacts

@@ -5,17 +5,9 @@ on:
       platform:
         required: true
         type: string
-      dry-run:
-        required: true
-        type: string
-
-permissions:
-  contents: write
-  id-token: write
 
 env:
   PLATFORM: ${{ inputs.platform }}
-  DRY_RUN: ${{ inputs.dry-run }}
   RUBIES: "2.6 2.7 3.0 3.1 3.2 3.3 3.4"
 
 jobs:
@@ -124,13 +116,10 @@ jobs:
           g=$(find -name "*.gem")
           echo $g
 
-      - name: Configure RubyGems Credentials (OIDC)
-        if: ${{ inputs.dry-run == 'false' }}
-        uses: rubygems/configure-rubygems-credentials@main
-
-      - name: Push gem
-        if: ${{ inputs.dry-run == 'false' }}
-        run: |
-          g=$(find -name "*.gem")
-          echo $g
-          gem push $g
+      - name: Upload gem to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gem-${{ inputs.platform }}
+          path: "*.gem"
+          if-no-files-found: error
+          retention-days: 1
