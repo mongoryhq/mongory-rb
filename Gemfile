@@ -15,5 +15,4 @@ end
 
 group :development do
   gem 'rake-compiler', '>= 1.2'
-  gem 'rake-compiler-dock'
 end
