@@ -110,9 +110,11 @@ jobs:
           tree ./lib/core
 
       - name: Native build Gem
+        env:
+          RCD_PLATFORM: ${{ inputs.platform }}
+          NATIVE_BUILD: 1
         run: |
-          export RCD_PLATFORM=$PLATFORM
-          NATIVE_BUILD=1 gem build mongory.gemspec
+          gem build mongory.gemspec
           g=$(find *.gem)
           echo $g
 
