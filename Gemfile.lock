@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    mongory (0.7.7)
+    mongory (0.7.8)
 
 GEM
   remote: https://rubygems.org/
@@ -60,4 +60,4 @@ DEPENDENCIES
   rubocop-rspec (~> 2.10.0)
 
 BUNDLED WITH
-   2.5.23
+   2.4.22
