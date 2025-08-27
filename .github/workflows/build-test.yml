@@ -6,6 +6,17 @@ on:
       - "feature/cross-platform-build" # for testing
 
 jobs:
+  windows-runners:
+    name: Windows - ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform:
+          - x64-mingw32
+          - x64-mingw-ucrt
+    uses: ./.github/workflows/_windows_cross_compile.yml
+    with:
+      platform: ${{ matrix.platform }}
+
   linux-runners:
     name: Linux – ${{ matrix.platform }}
     strategy:
@@ -35,7 +46,7 @@ jobs:
 
   display-gem:
     name: Display gems
-    needs: [linux-runners, macos-runners]
+    needs: [linux-runners, macos-runners, windows-runners]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
