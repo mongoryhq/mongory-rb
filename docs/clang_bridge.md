@@ -1,3 +1,27 @@
+### C Extension (Optional but Recommended)
+
+Mongory-rb includes an optional high-performance C extension powered by [mongory-core](https://github.com/mongoryhq/mongory-core):
+
+**System Dependencies:**
+- C99-compatible compiler (gcc/clang)
+- CMake >= 3.12 (optional; only needed if you want to build `mongory-core` standalone or run its native tests)
+
+**Installation:**
+```bash
+# macOS
+brew install cmake
+
+# Ubuntu/Debian
+sudo apt install cmake build-essential
+
+# CentOS/RHEL
+sudo yum install cmake gcc make
+```
+
+The C extension provides significant performance improvements for large datasets. If not available, Mongory-rb automatically falls back to pure Ruby implementation.
+
+Note: The Ruby C extension is built via Ruby's `mkmf` (see `ext/mongory_ext/extconf.rb`) and compiles `mongory-core` sources directly. You do not need CMake for normal gem installation.
+
 # Clang Bridge (C Extension)
 
 The Clang bridge connects the Ruby DSL to the `mongory-core` engine via a compact C layer. It exposes two key entry points:

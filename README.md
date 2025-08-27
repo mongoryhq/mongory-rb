@@ -1,6 +1,7 @@
-# Mongory-rb
+# Mongory
+### Let you query everywhere !
 
-A Mongo-like in-memory query DSL for Ruby.
+This is a Mongo-like in-memory query DSL for Ruby.
 
 Mongory lets you filter and query in-memory collections using syntax and semantics similar to MongoDB. It is designed for expressive chaining, symbolic operators, and composable matchers.
 
@@ -53,7 +54,18 @@ gem 'mongory'
 
 #### Before installing: install build tools
 
-Mongory ships with an optional native extension. Before installing the gem, make sure your system has a C build toolchain (gcc/clang and make). Install the toolchain with the following commands for your platform:
+Mongory ships with an optional native C extension.
+Before installing Mongory, make sure these following precompiled package support your platform:
+- x86_64-linux-musl (Linux)
+- aarch64-linux-musl (Linux)
+- x86_64-linux (Linux)
+- aarch64-linux (Linux)
+- x86_64-darwin (MacOS Intel)
+- arm64-darwin (MacOS Apple Silicon)
+- x64-mingw32 (Windows)
+- x64-mingw-ucrt (Windows)
+
+If your platform excludes, make sure your system has a C build toolchain (gcc/clang and make). Install the toolchain with the following commands for your platform:
 
 - Debian/Ubuntu (including ruby:*-slim base images)
 ```bash
@@ -85,19 +97,6 @@ yum groupinstall -y "Development Tools"
 xcode-select --install
 ```
 
-#### Rails Generator
-
-You can install a starter configuration with:
-
-```bash
-rails g mongory:install
-```
-
-This will generate `config/initializers/mongory.rb` and set up:
-- Optional symbol operator snippets (e.g. `:age.gt => 18`)
-- Class registration (e.g. `Array`, `ActiveRecord::Relation`, etc.)
-- Custom value/key converters for your ORM
-
 ### Basic Usage
 ```ruby
 records = [
@@ -119,29 +118,18 @@ limited = records.mongory
   .where(:age.gte => 18)       # Conditions apply to limited set
 ```
 
-### C Extension (Optional but Recommended)
+#### Rails Generator
 
-Mongory-rb includes an optional high-performance C extension powered by [mongory-core](https://github.com/mongoryhq/mongory-core):
+You can install a starter configuration with:
 
-**System Dependencies:**
-- C99-compatible compiler (gcc/clang)
-- CMake >= 3.12 (optional; only needed if you want to build `mongory-core` standalone or run its native tests)
-
-**Installation:**
 ```bash
-# macOS
-brew install cmake
-
-# Ubuntu/Debian
-sudo apt install cmake build-essential
-
-# CentOS/RHEL
-sudo yum install cmake gcc make
+rails g mongory:install
 ```
 
-The C extension provides significant performance improvements for large datasets. If not available, Mongory-rb automatically falls back to pure Ruby implementation.
-
-Note: The Ruby C extension is built via Ruby's `mkmf` (see `ext/mongory_ext/extconf.rb`) and compiles `mongory-core` sources directly. You do not need CMake for normal gem installation.
+This will generate `config/initializers/mongory.rb` and set up:
+- Optional symbol operator snippets (e.g. `:age.gt => 18`)
+- Class registration (e.g. `Array`, `ActiveRecord::Relation`, etc.)
+- Custom value/key converters for your ORM
 
 ## Positioning
 
@@ -201,8 +189,8 @@ This will:
 
 The generated matcher will:
 - Be named `ClassInMatcher`
-- Register the operator as `$classIn`
-- Be available as `:class_in` in queries
+- Register the operator as `$classIn` makes it available in queries
+- Enable `:field.class_in` query snippet (If symbol snippet enabled)
 
 Example usage of the generated matcher:
 ```ruby
@@ -248,8 +236,7 @@ User.where(status: 'active').mongory.where(:age.gte => 18, :name.regex => "^S.+"
 ```
 
 This injects a `.mongory` method via an internal extension module.
-
-Internally, the query is compiled into a matcher tree using the `QueryMatcher` and `ConditionConverter`.
+Internally, the query is compiled into a matcher tree.
 
 | Method | Description | Example |
 |--------|-------------|---------|
@@ -351,6 +338,7 @@ The debug output includes:
 | Pattern      | `$regex`                            |
 | Presence     | `$exists`, `$present`               |
 | Nested Match | `$elemMatch`, `$every`              |
+| Other        | `$size`                             |
 
 Note: Some operators are Mongory-specific and not available in MongoDB:
 - `$present`: Checks if a field is considered "present" (not nil, not empty, not KEY_NOT_FOUND)
@@ -403,6 +391,10 @@ end
    records.mongory.where(:age => 18).to_a
    Mongory.debugger.display
    Mongory.debugger.disable
+   ```
+   If using C extension:
+   ```ruby
+   records.mongory.c.where(:age => 18).trace.to_a
    ```
 
 2. **Common Issues**
