@@ -26,7 +26,7 @@ static VALUE inMongoryDataConverter;
 static VALUE inMongoryConditionConverter;
 
 // Matcher wrapper structure
-typedef struct ruby_mongory_matcher_t {
+typedef struct rb_mongory_matcher_t {
   mongory_matcher *matcher;
   mongory_value *condition;
   mongory_memory_pool *pool;
@@ -36,24 +36,24 @@ typedef struct ruby_mongory_matcher_t {
   mongory_table *symbol_map;
   mongory_array *mark_list;
   VALUE ctx;
-} ruby_mongory_matcher_t;
+} rb_mongory_matcher_t;
 
-typedef struct ruby_mongory_memory_pool_t {
+typedef struct rb_mongory_memory_pool_t {
   mongory_memory_pool base;
-  ruby_mongory_matcher_t *owner;
-} ruby_mongory_memory_pool_t;
+  rb_mongory_matcher_t *owner;
+} rb_mongory_memory_pool_t;
 
-typedef struct ruby_mongory_table_t {
+typedef struct rb_mongory_table_t {
   mongory_table base;
   VALUE rb_hash;
-  ruby_mongory_matcher_t *owner;
-} ruby_mongory_table_t;
+  rb_mongory_matcher_t *owner;
+} rb_mongory_table_t;
 
-typedef struct ruby_mongory_array_t {
+typedef struct rb_mongory_array_t {
   mongory_array base;
   VALUE rb_array;
-  ruby_mongory_matcher_t *owner;
-} ruby_mongory_array_t;
+  rb_mongory_matcher_t *owner;
+} rb_mongory_array_t;
 
 typedef struct {
   mongory_table *table;
@@ -61,23 +61,23 @@ typedef struct {
 } hash_conv_ctx;
 
 // Forward declarations
-static void ruby_mongory_matcher_mark(void *ptr);
-static void ruby_mongory_matcher_free(void *ptr);
-mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value);
-mongory_value *ruby_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb_value);
-mongory_value *ruby_mongory_table_wrap(mongory_memory_pool *pool, VALUE rb_hash);
-mongory_value *ruby_mongory_array_wrap(mongory_memory_pool *pool, VALUE rb_array);
-static VALUE cache_fetch_string(ruby_mongory_matcher_t *owner, const char *key);
-static VALUE cache_fetch_symbol(ruby_mongory_matcher_t *owner, const char *key);
-static ruby_mongory_memory_pool_t *ruby_mongory_memory_pool_new();
-static void rb_mongory_matcher_parse_argv(ruby_mongory_matcher_t *wrapper, int argc, VALUE *argv);
+static void rb_mongory_matcher_mark(void *ptr);
+static void rb_mongory_matcher_free(void *ptr);
+mongory_value *rb_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value);
+mongory_value *rb_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb_value);
+mongory_value *rb_mongory_table_wrap(mongory_memory_pool *pool, VALUE rb_hash);
+mongory_value *rb_mongory_array_wrap(mongory_memory_pool *pool, VALUE rb_array);
+static VALUE cache_fetch_string(rb_mongory_matcher_t *owner, const char *key);
+static VALUE cache_fetch_symbol(rb_mongory_matcher_t *owner, const char *key);
+static rb_mongory_memory_pool_t *rb_mongory_memory_pool_new();
+static void rb_mongory_matcher_parse_argv(rb_mongory_matcher_t *wrapper, int argc, VALUE *argv);
 static bool rb_mongory_error_handling(mongory_memory_pool *pool, char *error_message);
 
-static const rb_data_type_t ruby_mongory_matcher_type = {
+static const rb_data_type_t rb_mongory_matcher_type = {
   .wrap_struct_name = "mongory_matcher",
   .function = {
-    .dmark = ruby_mongory_matcher_mark,
-    .dfree = ruby_mongory_matcher_free,
+    .dmark = rb_mongory_matcher_mark,
+    .dfree = rb_mongory_matcher_free,
     .dsize = NULL,
   },
   .flags = RUBY_TYPED_FREE_IMMEDIATELY,
@@ -88,12 +88,12 @@ static const rb_data_type_t ruby_mongory_matcher_type = {
  */
 
 // Mongory::CMatcher.new(condition)
-static VALUE ruby_mongory_matcher_new(int argc, VALUE *argv, VALUE class) {
-  ruby_mongory_memory_pool_t *matcher_pool = ruby_mongory_memory_pool_new();
+static VALUE rb_mongory_matcher_new(int argc, VALUE *argv, VALUE class) {
+  rb_mongory_memory_pool_t *matcher_pool = rb_mongory_memory_pool_new();
   mongory_memory_pool *matcher_pool_base = &matcher_pool->base;
-  ruby_mongory_memory_pool_t *scratch_pool = ruby_mongory_memory_pool_new();
+  rb_mongory_memory_pool_t *scratch_pool = rb_mongory_memory_pool_new();
   mongory_memory_pool *scratch_pool_base = &scratch_pool->base;
-  ruby_mongory_matcher_t *wrapper = ALLOC(ruby_mongory_matcher_t);
+  rb_mongory_matcher_t *wrapper = ALLOC(rb_mongory_matcher_t);
   wrapper->pool = matcher_pool_base;
   wrapper->scratch_pool = scratch_pool_base;
   wrapper->trace_pool = NULL;
@@ -116,10 +116,10 @@ static VALUE ruby_mongory_matcher_new(int argc, VALUE *argv, VALUE class) {
   }
 
   wrapper->matcher = matcher;
-  return TypedData_Wrap_Struct(class, &ruby_mongory_matcher_type, wrapper);
+  return TypedData_Wrap_Struct(class, &rb_mongory_matcher_type, wrapper);
 }
 
-static void rb_mongory_matcher_parse_argv(ruby_mongory_matcher_t *wrapper, int argc, VALUE *argv) {
+static void rb_mongory_matcher_parse_argv(rb_mongory_matcher_t *self, int argc, VALUE *argv) {
   VALUE condition, kw_hash;
   rb_scan_args(argc, argv, "1:", &condition, &kw_hash);
   const ID ctx_id[1] = { rb_intern("context") };
@@ -128,26 +128,26 @@ static void rb_mongory_matcher_parse_argv(ruby_mongory_matcher_t *wrapper, int a
     rb_get_kwargs(kw_hash, ctx_id, 1, 0, kw_vals);
   }
   if (kw_vals[0] != Qundef) {
-    wrapper->ctx = kw_vals[0];
+    self->ctx = kw_vals[0];
   } else {
-    wrapper->ctx = rb_funcall(cMongoryMatcherContext, rb_intern("new"), 0);
+    self->ctx = rb_funcall(cMongoryMatcherContext, rb_intern("new"), 0);
   }
   VALUE converted_condition = rb_funcall(inMongoryConditionConverter, rb_intern("convert"), 1, condition);
-  wrapper->condition = ruby_to_mongory_value_deep(wrapper->pool, converted_condition);
-  wrapper->mark_list->push(wrapper->mark_list, wrapper->condition);
-  mongory_value *store_ctx = mongory_value_wrap_u(wrapper->pool, (void *)wrapper->ctx);
-  store_ctx->origin = (void *)wrapper->ctx;
-  wrapper->mark_list->push(wrapper->mark_list, store_ctx);
+  self->condition = rb_to_mongory_value_deep(self->pool, converted_condition);
+  self->mark_list->push(self->mark_list, self->condition);
+  mongory_value *store_ctx = mongory_value_wrap_u(self->pool, (void *)self->ctx);
+  store_ctx->origin = (void *)self->ctx;
+  self->mark_list->push(self->mark_list, store_ctx);
 }
 
 // Mongory::CMatcher#match(data)
-static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
-  mongory_matcher *matcher = wrapper->matcher;
-  mongory_memory_pool *scratch_pool = wrapper->scratch_pool;
-  mongory_memory_pool *trace_pool = wrapper->trace_pool;
-  mongory_value *data_value = ruby_to_mongory_value_shallow(scratch_pool, data);
+static VALUE rb_mongory_matcher_match(VALUE self, VALUE data) {
+  rb_mongory_matcher_t *self_wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, self_wrapper);
+  mongory_matcher *matcher = self_wrapper->matcher;
+  mongory_memory_pool *scratch_pool = self_wrapper->scratch_pool;
+  mongory_memory_pool *trace_pool = self_wrapper->trace_pool;
+  mongory_value *data_value = rb_to_mongory_value_shallow(scratch_pool, data);
 
   if (rb_mongory_error_handling(scratch_pool, "Match failed")) {
     return Qnil;
@@ -167,9 +167,9 @@ static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
 }
 
 // Mongory::CMatcher#explain
-static VALUE ruby_mongory_matcher_explain(VALUE self) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+static VALUE rb_mongory_matcher_explain(VALUE self) {
+  rb_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
   mongory_matcher_explain(wrapper->matcher, wrapper->scratch_pool);
   if (rb_mongory_error_handling(wrapper->scratch_pool, "Explain failed")) {
     return Qnil;
@@ -179,11 +179,11 @@ static VALUE ruby_mongory_matcher_explain(VALUE self) {
 }
 
 // Mongory::CMatcher#trace(data)
-static VALUE ruby_mongory_matcher_trace(VALUE self, VALUE data) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+static VALUE rb_mongory_matcher_trace(VALUE self, VALUE data) {
+  rb_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
   mongory_memory_pool *trace_pool = mongory_memory_pool_new();
-  mongory_value *data_value = ruby_to_mongory_value_shallow(trace_pool, data);
+  mongory_value *data_value = rb_to_mongory_value_shallow(trace_pool, data);
 
   if (rb_mongory_error_handling(trace_pool, "Trace failed")) {
     trace_pool->free(trace_pool);
@@ -197,10 +197,10 @@ static VALUE ruby_mongory_matcher_trace(VALUE self, VALUE data) {
 }
 
 // Mongory::CMatcher#enable_trace
-static VALUE ruby_mongory_matcher_enable_trace(VALUE self) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
-  mongory_memory_pool *trace_pool = ruby_mongory_memory_pool_new();
+static VALUE rb_mongory_matcher_enable_trace(VALUE self) {
+  rb_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  mongory_memory_pool *trace_pool = rb_mongory_memory_pool_new();
   mongory_matcher_enable_trace(wrapper->matcher, trace_pool);
 
   if (rb_mongory_error_handling(trace_pool, "Enable trace failed")) {
@@ -213,9 +213,9 @@ static VALUE ruby_mongory_matcher_enable_trace(VALUE self) {
 }
 
 // Mongory::CMatcher#disable_trace
-static VALUE ruby_mongory_matcher_disable_trace(VALUE self) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+static VALUE rb_mongory_matcher_disable_trace(VALUE self) {
+  rb_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
   mongory_memory_pool *trace_pool = wrapper->trace_pool;
   mongory_matcher_disable_trace(wrapper->matcher);
   rb_mongory_error_handling(trace_pool, "Disable trace failed");
@@ -226,9 +226,9 @@ static VALUE ruby_mongory_matcher_disable_trace(VALUE self) {
 }
 
 // Mongory::CMatcher#print_trace
-static VALUE ruby_mongory_matcher_print_trace(VALUE self) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+static VALUE rb_mongory_matcher_print_trace(VALUE self) {
+  rb_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
   mongory_matcher_print_trace(wrapper->matcher);
   rb_mongory_error_handling(wrapper->trace_pool, "Print trace failed");
 
@@ -236,23 +236,23 @@ static VALUE ruby_mongory_matcher_print_trace(VALUE self) {
 }
 
 // Mongory::CMatcher#condition
-static VALUE ruby_mongory_matcher_condition(VALUE self) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+static VALUE rb_mongory_matcher_condition(VALUE self) {
+  rb_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
 
   return (VALUE)wrapper->condition->origin;
 }
 
 // Mongory::CMatcher#context
-static VALUE ruby_mongory_matcher_context(VALUE self) {
-  ruby_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+static VALUE rb_mongory_matcher_context(VALUE self) {
+  rb_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
 
   return wrapper->ctx ? wrapper->ctx : Qnil;
 }
 
 // Mongory::CMatcher.trace_result_colorful=(colorful)
-static VALUE ruby_mongory_matcher_trace_result_colorful(VALUE self, VALUE colorful) {
+static VALUE rb_mongory_matcher_trace_result_colorful(VALUE self, VALUE colorful) {
   (void)self;
   mongory_matcher_trace_result_colorful_set(RTEST(colorful));
 
@@ -262,8 +262,8 @@ static VALUE ruby_mongory_matcher_trace_result_colorful(VALUE self, VALUE colorf
 /**
  * Create a new memory pool
  */
-static ruby_mongory_memory_pool_t *ruby_mongory_memory_pool_new() {
-  ruby_mongory_memory_pool_t *pool = malloc(sizeof(ruby_mongory_memory_pool_t));
+static rb_mongory_memory_pool_t *rb_mongory_memory_pool_new() {
+  rb_mongory_memory_pool_t *pool = malloc(sizeof(rb_mongory_memory_pool_t));
   mongory_memory_pool *base = mongory_memory_pool_new();
   memcpy(&pool->base, base, sizeof(mongory_memory_pool));
   free(base);
@@ -274,8 +274,8 @@ static ruby_mongory_memory_pool_t *ruby_mongory_memory_pool_new() {
 /**
  * Ruby GC management functions
  */
-static void ruby_mongory_matcher_free(void *ptr) {
-  ruby_mongory_matcher_t *wrapper = (ruby_mongory_matcher_t *)ptr;
+static void rb_mongory_matcher_free(void *ptr) {
+  rb_mongory_matcher_t *wrapper = (rb_mongory_matcher_t *)ptr;
   mongory_memory_pool *pool = wrapper->pool;
   mongory_memory_pool *scratch_pool = wrapper->scratch_pool;
   mongory_memory_pool *trace_pool = wrapper->trace_pool;
@@ -299,10 +299,10 @@ static bool gc_mark_array_cb(mongory_value *value, void *acc) {
 /**
  * GC marking callback for mongory_matcher
  */
-static void ruby_mongory_matcher_mark(void *ptr) {
-  ruby_mongory_matcher_t *wrapper = (ruby_mongory_matcher_t *)ptr;
-  if (!wrapper) return;
-  wrapper->mark_list->each(wrapper->mark_list, NULL, gc_mark_array_cb);
+static void rb_mongory_matcher_mark(void *ptr) {
+  rb_mongory_matcher_t *self = (rb_mongory_matcher_t *)ptr;
+  if (!self) return;
+  self->mark_list->each(self->mark_list, NULL, gc_mark_array_cb);
 }
 
 /**
@@ -310,7 +310,7 @@ static void ruby_mongory_matcher_mark(void *ptr) {
  */
 
 // Helper function to convert Ruby value to C string
-static char *ruby_mongory_value_to_cstr(mongory_value *value, mongory_memory_pool *pool) {
+static char *rb_mongory_value_to_cstr(mongory_value *value, mongory_memory_pool *pool) {
   (void)pool;
   VALUE rb_value = (VALUE)value->origin;
   VALUE rb_str = rb_funcall(rb_value, rb_intern("inspect"), 0);
@@ -318,7 +318,7 @@ static char *ruby_mongory_value_to_cstr(mongory_value *value, mongory_memory_poo
 }
 
 // Helper function for primitive conversion of Ruby value to mongory_value
-static mongory_value *ruby_to_mongory_value_primitive(mongory_memory_pool *pool, VALUE rb_value) {
+static mongory_value *rb_to_mongory_value_primitive(mongory_memory_pool *pool, VALUE rb_value) {
   mongory_value *mg_value = NULL;
   switch (TYPE(rb_value)) {
   case T_NIL:
@@ -360,8 +360,8 @@ static mongory_value *ruby_to_mongory_value_primitive(mongory_memory_pool *pool,
   return mg_value;
 }
 // Shallow conversion: Convert Ruby value to mongory_value (fully materialize arrays/tables)
-static mongory_value *ruby_to_mongory_value_shallow_rec(mongory_memory_pool *pool, VALUE rb_value, bool converted) {
-  mongory_value *mg_value = ruby_to_mongory_value_primitive(pool, rb_value);
+static mongory_value *rb_to_mongory_value_shallow_rec(mongory_memory_pool *pool, VALUE rb_value, bool converted) {
+  mongory_value *mg_value = rb_to_mongory_value_primitive(pool, rb_value);
   if (mg_value) {
     mg_value->origin = rb_value;
     return mg_value;
@@ -369,12 +369,12 @@ static mongory_value *ruby_to_mongory_value_shallow_rec(mongory_memory_pool *poo
 
   switch (TYPE(rb_value)) {
   case T_ARRAY: {
-    mg_value = ruby_mongory_array_wrap(pool, rb_value);
+    mg_value = rb_mongory_array_wrap(pool, rb_value);
     break;
   }
 
   case T_HASH: {
-    mg_value = ruby_mongory_table_wrap(pool, rb_value);
+    mg_value = rb_mongory_table_wrap(pool, rb_value);
     break;
   }
 
@@ -384,7 +384,7 @@ static mongory_value *ruby_to_mongory_value_shallow_rec(mongory_memory_pool *poo
       break;
     } else {
       VALUE converted_value = rb_funcall(inMongoryDataConverter, rb_intern("convert"), 1, rb_value);
-      return ruby_to_mongory_value_shallow_rec(pool, converted_value, true);
+      return rb_to_mongory_value_shallow_rec(pool, converted_value, true);
     }
   }
   mg_value->origin = rb_value;
@@ -392,15 +392,15 @@ static mongory_value *ruby_to_mongory_value_shallow_rec(mongory_memory_pool *poo
 }
 
 // Shallow conversion: Convert Ruby value to mongory_value (fully materialize arrays/tables)
-mongory_value *ruby_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb_value) {
-  return ruby_to_mongory_value_shallow_rec(pool, rb_value, false);
+mongory_value *rb_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb_value) {
+  return rb_to_mongory_value_shallow_rec(pool, rb_value, false);
 }
 
 // Helper function for deep conversion of hash values
 static int hash_foreach_deep_convert_cb(VALUE key, VALUE val, VALUE ptr) {
   hash_conv_ctx *ctx = (hash_conv_ctx *)ptr;
-  ruby_mongory_memory_pool_t *rb_pool = (ruby_mongory_memory_pool_t *)ctx->pool;
-  ruby_mongory_matcher_t *owner = rb_pool->owner;
+  rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)ctx->pool;
+  rb_mongory_matcher_t *owner = rb_pool->owner;
   mongory_table *store_map;
   char *key_str;
   if (SYMBOL_P(key)) {
@@ -413,14 +413,14 @@ static int hash_foreach_deep_convert_cb(VALUE key, VALUE val, VALUE ptr) {
   mongory_value *store = mongory_value_wrap_u(ctx->pool, NULL);
   store->origin = (void *)key;
   store_map->set(store_map, key_str, store);
-  mongory_value *cval = ruby_to_mongory_value_deep(ctx->pool, val);
+  mongory_value *cval = rb_to_mongory_value_deep(ctx->pool, val);
   ctx->table->set(ctx->table, key_str, cval);
   return ST_CONTINUE;
 }
 
 // Deep conversion: Convert Ruby value to mongory_value (fully materialize arrays/tables)
-static mongory_value *ruby_to_mongory_value_deep_rec(mongory_memory_pool *pool, VALUE rb_value, bool converted) {
-  mongory_value *mg_value = ruby_to_mongory_value_primitive(pool, rb_value);
+static mongory_value *rb_to_mongory_value_deep_rec(mongory_memory_pool *pool, VALUE rb_value, bool converted) {
+  mongory_value *mg_value = rb_to_mongory_value_primitive(pool, rb_value);
   if (mg_value) {
     mg_value->origin = rb_value;
     return mg_value;
@@ -430,7 +430,7 @@ static mongory_value *ruby_to_mongory_value_deep_rec(mongory_memory_pool *pool, 
     mongory_array *array = mongory_array_new(pool);
 
     for (long i = 0; i < RARRAY_LEN(rb_value); i++) {
-      array->push(array, ruby_to_mongory_value_deep(pool, RARRAY_AREF(rb_value, i)));
+      array->push(array, rb_to_mongory_value_deep(pool, RARRAY_AREF(rb_value, i)));
     }
     mg_value = mongory_value_wrap_a(pool, array);
     break;
@@ -452,7 +452,7 @@ static mongory_value *ruby_to_mongory_value_deep_rec(mongory_memory_pool *pool, 
       break;
     } else {
       VALUE converted_value = rb_funcall(inMongoryDataConverter, rb_intern("convert"), 1, rb_value);
-      mg_value = ruby_to_mongory_value_deep_rec(pool, converted_value, true);
+      mg_value = rb_to_mongory_value_deep_rec(pool, converted_value, true);
       break;
     }
   }
@@ -461,13 +461,13 @@ static mongory_value *ruby_to_mongory_value_deep_rec(mongory_memory_pool *pool, 
 }
 
 // Deep conversion: Convert Ruby value to mongory_value (fully materialize arrays/tables)
-mongory_value *ruby_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value) {
-  return ruby_to_mongory_value_deep_rec(pool, rb_value, false);
+mongory_value *rb_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value) {
+  return rb_to_mongory_value_deep_rec(pool, rb_value, false);
 }
 
 // Get value from Ruby hash via mongory_table
-mongory_value *ruby_mongory_table_get(mongory_table *self, char *key) {
-  ruby_mongory_table_t *table = (ruby_mongory_table_t *)self;
+mongory_value *rb_mongory_table_get(mongory_table *self, char *key) {
+  rb_mongory_table_t *table = (rb_mongory_table_t *)self;
   VALUE rb_hash = table->rb_hash;
   VALUE rb_value = Qundef;
 
@@ -484,47 +484,47 @@ mongory_value *ruby_mongory_table_get(mongory_table *self, char *key) {
   if (rb_value == Qundef) {
     return NULL;
   }
-  return ruby_to_mongory_value_shallow(table->base.pool, rb_value);
+  return rb_to_mongory_value_shallow(table->base.pool, rb_value);
 }
 
 // Shallow conversion: Wrap Ruby hash as mongory_table
-mongory_value *ruby_mongory_table_wrap(mongory_memory_pool *pool, VALUE rb_hash) {
-  ruby_mongory_table_t *table = MG_ALLOC_PTR(pool, ruby_mongory_table_t);
-  ruby_mongory_memory_pool_t *rb_pool = (ruby_mongory_memory_pool_t *)pool;
+mongory_value *rb_mongory_table_wrap(mongory_memory_pool *pool, VALUE rb_hash) {
+  rb_mongory_table_t *table = MG_ALLOC_PTR(pool, rb_mongory_table_t);
+  rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
   table->base.pool = pool;
-  table->base.get = ruby_mongory_table_get;
+  table->base.get = rb_mongory_table_get;
   table->rb_hash = rb_hash;
   table->base.count = RHASH_SIZE(rb_hash);
   table->owner = rb_pool->owner;
   mongory_value *mg_value = mongory_value_wrap_t(pool, &table->base);
   mg_value->origin = (void *)rb_hash;
-  mg_value->to_str = ruby_mongory_value_to_cstr;
+  mg_value->to_str = rb_mongory_value_to_cstr;
   return mg_value;
 }
 
 // Get value from Ruby array via mongory_array
-static mongory_value *ruby_mongory_array_get(mongory_array *self, size_t index) {
-  ruby_mongory_array_t *array = (ruby_mongory_array_t *)self;
+static mongory_value *rb_mongory_array_get(mongory_array *self, size_t index) {
+  rb_mongory_array_t *array = (rb_mongory_array_t *)self;
   VALUE rb_array = array->rb_array;
   if (index >= (size_t)RARRAY_LEN(rb_array)) {
     return NULL;
   }
   VALUE rb_value = rb_ary_entry(rb_array, index);
-  return ruby_to_mongory_value_shallow(self->pool, rb_value);
+  return rb_to_mongory_value_shallow(self->pool, rb_value);
 }
 
 // Shallow conversion: Wrap Ruby array as mongory_array
-mongory_value *ruby_mongory_array_wrap(mongory_memory_pool *pool, VALUE rb_array) {
-  ruby_mongory_array_t *array = MG_ALLOC_PTR(pool, ruby_mongory_array_t);
-  ruby_mongory_memory_pool_t *rb_pool = (ruby_mongory_memory_pool_t *)pool;
+mongory_value *rb_mongory_array_wrap(mongory_memory_pool *pool, VALUE rb_array) {
+  rb_mongory_array_t *array = MG_ALLOC_PTR(pool, rb_mongory_array_t);
+  rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
   array->base.pool = pool;
-  array->base.get = ruby_mongory_array_get;
+  array->base.get = rb_mongory_array_get;
   array->rb_array = rb_array;
   array->base.count = RARRAY_LEN(rb_array);
   array->owner = rb_pool->owner;
   mongory_value *mg_value = mongory_value_wrap_a(pool, &array->base);
   mg_value->origin = (void *)rb_array;
-  mg_value->to_str = ruby_mongory_value_to_cstr;
+  mg_value->to_str = rb_mongory_value_to_cstr;
   return mg_value;
 }
 
@@ -537,7 +537,7 @@ void *mongory_value_to_ruby(mongory_memory_pool *pool, mongory_value *value) {
 }
 
 // ===== Cache helper implementations =====
-static VALUE cache_fetch_string(ruby_mongory_matcher_t *owner, const char *key) {
+static VALUE cache_fetch_string(rb_mongory_matcher_t *owner, const char *key) {
   if (!owner || !owner->string_map) return rb_utf8_str_new_cstr(key);
   mongory_value *v = owner->string_map->get(owner->string_map, (char *)key);
   if (v && v->origin) return (VALUE)v->origin;
@@ -557,7 +557,7 @@ static inline VALUE char_key_to_symbol(const char *key, rb_encoding *enc) {
 }
 
 // Cache helper for Ruby symbol keys
-static VALUE cache_fetch_symbol(ruby_mongory_matcher_t *owner, const char *key) {
+static VALUE cache_fetch_symbol(rb_mongory_matcher_t *owner, const char *key) {
   rb_encoding *enc = rb_utf8_encoding();
   if (!owner || !owner->symbol_map) {
     return char_key_to_symbol(key, enc);
@@ -573,7 +573,7 @@ static VALUE cache_fetch_symbol(ruby_mongory_matcher_t *owner, const char *key) 
 }
 
 // Regex adapter bridging to Ruby's Regexp
-static bool ruby_regex_match_adapter(mongory_memory_pool *pool, mongory_value *pattern, mongory_value *value) {
+static bool rb_mongory_regex_match_adapter(mongory_memory_pool *pool, mongory_value *pattern, mongory_value *value) {
   if (!pattern || !value) {
     return false;
   }
@@ -600,7 +600,7 @@ static bool ruby_regex_match_adapter(mongory_memory_pool *pool, mongory_value *p
 }
 
 // Regex adapter bridging to Ruby's Regexp
-static char *ruby_regex_stringify_adapter(mongory_memory_pool *pool, mongory_value *pattern) {
+static char *rb_mongory_regex_stringify_adapter(mongory_memory_pool *pool, mongory_value *pattern) {
   (void)pool;
   if (pattern->type != MONGORY_TYPE_REGEX) {
     return NULL;
@@ -611,10 +611,10 @@ static char *ruby_regex_stringify_adapter(mongory_memory_pool *pool, mongory_val
 }
 
 // Custom matcher adapter bridging to Ruby's custom matcher
-static mongory_matcher_custom_context *ruby_custom_matcher_build(char *key, mongory_value *condition, void *ctx) {
+static mongory_matcher_custom_context *rb_mongory_custom_matcher_build(char *key, mongory_value *condition, void *ctx) {
   mongory_memory_pool *pool = condition->pool;
-  ruby_mongory_memory_pool_t *rb_pool = (ruby_mongory_memory_pool_t *)pool;
-  ruby_mongory_matcher_t *owner = rb_pool->owner;
+  rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
+  rb_mongory_matcher_t *owner = rb_pool->owner;
   VALUE matcher_class = rb_funcall(mMongoryMatchers, rb_intern("lookup"), 1, cache_fetch_string(owner, key));
   if (matcher_class == Qnil) {
     return NULL;
@@ -646,14 +646,14 @@ static mongory_matcher_custom_context *ruby_custom_matcher_build(char *key, mong
 }
 
 // Custom matcher adapter bridging to Ruby's custom matcher
-static bool ruby_custom_matcher_match(void *ruby_matcher, mongory_value *value) {
+static bool rb_mongory_custom_matcher_match(void *ruby_matcher, mongory_value *value) {
   VALUE matcher = (VALUE)ruby_matcher;
   VALUE match_result = rb_funcall(matcher, rb_intern("match?"), 1, value->origin);
   return RTEST(match_result);
 }
 
 // Custom matcher adapter bridging to Ruby's custom matcher
-static bool ruby_custom_matcher_lookup(char *key) {
+static bool rb_mongory_custom_matcher_lookup(char *key) {
   VALUE matcher_class = rb_funcall(mMongoryMatchers, rb_intern("lookup"), 1, rb_str_new_cstr(key));
   return RTEST(matcher_class);
 }
@@ -690,28 +690,28 @@ void Init_mongory_ext(void) {
   eMongoryTypeError = rb_define_class_under(mMongory, "TypeError", eMongoryError);
 
   // Define Matcher methods
-  rb_define_singleton_method(cMongoryMatcher, "new", ruby_mongory_matcher_new, -1);
-  rb_define_singleton_method(cMongoryMatcher, "trace_result_colorful=", ruby_mongory_matcher_trace_result_colorful, 1);
-  rb_define_method(cMongoryMatcher, "match?", ruby_mongory_matcher_match, 1);
-  rb_define_method(cMongoryMatcher, "explain", ruby_mongory_matcher_explain, 0);
-  rb_define_method(cMongoryMatcher, "condition", ruby_mongory_matcher_condition, 0);
-  rb_define_method(cMongoryMatcher, "context", ruby_mongory_matcher_context, 0);
-  rb_define_method(cMongoryMatcher, "trace", ruby_mongory_matcher_trace, 1);
-  rb_define_method(cMongoryMatcher, "enable_trace", ruby_mongory_matcher_enable_trace, 0);
-  rb_define_method(cMongoryMatcher, "disable_trace", ruby_mongory_matcher_disable_trace, 0);
-  rb_define_method(cMongoryMatcher, "print_trace", ruby_mongory_matcher_print_trace, 0);
+  rb_define_singleton_method(cMongoryMatcher, "new", rb_mongory_matcher_new, -1);
+  rb_define_singleton_method(cMongoryMatcher, "trace_result_colorful=", rb_mongory_matcher_trace_result_colorful, 1);
+  rb_define_method(cMongoryMatcher, "match?", rb_mongory_matcher_match, 1);
+  rb_define_method(cMongoryMatcher, "explain", rb_mongory_matcher_explain, 0);
+  rb_define_method(cMongoryMatcher, "condition", rb_mongory_matcher_condition, 0);
+  rb_define_method(cMongoryMatcher, "context", rb_mongory_matcher_context, 0);
+  rb_define_method(cMongoryMatcher, "trace", rb_mongory_matcher_trace, 1);
+  rb_define_method(cMongoryMatcher, "enable_trace", rb_mongory_matcher_enable_trace, 0);
+  rb_define_method(cMongoryMatcher, "disable_trace", rb_mongory_matcher_disable_trace, 0);
+  rb_define_method(cMongoryMatcher, "print_trace", rb_mongory_matcher_print_trace, 0);
 
   // Set regex adapter to use Ruby's Regexp
-  mongory_regex_func_set(ruby_regex_match_adapter);
-  mongory_regex_stringify_func_set(ruby_regex_stringify_adapter);
+  mongory_regex_func_set(rb_mongory_regex_match_adapter);
+  mongory_regex_stringify_func_set(rb_mongory_regex_stringify_adapter);
 
   // Set value converter functions
-  mongory_value_converter_deep_convert_set(ruby_to_mongory_value_deep);
-  mongory_value_converter_shallow_convert_set(ruby_to_mongory_value_shallow);
+  mongory_value_converter_deep_convert_set(rb_to_mongory_value_deep);
+  mongory_value_converter_shallow_convert_set(rb_to_mongory_value_shallow);
   mongory_value_converter_recover_set(mongory_value_to_ruby);
 
   // Set custom matcher adapter
-  mongory_custom_matcher_match_func_set(ruby_custom_matcher_match);
-  mongory_custom_matcher_build_func_set(ruby_custom_matcher_build);
-  mongory_custom_matcher_lookup_func_set(ruby_custom_matcher_lookup);
+  mongory_custom_matcher_match_func_set(rb_mongory_custom_matcher_match);
+  mongory_custom_matcher_build_func_set(rb_mongory_custom_matcher_build);
+  mongory_custom_matcher_lookup_func_set(rb_mongory_custom_matcher_lookup);
 }
