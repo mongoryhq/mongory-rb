@@ -298,19 +298,13 @@ And: {"age"=>{"$gte"=>18}, "$or"=>[{"status"=>"active"}, {"name"=>{"$regex"=>/^J
 
 This helps you understand how your query is being processed and can be useful for debugging complex conditions.
 
-Or use the debugger for detailed matching process:
+Or use trace for detailed matching process:
 ```ruby
-# Enable debugging
-Mongory.debugger.enable
-
 # Execute your query
 query = Mongory.build_query(users).where(age: { :$gt => 18 })
-query.each do |user|
+query.trace do |user|
   puts user
 end
-
-# Display the debug trace
-Mongory.debugger.display
 ```
 
 The debug output will show detailed matching process with full class names:
@@ -387,10 +381,7 @@ end
 
 1. **Debugging Queries**
    ```ruby
-   Mongory.debugger.enable
-   records.mongory.where(:age => 18).to_a
-   Mongory.debugger.display
-   Mongory.debugger.disable
+   records.mongory.where(:age => 18).trace.to_a
    ```
    If using C extension:
    ```ruby

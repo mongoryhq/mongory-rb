@@ -65,8 +65,25 @@ module Mongory
       @matcher.prepare_query
       matcher_block = @matcher.to_proc
       @records.each do |record|
+        @context.current_record = record
         yield record if matcher_block.call(record)
       end
+    end
+
+    def trace
+      return to_enum(:trace) unless block_given?
+
+      Mongory.debugger.enable
+      @matcher.prepare_query
+      @records.each do |record|
+        @context.current_record = record
+        matched = @matcher.match?(record)
+        Mongory.debugger.display
+        yield record if matched
+        Mongory.debugger.clear
+      end
+    ensure
+      Mongory.debugger.disable
     end
 
     # Adds a condition to filter records using the given condition.
