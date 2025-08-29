@@ -49,7 +49,7 @@ end
   # Simple query (Mongory) test
   puts "\nSimple query (Mongory) (#{size} records):"
   gc_handler do
-    builder = records.mongory.where(:age.gte => 18)
+    builder = records.mongory.where({:age.gte => 18})
     5.times do
       result = Benchmark.measure do
         builder.to_a
@@ -62,7 +62,7 @@ end
   # Simple query (Mongory::CMatcher) test
   puts "\nSimple query (Mongory::CMatcher) (#{size} records):"
   gc_handler do
-    matcher = Mongory::CMatcher.new(:age.gte => 18)
+    matcher = Mongory::CMatcher.new({:age.gte => 18})
     5.times do
       result = Benchmark.measure do
         records.select { |r| matcher.match?(r) }
@@ -75,7 +75,7 @@ end
   # Simple query (Mongory::CQueryBuilder) test
   puts "\nSimple query (Mongory::CQueryBuilder) (#{size} records):"
   gc_handler do
-    builder = Mongory::CQueryBuilder.new(records).where(:age.gte => 18)
+    builder = Mongory::CQueryBuilder.new(records).where({:age.gte => 18})
     5.times do
       result = Benchmark.measure do
         builder.to_a
@@ -138,12 +138,12 @@ end
 
   puts "\nComplex query (Mongory) use CMatcher (#{size} records):"
   gc_handler do
-    matcher = Mongory::CMatcher.new(
+    matcher = Mongory::CMatcher.new({
       '$or' => [
         { :age.gte => 18 },
         { status: 'active' }
       ]
-    )
+    })
     5.times do
       result = Benchmark.measure do
         records.select { |r| matcher.match?(r) }
@@ -167,18 +167,4 @@ end
     end
     raise "count mismatch" if builder.count != count_of_complex_query
   end
-
-  puts "\nTest Mongory::CMatcher#trace"
-  matcher = Mongory::CMatcher.new(
-    '$or' => [
-      { :age.gte => 18 },
-      { status: 'active' }
-    ]
-  )
-  # matcher.enable_trace
-  records.sample(30).each do |r|
-    matcher.trace(r)
-  end
-  # matcher.print_trace
-  # matcher.disable_trace
 end
