@@ -31,10 +31,10 @@ typedef struct ruby_mongory_matcher_t {
   mongory_value *condition;
   mongory_memory_pool *pool;
   mongory_memory_pool *scratch_pool;
+  mongory_memory_pool *trace_pool;
   mongory_table *string_map;
   mongory_table *symbol_map;
   mongory_array *mark_list;
-  bool trace_enabled;
   VALUE ctx;
 } ruby_mongory_matcher_t;
 
@@ -71,7 +71,7 @@ static VALUE cache_fetch_string(ruby_mongory_matcher_t *owner, const char *key);
 static VALUE cache_fetch_symbol(ruby_mongory_matcher_t *owner, const char *key);
 static ruby_mongory_memory_pool_t *ruby_mongory_memory_pool_new();
 static void rb_mongory_matcher_parse_argv(ruby_mongory_matcher_t *wrapper, int argc, VALUE *argv);
-static bool mongory_error_handling(mongory_memory_pool *pool, char *error_message);
+static bool rb_mongory_error_handling(mongory_memory_pool *pool, char *error_message);
 
 static const rb_data_type_t ruby_mongory_matcher_type = {
   .wrap_struct_name = "mongory_matcher",
@@ -90,20 +90,28 @@ static const rb_data_type_t ruby_mongory_matcher_type = {
 // Mongory::CMatcher.new(condition)
 static VALUE ruby_mongory_matcher_new(int argc, VALUE *argv, VALUE class) {
   ruby_mongory_memory_pool_t *matcher_pool = ruby_mongory_memory_pool_new();
+  mongory_memory_pool *matcher_pool_base = &matcher_pool->base;
   ruby_mongory_memory_pool_t *scratch_pool = ruby_mongory_memory_pool_new();
+  mongory_memory_pool *scratch_pool_base = &scratch_pool->base;
   ruby_mongory_matcher_t *wrapper = ALLOC(ruby_mongory_matcher_t);
-  wrapper->pool = &matcher_pool->base;
-  wrapper->scratch_pool = &scratch_pool->base;
-  wrapper->string_map = mongory_table_new(wrapper->pool);
-  wrapper->symbol_map = mongory_table_new(wrapper->pool);
-  wrapper->mark_list = mongory_array_new(wrapper->pool);
-  wrapper->trace_enabled = false;
+  wrapper->pool = matcher_pool_base;
+  wrapper->scratch_pool = scratch_pool_base;
+  wrapper->trace_pool = NULL;
+  wrapper->ctx = NULL;
+  wrapper->string_map = mongory_table_new(matcher_pool_base);
+  wrapper->symbol_map = mongory_table_new(matcher_pool_base);
+  wrapper->mark_list = mongory_array_new(matcher_pool_base);
+  wrapper->condition = NULL;
+  wrapper->matcher = NULL;
   matcher_pool->owner = wrapper;
   scratch_pool->owner = wrapper;
   rb_mongory_matcher_parse_argv(wrapper, argc, argv);
 
-  mongory_matcher *matcher = mongory_matcher_new(wrapper->pool, wrapper->condition, wrapper->ctx);
-  if (mongory_error_handling(wrapper->pool, "Failed to create matcher")) {
+  mongory_matcher *matcher = mongory_matcher_new(matcher_pool_base, wrapper->condition, wrapper->ctx);
+  if (rb_mongory_error_handling(matcher_pool_base, "Failed to create matcher")) {
+    matcher_pool_base->free(matcher_pool_base);
+    scratch_pool_base->free(scratch_pool_base);
+    xfree(wrapper);
     return Qnil;
   }
 
@@ -136,15 +144,25 @@ static void rb_mongory_matcher_parse_argv(ruby_mongory_matcher_t *wrapper, int a
 static VALUE ruby_mongory_matcher_match(VALUE self, VALUE data) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
-  mongory_value *data_value;
-  data_value = ruby_to_mongory_value_shallow(wrapper->scratch_pool, data);
-  if (mongory_error_handling(wrapper->scratch_pool, "Match failed")) {
+  mongory_matcher *matcher = wrapper->matcher;
+  mongory_memory_pool *scratch_pool = wrapper->scratch_pool;
+  mongory_memory_pool *trace_pool = wrapper->trace_pool;
+  mongory_value *data_value = ruby_to_mongory_value_shallow(scratch_pool, data);
+
+  if (rb_mongory_error_handling(scratch_pool, "Match failed")) {
     return Qnil;
   }
-  bool result = mongory_matcher_match(wrapper->matcher, data_value);
-  if (!wrapper->trace_enabled) {
-    wrapper->scratch_pool->reset(wrapper->scratch_pool);
+
+  bool result = mongory_matcher_match(matcher, data_value);
+
+  if (trace_pool) {
+    mongory_matcher_print_trace(matcher);
+    trace_pool->reset(trace_pool);
+    mongory_matcher_enable_trace(matcher, trace_pool);
   }
+
+  scratch_pool->reset(scratch_pool);
+
   return result ? Qtrue : Qfalse;
 }
 
@@ -153,7 +171,7 @@ static VALUE ruby_mongory_matcher_explain(VALUE self) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
   mongory_matcher_explain(wrapper->matcher, wrapper->scratch_pool);
-  if (mongory_error_handling(wrapper->scratch_pool, "Explain failed")) {
+  if (rb_mongory_error_handling(wrapper->scratch_pool, "Explain failed")) {
     return Qnil;
   }
   wrapper->scratch_pool->reset(wrapper->scratch_pool);
@@ -164,12 +182,17 @@ static VALUE ruby_mongory_matcher_explain(VALUE self) {
 static VALUE ruby_mongory_matcher_trace(VALUE self, VALUE data) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
-  mongory_value *data_value = ruby_to_mongory_value_shallow(wrapper->scratch_pool, data);
-  if (mongory_error_handling(wrapper->scratch_pool, "Trace failed")) {
+  mongory_memory_pool *trace_pool = mongory_memory_pool_new();
+  mongory_value *data_value = ruby_to_mongory_value_shallow(trace_pool, data);
+
+  if (rb_mongory_error_handling(trace_pool, "Trace failed")) {
+    trace_pool->free(trace_pool);
     return Qnil;
   }
+
   bool matched = mongory_matcher_trace(wrapper->matcher, data_value);
-  wrapper->scratch_pool->reset(wrapper->scratch_pool);
+  trace_pool->free(trace_pool);
+
   return matched ? Qtrue : Qfalse;
 }
 
@@ -177,11 +200,15 @@ static VALUE ruby_mongory_matcher_trace(VALUE self, VALUE data) {
 static VALUE ruby_mongory_matcher_enable_trace(VALUE self) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
-  mongory_matcher_enable_trace(wrapper->matcher, wrapper->scratch_pool);
-  if (mongory_error_handling(wrapper->scratch_pool, "Enable trace failed")) {
+  mongory_memory_pool *trace_pool = ruby_mongory_memory_pool_new();
+  mongory_matcher_enable_trace(wrapper->matcher, trace_pool);
+
+  if (rb_mongory_error_handling(trace_pool, "Enable trace failed")) {
+    trace_pool->free(trace_pool);
     return Qnil;
   }
-  wrapper->trace_enabled = true;
+  wrapper->trace_pool = trace_pool;
+
   return Qnil;
 }
 
@@ -189,12 +216,12 @@ static VALUE ruby_mongory_matcher_enable_trace(VALUE self) {
 static VALUE ruby_mongory_matcher_disable_trace(VALUE self) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+  mongory_memory_pool *trace_pool = wrapper->trace_pool;
   mongory_matcher_disable_trace(wrapper->matcher);
-  if (mongory_error_handling(wrapper->scratch_pool, "Disable trace failed")) {
-    return Qnil;
-  }
-  wrapper->scratch_pool->reset(wrapper->scratch_pool);
-  wrapper->trace_enabled = false;
+  rb_mongory_error_handling(trace_pool, "Disable trace failed");
+  trace_pool->free(trace_pool);
+  wrapper->trace_pool = NULL;
+
   return Qnil;
 }
 
@@ -203,7 +230,8 @@ static VALUE ruby_mongory_matcher_print_trace(VALUE self) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
   mongory_matcher_print_trace(wrapper->matcher);
-  mongory_error_handling(wrapper->scratch_pool, "Print trace failed");
+  rb_mongory_error_handling(wrapper->trace_pool, "Print trace failed");
+
   return Qnil;
 }
 
@@ -211,6 +239,7 @@ static VALUE ruby_mongory_matcher_print_trace(VALUE self) {
 static VALUE ruby_mongory_matcher_condition(VALUE self) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+
   return (VALUE)wrapper->condition->origin;
 }
 
@@ -218,6 +247,7 @@ static VALUE ruby_mongory_matcher_condition(VALUE self) {
 static VALUE ruby_mongory_matcher_context(VALUE self) {
   ruby_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, ruby_mongory_matcher_t, &ruby_mongory_matcher_type, wrapper);
+
   return wrapper->ctx ? wrapper->ctx : Qnil;
 }
 
@@ -225,6 +255,7 @@ static VALUE ruby_mongory_matcher_context(VALUE self) {
 static VALUE ruby_mongory_matcher_trace_result_colorful(VALUE self, VALUE colorful) {
   (void)self;
   mongory_matcher_trace_result_colorful_set(RTEST(colorful));
+
   return Qnil;
 }
 
@@ -247,8 +278,12 @@ static void ruby_mongory_matcher_free(void *ptr) {
   ruby_mongory_matcher_t *wrapper = (ruby_mongory_matcher_t *)ptr;
   mongory_memory_pool *pool = wrapper->pool;
   mongory_memory_pool *scratch_pool = wrapper->scratch_pool;
+  mongory_memory_pool *trace_pool = wrapper->trace_pool;
   pool->free(pool);
   scratch_pool->free(scratch_pool);
+  if (trace_pool) {
+    trace_pool->free(trace_pool);
+  }
   xfree(wrapper);
 }
 
@@ -624,11 +659,10 @@ static bool ruby_custom_matcher_lookup(char *key) {
 }
 
 // Error handling for mongory_memory_pool
-static bool mongory_error_handling(mongory_memory_pool *pool, char *error_message) {
+static bool rb_mongory_error_handling(mongory_memory_pool *pool, char *error_message) {
   if (pool->error) {
     rb_raise(eMongoryTypeError, "%s: %s", error_message, pool->error->message);
     pool->error = NULL;
-    pool->reset(pool);
     return true;
   }
   return false;
