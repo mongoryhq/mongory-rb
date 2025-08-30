@@ -64,7 +64,7 @@ module Mongory
     # @return [Enumerator] if no block given
     # @return [void] if block given
     def fast
-      warn("Deprecated: Since C extension has implemented, the fast mode is no longer needed. Use C extension instead.")
+      warn('Deprecated: Since C extension has implemented, the fast mode is no longer needed. Use C extension instead.')
       return to_enum(:fast) unless block_given?
 
       @context.need_convert = false
