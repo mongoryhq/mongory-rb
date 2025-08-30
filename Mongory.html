@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Module: Mongory
+  
+    &mdash; Documentation by YARD 0.9.37
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" />
+
+  <link rel="stylesheet" href="css/common.css" type="text/css" />
+
+<script type="text/javascript">
+  pathId = "Mongory";
+  relpath = '';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="_index.html">Index (M)</a> &raquo;
+    
+    
+    <span class="title">Mongory</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Module: Mongory
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/mongory.rb<span class="defines">,<br />
+  lib/mongory/rails.rb,<br /> lib/mongory/utils.rb,<br /> lib/mongory/mongoid.rb,<br /> lib/mongory/version.rb,<br /> lib/mongory/matchers.rb,<br /> lib/mongory/c_matcher.rb,<br /> lib/mongory/query_builder.rb,<br /> lib/mongory/query_matcher.rb,<br /> lib/mongory/utils/context.rb,<br /> lib/mongory/query_operator.rb,<br /> lib/mongory/utils/debugger.rb,<br /> lib/mongory/c_query_builder.rb,<br /> lib/mongory/utils/rails_patch.rb,<br /> lib/mongory/matchers/eq_matcher.rb,<br /> lib/mongory/matchers/gt_matcher.rb,<br /> lib/mongory/matchers/in_matcher.rb,<br /> lib/mongory/matchers/lt_matcher.rb,<br /> lib/mongory/matchers/ne_matcher.rb,<br /> lib/mongory/matchers/or_matcher.rb,<br /> lib/mongory/converters/converted.rb,<br /> lib/mongory/matchers/and_matcher.rb,<br /> lib/mongory/matchers/gte_matcher.rb,<br /> lib/mongory/matchers/lte_matcher.rb,<br /> lib/mongory/matchers/nin_matcher.rb,<br /> lib/mongory/matchers/not_matcher.rb,<br /> lib/mongory/matchers/size_matcher.rb,<br /> lib/mongory/matchers/every_matcher.rb,<br /> lib/mongory/matchers/field_matcher.rb,<br /> lib/mongory/matchers/regex_matcher.rb,<br /> lib/mongory/matchers/exists_matcher.rb,<br /> lib/mongory/utils/singleton_builder.rb,<br /> lib/mongory/converters/key_converter.rb,<br /> lib/mongory/matchers/literal_matcher.rb,<br /> lib/mongory/matchers/present_matcher.rb,<br /> lib/mongory/converters/data_converter.rb,<br /> lib/mongory/matchers/abstract_matcher.rb,<br /> lib/mongory/converters/value_converter.rb,<br /> lib/mongory/matchers/elem_match_matcher.rb,<br /> lib/mongory/converters/abstract_converter.rb,<br /> lib/mongory/matchers/array_record_matcher.rb,<br /> lib/mongory/converters/condition_converter.rb,<br /> lib/mongory/matchers/abstract_multi_matcher.rb,<br /> lib/mongory/matchers/hash_condition_matcher.rb,<br /> lib/generators/mongory/install/install_generator.rb,<br /> lib/generators/mongory/matcher/matcher_generator.rb</span>
+</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>Main namespace for Mongory DSL and configuration.</p>
+
+<p>Provides access to core converters, query construction, and optional
+integrations with frameworks like Rails or Mongoid.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h4 class="tag_title">Examples:</h4>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Basic usage</p>
+</div></h5>
+      
+      <pre class="example code"><code><span class='const'>Mongory</span><span class='period'>.</span><span class='id identifier rubyid_build_query'><span class='object_link'><a href="#build_query-class_method" title="Mongory.build_query (method)">build_query</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_records'>records</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_where'><span class='object_link'><a href="Mongory/QueryBuilder.html#where-instance_method" title="Mongory::QueryBuilder#where (method)">where</a></span></span><span class='lparen'>(</span><span class='label'>age:</span> <span class='lbrace'>{</span> <span class='symbol'>:$gt</span> <span class='op'>=&gt;</span> <span class='int'>18</span> <span class='rbrace'>}</span><span class='rparen'>)</span></code></pre>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Enabling DSL snippets</p>
+</div></h5>
+      
+      <pre class="example code"><code><span class='const'>Mongory</span><span class='period'>.</span><span class='id identifier rubyid_enable_symbol_snippets!'><span class='object_link'><a href="#enable_symbol_snippets!-class_method" title="Mongory.enable_symbol_snippets! (method)">enable_symbol_snippets!</a></span></span>
+<span class='const'>Mongory</span><span class='period'>.</span><span class='id identifier rubyid_register'><span class='object_link'><a href="#register-class_method" title="Mongory.register (method)">register</a></span></span><span class='lparen'>(</span><span class='const'>Array</span><span class='rparen'>)</span></code></pre>
+    
+  </div>
+
+
+</div><h2>Defined Under Namespace</h2>
+<p class="children">
+  
+    
+      <strong class="modules">Modules:</strong> <span class='object_link'><a href="Mongory/ClassExtention.html" title="Mongory::ClassExtention (module)">ClassExtention</a></span>, <span class='object_link'><a href="Mongory/Converters.html" title="Mongory::Converters (module)">Converters</a></span>, <span class='object_link'><a href="Mongory/Generators.html" title="Mongory::Generators (module)">Generators</a></span>, <span class='object_link'><a href="Mongory/Matchers.html" title="Mongory::Matchers (module)">Matchers</a></span>, <span class='object_link'><a href="Mongory/MongoidPatch.html" title="Mongory::MongoidPatch (module)">MongoidPatch</a></span>, <span class='object_link'><a href="Mongory/Utils.html" title="Mongory::Utils (module)">Utils</a></span>
+    
+  
+    
+      <strong class="classes">Classes:</strong> <span class='object_link'><a href="Mongory/CMatcher.html" title="Mongory::CMatcher (class)">CMatcher</a></span>, <span class='object_link'><a href="Mongory/CQueryBuilder.html" title="Mongory::CQueryBuilder (class)">CQueryBuilder</a></span>, <span class='object_link'><a href="Mongory/Error.html" title="Mongory::Error (class)">Error</a></span>, <span class='object_link'><a href="Mongory/QueryBuilder.html" title="Mongory::QueryBuilder (class)">QueryBuilder</a></span>, <span class='object_link'><a href="Mongory/QueryMatcher.html" title="Mongory::QueryMatcher (class)">QueryMatcher</a></span>, <span class='object_link'><a href="Mongory/QueryOperator.html" title="Mongory::QueryOperator (class)">QueryOperator</a></span>, <span class='object_link'><a href="Mongory/Railtie.html" title="Mongory::Railtie (class)">Railtie</a></span>, <span class='object_link'><a href="Mongory/TypeError.html" title="Mongory::TypeError (class)">TypeError</a></span>
+    
+  
+</p>
+
+  
+    <h2>
+      Constant Summary
+      <small><a href="#" class="constants_summary_toggle">collapse</a></small>
+    </h2>
+
+    <dl class="constants">
+      
+        <dt id="VERSION-constant" class="">VERSION =
+          
+        </dt>
+        <dd><pre class="code"><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>0.8.1</span><span class='tstring_end'>&#39;</span></span></pre></dd>
+      
+    </dl>
+  
+
+
+
+
+
+
+
+  
+    <h2>
+      Class Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#build_query-class_method" title="build_query (class method)">.<strong>build_query</strong>(records)  &#x21d2; QueryBuilder </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Builds a new query over the given record set.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#condition_converter-class_method" title="condition_converter (class method)">.<strong>condition_converter</strong>  &#x21d2; Converters::ConditionConverter </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Returns the condition converter instance.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#configure-class_method" title="configure (class method)">.<strong>configure</strong> {|self| ... } &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Yields Mongory for configuration and freezes key components.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#data_converter-class_method" title="data_converter (class method)">.<strong>data_converter</strong>  &#x21d2; Converters::DataConverter </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Returns the data converter instance.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#debugger-class_method" title="debugger (class method)">.<strong>debugger</strong>  &#x21d2; Utils::Debugger </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Returns the debugger instance.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#enable_symbol_snippets!-class_method" title="enable_symbol_snippets! (class method)">.<strong>enable_symbol_snippets!</strong>  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Enables symbol snippets like <code>:age.gte</code> or <code>:name.regex</code> by dynamically defining methods on <code>Symbol</code> for query operators.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#register-class_method" title="register (class method)">.<strong>register</strong>(klass)  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Registers a class to support <code>.mongory</code> query DSL.</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+
+  <div id="class_method_details" class="method_details_list">
+    <h2>Class Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="build_query-class_method">
+  
+    .<strong>build_query</strong>(records)  &#x21d2; <tt><span class='object_link'><a href="Mongory/QueryBuilder.html" title="Mongory::QueryBuilder (class)">QueryBuilder</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Builds a new query over the given record set.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>records</span>
+      
+      
+        <span class='type'>(<tt>Enumerable</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>any enumerable object (Array, AR::Relation, etc.)</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Mongory/QueryBuilder.html" title="Mongory::QueryBuilder (class)">QueryBuilder</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>a new query builder</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+83
+84
+85</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory.rb', line 83</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_build_query'>build_query</span><span class='lparen'>(</span><span class='id identifier rubyid_records'>records</span><span class='rparen'>)</span>
+  <span class='const'><span class='object_link'><a href="Mongory/QueryBuilder.html" title="Mongory::QueryBuilder (class)">QueryBuilder</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="Mongory/QueryBuilder.html#initialize-instance_method" title="Mongory::QueryBuilder#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_records'>records</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="condition_converter-class_method">
+  
+    .<strong>condition_converter</strong>  &#x21d2; <tt><span class='object_link'><a href="Mongory/Converters/ConditionConverter.html" title="Mongory::Converters::ConditionConverter (class)">Converters::ConditionConverter</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns the condition converter instance.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Mongory/Converters/ConditionConverter.html" title="Mongory::Converters::ConditionConverter (class)">Converters::ConditionConverter</a></span></tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+68
+69
+70</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory.rb', line 68</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_condition_converter'>condition_converter</span>
+  <span class='ivar'>@condition_converter</span> <span class='op'>||=</span> <span class='const'><span class='object_link'><a href="Mongory/Converters.html" title="Mongory::Converters (module)">Converters</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="Mongory/Converters/ConditionConverter.html" title="Mongory::Converters::ConditionConverter (class)">ConditionConverter</a></span></span><span class='period'>.</span><span class='id identifier rubyid_instance'>instance</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="configure-class_method">
+  
+    .<strong>configure</strong> {|self| ... } &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Yields Mongory for configuration and freezes key components.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h4 class="tag_title">Examples:</h4>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Configure converters</p>
+</div></h5>
+      
+      <pre class="example code"><code><span class='const'><span class='object_link'><a href="" title="Mongory (module)">Mongory</a></span></span><span class='period'>.</span><span class='id identifier rubyid_configure'>configure</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_mc'>mc</span><span class='op'>|</span>
+  <span class='id identifier rubyid_mc'>mc</span><span class='period'>.</span><span class='id identifier rubyid_data_converter'>data_converter</span><span class='period'>.</span><span class='id identifier rubyid_configure'>configure</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_dc'>dc</span><span class='op'>|</span>
+    <span class='id identifier rubyid_dc'>dc</span><span class='period'>.</span><span class='id identifier rubyid_register'>register</span><span class='lparen'>(</span><span class='const'>MyType</span><span class='rparen'>)</span> <span class='lbrace'>{</span> <span class='id identifier rubyid_transform'>transform</span><span class='lparen'>(</span><span class='kw'>self</span><span class='rparen'>)</span> <span class='rbrace'>}</span>
+  <span class='kw'>end</span>
+
+  <span class='id identifier rubyid_mc'>mc</span><span class='period'>.</span><span class='id identifier rubyid_condition_converter'>condition_converter</span><span class='period'>.</span><span class='id identifier rubyid_key_converter'>key_converter</span><span class='period'>.</span><span class='id identifier rubyid_configure'>configure</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_kc'>kc</span><span class='op'>|</span>
+    <span class='id identifier rubyid_kc'>kc</span><span class='period'>.</span><span class='id identifier rubyid_register'>register</span><span class='lparen'>(</span><span class='const'>MyKeyType</span><span class='rparen'>)</span> <span class='lbrace'>{</span> <span class='id identifier rubyid_normalize_key'>normalize_key</span><span class='lparen'>(</span><span class='kw'>self</span><span class='rparen'>)</span> <span class='rbrace'>}</span>
+  <span class='kw'>end</span>
+
+  <span class='id identifier rubyid_mc'>mc</span><span class='period'>.</span><span class='id identifier rubyid_condition_converter'>condition_converter</span><span class='period'>.</span><span class='id identifier rubyid_value_converter'>value_converter</span><span class='period'>.</span><span class='id identifier rubyid_configure'>configure</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_vc'>vc</span><span class='op'>|</span>
+    <span class='id identifier rubyid_vc'>vc</span><span class='period'>.</span><span class='id identifier rubyid_register'>register</span><span class='lparen'>(</span><span class='const'>MyValueType</span><span class='rparen'>)</span> <span class='lbrace'>{</span> <span class='id identifier rubyid_cast_value'>cast_value</span><span class='lparen'>(</span><span class='kw'>self</span><span class='rparen'>)</span> <span class='rbrace'>}</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></code></pre>
+    
+  </div>
+
+<p class="tag_title">Yield Parameters:</p>
+<ul class="yieldparam">
+  
+    <li>
+      
+        <span class='name'>self</span>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="" title="Mongory (module)">Mongory</a></span></tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+51
+52
+53
+54
+55
+56</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory.rb', line 51</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_configure'>configure</span>
+  <span class='kw'>yield</span> <span class='kw'>self</span>
+  <span class='id identifier rubyid_data_converter'>data_converter</span><span class='period'>.</span><span class='id identifier rubyid_freeze'>freeze</span>
+  <span class='id identifier rubyid_condition_converter'>condition_converter</span><span class='period'>.</span><span class='id identifier rubyid_freeze'>freeze</span>
+  <span class='const'><span class='object_link'><a href="Mongory/Matchers.html" title="Mongory::Matchers (module)">Matchers</a></span></span><span class='period'>.</span><span class='id identifier rubyid_freeze'><span class='object_link'><a href="Mongory/Matchers.html#freeze-class_method" title="Mongory::Matchers.freeze (method)">freeze</a></span></span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="data_converter-class_method">
+  
+    .<strong>data_converter</strong>  &#x21d2; <tt><span class='object_link'><a href="Mongory/Converters/DataConverter.html" title="Mongory::Converters::DataConverter (class)">Converters::DataConverter</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns the data converter instance.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Mongory/Converters/DataConverter.html" title="Mongory::Converters::DataConverter (class)">Converters::DataConverter</a></span></tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+61
+62
+63</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory.rb', line 61</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_data_converter'>data_converter</span>
+  <span class='ivar'>@data_converter</span> <span class='op'>||=</span> <span class='const'><span class='object_link'><a href="Mongory/Converters.html" title="Mongory::Converters (module)">Converters</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="Mongory/Converters/DataConverter.html" title="Mongory::Converters::DataConverter (class)">DataConverter</a></span></span><span class='period'>.</span><span class='id identifier rubyid_instance'>instance</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="debugger-class_method">
+  
+    .<strong>debugger</strong>  &#x21d2; <tt><span class='object_link'><a href="Mongory/Utils/Debugger.html" title="Mongory::Utils::Debugger (class)">Utils::Debugger</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Returns the debugger instance.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Mongory/Utils/Debugger.html" title="Mongory::Utils::Debugger (class)">Utils::Debugger</a></span></tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+75
+76
+77</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory.rb', line 75</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_debugger'>debugger</span>
+  <span class='ivar'>@debugger</span> <span class='op'>||=</span> <span class='const'><span class='object_link'><a href="Mongory/Utils.html" title="Mongory::Utils (module)">Utils</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="Mongory/Utils/Debugger.html" title="Mongory::Utils::Debugger (class)">Debugger</a></span></span><span class='period'>.</span><span class='id identifier rubyid_instance'>instance</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="enable_symbol_snippets!-class_method">
+  
+    .<strong>enable_symbol_snippets!</strong>  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Enables symbol snippets like <code>:age.gte</code> or <code>:name.regex</code>
+by dynamically defining methods on <code>Symbol</code> for query operators.</p>
+
+<p>Skips operators that already exist to avoid patching Mongoid or other gems.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+102
+103
+104</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory.rb', line 102</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_enable_symbol_snippets!'>enable_symbol_snippets!</span>
+  <span class='const'><span class='object_link'><a href="Mongory/Matchers.html" title="Mongory::Matchers (module)">Matchers</a></span></span><span class='period'>.</span><span class='id identifier rubyid_enable_symbol_snippets!'><span class='object_link'><a href="Mongory/Matchers.html#enable_symbol_snippets!-class_method" title="Mongory::Matchers.enable_symbol_snippets! (method)">enable_symbol_snippets!</a></span></span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="register-class_method">
+  
+    .<strong>register</strong>(klass)  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Registers a class to support <code>.mongory</code> query DSL.
+This injects a <code>#mongory</code> method into the given class.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>klass</span>
+      
+      
+        <span class='type'>(<tt>Class</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the class to register (e.g., Array, ActiveRecord::Relation)</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+92
+93
+94</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory.rb', line 92</span>
+
+<span class='kw'>def</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_register'>register</span><span class='lparen'>(</span><span class='id identifier rubyid_klass'>klass</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_klass'>klass</span><span class='period'>.</span><span class='id identifier rubyid_include'>include</span><span class='lparen'>(</span><span class='const'><span class='object_link'><a href="Mongory/ClassExtention.html" title="Mongory::ClassExtention (module)">ClassExtention</a></span></span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Sat Aug 30 05:39:02 2025 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.37 (ruby-3.2.9).
+</div>
+
+    </div>
+  </body>
+</html>

@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: Mongory::QueryMatcher
+  
+    &mdash; Documentation by YARD 0.9.37
+  
+</title>
+
+  <link rel="stylesheet" href="../css/style.css" type="text/css" />
+
+  <link rel="stylesheet" href="../css/common.css" type="text/css" />
+
+<script type="text/javascript">
+  pathId = "Mongory::QueryMatcher";
+  relpath = '../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../_index.html">Index (Q)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../Mongory.html" title="Mongory (module)">Mongory</a></span></span>
+     &raquo; 
+    <span class="title">QueryMatcher</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: Mongory::QueryMatcher
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName"><span class='object_link'><a href="Matchers/HashConditionMatcher.html" title="Mongory::Matchers::HashConditionMatcher (class)">Matchers::HashConditionMatcher</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next"><span class='object_link'><a href="Matchers/AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">Matchers::AbstractMatcher</a></span></li>
+          
+            <li class="next"><span class='object_link'><a href="Matchers/AbstractMultiMatcher.html" title="Mongory::Matchers::AbstractMultiMatcher (class)">Matchers::AbstractMultiMatcher</a></span></li>
+          
+            <li class="next"><span class='object_link'><a href="Matchers/HashConditionMatcher.html" title="Mongory::Matchers::HashConditionMatcher (class)">Matchers::HashConditionMatcher</a></span></li>
+          
+            <li class="next">Mongory::QueryMatcher</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/mongory/query_matcher.rb</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>The top-level matcher for compiled query conditions.</p>
+
+<p>Delegates to <span class='object_link'><a href="Matchers/LiteralMatcher.html" title="Mongory::Matchers::LiteralMatcher (class)">Matchers::LiteralMatcher</a></span> after transforming input
+via <span class='object_link'><a href="Converters/ConditionConverter.html" title="Mongory::Converters::ConditionConverter (class)">Converters::ConditionConverter</a></span>.</p>
+
+<p>Typically used internally by <code>QueryBuilder</code>.</p>
+
+<p>Conversion via Mongory.data_converter is applied to the record
+before matching to ensure consistent data types.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h4 class="tag_title">Examples:</h4>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Basic matching</p>
+</div></h5>
+      
+      <pre class="example code"><code><span class='id identifier rubyid_matcher'>matcher</span> <span class='op'>=</span> <span class='const'>QueryMatcher</span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="#initialize-instance_method" title="Mongory::QueryMatcher#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='lbrace'>{</span> <span class='symbol'>:age</span><span class='period'>.</span><span class='id identifier rubyid_gte'>gte</span> <span class='op'>=&gt;</span> <span class='int'>18</span> <span class='rbrace'>}</span><span class='rparen'>)</span>
+<span class='id identifier rubyid_matcher'>matcher</span><span class='period'>.</span><span class='id identifier rubyid_match?'>match?</span><span class='lparen'>(</span><span class='id identifier rubyid_record'>record</span><span class='rparen'>)</span> <span class='comment'># =&gt; true/false</span></code></pre>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Complex condition</p>
+</div></h5>
+      
+      <pre class="example code"><code><span class='id identifier rubyid_matcher'>matcher</span> <span class='op'>=</span> <span class='const'>QueryMatcher</span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="#initialize-instance_method" title="Mongory::QueryMatcher#initialize (method)">new</a></span></span><span class='lparen'>(</span><span class='lbrace'>{</span>
+  <span class='symbol'>:age</span><span class='period'>.</span><span class='id identifier rubyid_gte'>gte</span> <span class='op'>=&gt;</span> <span class='int'>18</span><span class='comma'>,</span>
+  <span class='symbol'>:$or</span> <span class='op'>=&gt;</span> <span class='lbracket'>[</span>
+    <span class='lbrace'>{</span> <span class='symbol'>:name</span> <span class='op'>=&gt;</span> <span class='tstring'><span class='regexp_beg'>/</span><span class='tstring_content'>J</span><span class='regexp_end'>/</span></span> <span class='rbrace'>}</span><span class='comma'>,</span>
+    <span class='lbrace'>{</span> <span class='symbol'>:name</span><span class='period'>.</span><span class='id identifier rubyid_eq'>eq</span> <span class='op'>=&gt;</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>Bob</span><span class='tstring_end'>&#39;</span></span> <span class='rbrace'>}</span>
+  <span class='rbracket'>]</span>
+<span class='rbrace'>}</span><span class='rparen'>)</span></code></pre>
+    
+  </div>
+
+
+  <p class="tag_title">See Also:</p>
+  <ul class="see">
+    
+      <li><span class='object_link'><a href="Matchers/LiteralMatcher.html" title="Mongory::Matchers::LiteralMatcher (class)">Matchers::LiteralMatcher</a></span></li>
+    
+      <li><span class='object_link'><a href="Converters/ConditionConverter.html" title="Mongory::Converters::ConditionConverter (class)">Converters::ConditionConverter</a></span></li>
+    
+  </ul>
+
+</div>
+
+
+  <h2>Constant Summary</h2>
+  
+  <h3 class="inherited">Constants inherited
+     from <span class='object_link'><a href="Matchers/AbstractMultiMatcher.html" title="Mongory::Matchers::AbstractMultiMatcher (class)">Matchers::AbstractMultiMatcher</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Matchers/AbstractMultiMatcher.html#FALSE_PROC-constant" title="Mongory::Matchers::AbstractMultiMatcher::FALSE_PROC (constant)">Matchers::AbstractMultiMatcher::FALSE_PROC</a></span>, <span class='object_link'><a href="Matchers/AbstractMultiMatcher.html#TRUE_PROC-constant" title="Mongory::Matchers::AbstractMultiMatcher::TRUE_PROC (constant)">Matchers::AbstractMultiMatcher::TRUE_PROC</a></span></p>
+
+  
+  
+  <h3 class="inherited">Constants inherited
+     from <span class='object_link'><a href="Matchers/AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">Matchers::AbstractMatcher</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Matchers/AbstractMatcher.html#KEY_NOT_FOUND-constant" title="Mongory::Matchers::AbstractMatcher::KEY_NOT_FOUND (constant)">Matchers::AbstractMatcher::KEY_NOT_FOUND</a></span></p>
+
+
+
+
+  <h2>Instance Attribute Summary</h2>
+  
+  <h3 class="inherited">Attributes inherited from <span class='object_link'><a href="Matchers/AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">Matchers::AbstractMatcher</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Matchers/AbstractMatcher.html#condition-instance_method" title="Mongory::Matchers::AbstractMatcher#condition (method)">#condition</a></span>, <span class='object_link'><a href="Matchers/AbstractMatcher.html#context-instance_method" title="Mongory::Matchers::AbstractMatcher#context (method)">#context</a></span></p>
+
+
+  
+    <h2>
+      Instance Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#check_validity!-instance_method" title="#check_validity! (instance method)">#<strong>check_validity!</strong>  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Overrides the parent class&#39;s check_validity! to prevent premature matcher tree construction.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#initialize-instance_method" title="#initialize (instance method)">#<strong>initialize</strong>(condition, context: Utils::Context.new)  &#x21d2; QueryMatcher </a>
+    
+
+    
+  </span>
+  
+  
+    <span class="note title constructor">constructor</span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Initializes a new query matcher with the given condition.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#prepare_query-instance_method" title="#prepare_query (instance method)">#<strong>prepare_query</strong>  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Prepares the query for execution by ensuring all necessary matchers are initialized.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#raw_proc-instance_method" title="#raw_proc (instance method)">#<strong>raw_proc</strong>  &#x21d2; Proc </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Returns a Proc that can be used for fast matching.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#render_tree-instance_method" title="#render_tree (instance method)">#<strong>render_tree</strong>  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Renders the full matcher tree for the current query.</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="Matchers/HashConditionMatcher.html" title="Mongory::Matchers::HashConditionMatcher (class)">Matchers::HashConditionMatcher</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Matchers/HashConditionMatcher.html#matchers-instance_method" title="Mongory::Matchers::HashConditionMatcher#matchers (method)">#matchers</a></span></p>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="Matchers/AbstractMultiMatcher.html" title="Mongory::Matchers::AbstractMultiMatcher (class)">Matchers::AbstractMultiMatcher</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Matchers/AbstractMultiMatcher.html#build_or_unwrap-class_method" title="Mongory::Matchers::AbstractMultiMatcher.build_or_unwrap (method)">build_or_unwrap</a></span>, <span class='object_link'><a href="Matchers/AbstractMultiMatcher.html#priority-instance_method" title="Mongory::Matchers::AbstractMultiMatcher#priority (method)">#priority</a></span></p>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="Matchers/AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">Matchers::AbstractMatcher</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Matchers/AbstractMatcher.html#cached_proc-instance_method" title="Mongory::Matchers::AbstractMatcher#cached_proc (method)">#cached_proc</a></span>, <span class='object_link'><a href="Matchers/AbstractMatcher.html#debug_proc-instance_method" title="Mongory::Matchers::AbstractMatcher#debug_proc (method)">#debug_proc</a></span>, <span class='object_link'><a href="Matchers/AbstractMatcher.html#define_matcher-class_method" title="Mongory::Matchers::AbstractMatcher.define_matcher (method)">define_matcher</a></span>, <span class='object_link'><a href="Matchers/AbstractMatcher.html#match-instance_method" title="Mongory::Matchers::AbstractMatcher#match (method)">#match</a></span>, <span class='object_link'><a href="Matchers/AbstractMatcher.html#match%3F-instance_method" title="Mongory::Matchers::AbstractMatcher#match? (method)">#match?</a></span>, <span class='object_link'><a href="Matchers/AbstractMatcher.html#priority-instance_method" title="Mongory::Matchers::AbstractMatcher#priority (method)">#priority</a></span>, <span class='object_link'><a href="Matchers/AbstractMatcher.html#uniq_key-instance_method" title="Mongory::Matchers::AbstractMatcher#uniq_key (method)">#uniq_key</a></span></p>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="Utils.html" title="Mongory::Utils (module)">Utils</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="Utils.html#included-class_method" title="Mongory::Utils.included (method)">included</a></span>, <span class='object_link'><a href="Utils.html#included_classes-class_method" title="Mongory::Utils.included_classes (method)">included_classes</a></span>, <span class='object_link'><a href="Utils.html#is_blank%3F-instance_method" title="Mongory::Utils#is_blank? (method)">#is_blank?</a></span>, <span class='object_link'><a href="Utils.html#is_present%3F-instance_method" title="Mongory::Utils#is_present? (method)">#is_present?</a></span></p>
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <div class="method_details first">
+  <h3 class="signature first" id="initialize-instance_method">
+  
+    #<strong>initialize</strong>(condition, context: Utils::Context.new)  &#x21d2; <tt><span class='object_link'><a href="" title="Mongory::QueryMatcher (class)">QueryMatcher</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Initializes a new query matcher with the given condition.
+The condition is converted using Mongory.condition_converter
+before being passed to the parent matcher.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>condition</span>
+      
+      
+        <span class='type'>(<tt>Hash&lt;Symbol, Object&gt;</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>a query condition using operator-style symbol keys,
+e.g. { :age.gt =&gt; 18 }, which will be parsed by <code>Mongory.condition_converter</code>.</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>context</span>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="Utils/Context.html" title="Mongory::Utils::Context (class)">Context</a></span></tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>Utils::Context.new</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>The query context containing configuration and current record</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+  
+    
+    
+    
+    
+    <p class="tag_title">Options Hash (<tt>context:</tt>):</p>
+    <ul class="option">
+      
+        <li>
+          <span class="name">:config</span>
+          <span class="type">(<tt>Hash</tt>)</span>
+          <span class="default">
+            
+          </span>
+          
+            &mdash; <div class='inline'><p>The query configuration</p>
+</div>
+          
+        </li>
+      
+        <li>
+          <span class="name">:current_record</span>
+          <span class="type">(<tt>Object</tt>)</span>
+          <span class="default">
+            
+          </span>
+          
+            &mdash; <div class='inline'><p>The current record being processed</p>
+</div>
+          
+        </li>
+      
+        <li>
+          <span class="name">:need_convert</span>
+          <span class="type">(<tt>Boolean</tt>)</span>
+          <span class="default">
+            
+          </span>
+          
+            &mdash; <div class='inline'><p>Whether the record needs to be converted</p>
+</div>
+          
+        </li>
+      
+    </ul>
+  
+
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+42
+43
+44</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/query_matcher.rb', line 42</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span><span class='lparen'>(</span><span class='id identifier rubyid_condition'>condition</span><span class='comma'>,</span> <span class='label'>context:</span> <span class='const'><span class='object_link'><a href="Utils.html" title="Mongory::Utils (module)">Utils</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="Utils/Context.html" title="Mongory::Utils::Context (class)">Context</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="Utils/Context.html#initialize-instance_method" title="Mongory::Utils::Context#initialize (method)">new</a></span></span><span class='rparen'>)</span>
+  <span class='kw'>super</span><span class='lparen'>(</span><span class='const'><span class='object_link'><a href="../Mongory.html" title="Mongory (module)">Mongory</a></span></span><span class='period'>.</span><span class='id identifier rubyid_condition_converter'><span class='object_link'><a href="../Mongory.html#condition_converter-class_method" title="Mongory.condition_converter (method)">condition_converter</a></span></span><span class='period'>.</span><span class='id identifier rubyid_convert'><span class='object_link'><a href="Converters/ConditionConverter.html#convert-instance_method" title="Mongory::Converters::ConditionConverter#convert (method)">convert</a></span></span><span class='lparen'>(</span><span class='id identifier rubyid_condition'>condition</span><span class='rparen'>)</span><span class='comma'>,</span> <span class='label'>context:</span> <span class='id identifier rubyid_context'>context</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+  
+</div>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="check_validity!-instance_method">
+  
+    #<strong>check_validity!</strong>  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Overrides the parent class&#39;s check_validity! to prevent premature matcher tree construction.
+This matcher does not require validation, so this is a no-op.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+89
+90
+91</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/query_matcher.rb', line 89</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_check_validity!'>check_validity!</span>
+  <span class='comment'># No-op for this matcher
+</span><span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="prepare_query-instance_method">
+  
+    #<strong>prepare_query</strong>  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Prepares the query for execution by ensuring all necessary matchers are initialized.
+This is called before query execution to avoid premature matcher tree construction.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+83</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/query_matcher.rb', line 83</span>
+
+<span class='id identifier rubyid_alias_method'>alias_method</span> <span class='symbol'>:prepare_query</span><span class='comma'>,</span> <span class='symbol'>:check_validity!</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="raw_proc-instance_method">
+  
+    #<strong>raw_proc</strong>  &#x21d2; <tt>Proc</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+  <div class="note notetag">
+    <strong>Note:</strong>
+    <div class='inline'><p>The proc includes error handling and context-based record conversion</p>
+</div>
+  </div>
+
+<p>Returns a Proc that can be used for fast matching.
+The Proc converts the record using Mongory.data_converter
+and delegates to the superclass&#39;s raw_proc.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Proc</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>A proc that performs query matching with context awareness</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/query_matcher.rb', line 52</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_raw_proc'>raw_proc</span>
+  <span class='id identifier rubyid_super_proc'>super_proc</span> <span class='op'>=</span> <span class='kw'>super</span>
+  <span class='id identifier rubyid_need_convert'>need_convert</span> <span class='op'>=</span> <span class='ivar'>@context</span><span class='period'>.</span><span class='id identifier rubyid_need_convert'>need_convert</span>
+  <span class='id identifier rubyid_data_converter'>data_converter</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="../Mongory.html" title="Mongory (module)">Mongory</a></span></span><span class='period'>.</span><span class='id identifier rubyid_data_converter'><span class='object_link'><a href="../Mongory.html#data_converter-class_method" title="Mongory.data_converter (method)">data_converter</a></span></span>
+
+  <span class='const'>Proc</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_record'>record</span><span class='op'>|</span>
+    <span class='id identifier rubyid_record'>record</span> <span class='op'>=</span> <span class='id identifier rubyid_data_converter'>data_converter</span><span class='period'>.</span><span class='id identifier rubyid_convert'>convert</span><span class='lparen'>(</span><span class='id identifier rubyid_record'>record</span><span class='rparen'>)</span> <span class='kw'>if</span> <span class='id identifier rubyid_need_convert'>need_convert</span>
+    <span class='id identifier rubyid_super_proc'>super_proc</span><span class='period'>.</span><span class='id identifier rubyid_call'>call</span><span class='lparen'>(</span><span class='id identifier rubyid_record'>record</span><span class='rparen'>)</span>
+  <span class='kw'>rescue</span> <span class='const'>StandardError</span>
+    <span class='kw'>false</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="render_tree-instance_method">
+  
+    #<strong>render_tree</strong>  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Renders the full matcher tree for the current query.
+This method is intended to be the public entry point for rendering
+the matcher tree. It does not accept any arguments and internally
+handles rendering via the configured pretty-print logic.</p>
+
+<p>Subclasses or internal matchers should implement their own
+<code>#render_tree(prefix, is_last:)</code> for internal recursion.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+  <p class="tag_title">See Also:</p>
+  <ul class="see">
+    
+      <li><span class='object_link'><a href="Matchers/LiteralMatcher.html#render_tree-instance_method" title="Mongory::Matchers::LiteralMatcher#render_tree (method)">Matchers::LiteralMatcher#render_tree</a></span></li>
+    
+  </ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+75
+76
+77</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/query_matcher.rb', line 75</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_render_tree'>render_tree</span>
+  <span class='kw'>super</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Sat Aug 30 05:39:03 2025 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.37 (ruby-3.2.9).
+</div>
+
+    </div>
+  </body>
+</html>

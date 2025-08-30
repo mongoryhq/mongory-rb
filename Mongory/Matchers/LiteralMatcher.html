@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: Mongory::Matchers::LiteralMatcher
+  
+    &mdash; Documentation by YARD 0.9.37
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css" />
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css" />
+
+<script type="text/javascript">
+  pathId = "Mongory::Matchers::LiteralMatcher";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (L)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../Mongory.html" title="Mongory (module)">Mongory</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Matchers.html" title="Mongory::Matchers (module)">Matchers</a></span></span>
+     &raquo; 
+    <span class="title">LiteralMatcher</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: Mongory::Matchers::LiteralMatcher
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName"><span class='object_link'><a href="AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">AbstractMatcher</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next"><span class='object_link'><a href="AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">AbstractMatcher</a></span></li>
+          
+            <li class="next">Mongory::Matchers::LiteralMatcher</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/mongory/matchers/literal_matcher.rb</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>LiteralMatcher handles direct value comparison with special array handling.</p>
+
+<p>This matcher is used when a condition is a literal value (not an operator).
+It handles both direct equality comparison and array-record scenarios.</p>
+
+<p>For array records:</p>
+
+<ul>
+<li>Uses ArrayRecordMatcher to check if any element matches
+For non-array records:</li>
+<li>Uses appropriate matcher based on condition type (Hash, Regexp, nil, etc.)</li>
+</ul>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h4 class="tag_title">Examples:</h4>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Basic equality matching</p>
+</div></h5>
+      
+      <pre class="example code"><code><span class='id identifier rubyid_matcher'>matcher</span> <span class='op'>=</span> <span class='const'>LiteralMatcher</span><span class='period'>.</span><span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='int'>42</span><span class='rparen'>)</span>
+<span class='id identifier rubyid_matcher'>matcher</span><span class='period'>.</span><span class='id identifier rubyid_match?'>match?</span><span class='lparen'>(</span><span class='int'>42</span><span class='rparen'>)</span>       <span class='comment'>#=&gt; true
+</span><span class='id identifier rubyid_matcher'>matcher</span><span class='period'>.</span><span class='id identifier rubyid_match?'>match?</span><span class='lparen'>(</span><span class='lbracket'>[</span><span class='int'>42</span><span class='comma'>,</span> <span class='int'>43</span><span class='rbracket'>]</span><span class='rparen'>)</span> <span class='comment'>#=&gt; true (array contains 42)</span></code></pre>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Regexp matching</p>
+</div></h5>
+      
+      <pre class="example code"><code><span class='id identifier rubyid_matcher'>matcher</span> <span class='op'>=</span> <span class='const'>LiteralMatcher</span><span class='period'>.</span><span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='tstring'><span class='regexp_beg'>/</span><span class='tstring_content'>foo</span><span class='regexp_end'>/</span></span><span class='rparen'>)</span>
+<span class='id identifier rubyid_matcher'>matcher</span><span class='period'>.</span><span class='id identifier rubyid_match?'>match?</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>foo</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span>     <span class='comment'>#=&gt; true
+</span><span class='id identifier rubyid_matcher'>matcher</span><span class='period'>.</span><span class='id identifier rubyid_match?'>match?</span><span class='lparen'>(</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>foobar</span><span class='tstring_end'>&quot;</span></span><span class='rbracket'>]</span><span class='rparen'>)</span> <span class='comment'>#=&gt; true</span></code></pre>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Hash condition matching</p>
+</div></h5>
+      
+      <pre class="example code"><code><span class='id identifier rubyid_matcher'>matcher</span> <span class='op'>=</span> <span class='const'>LiteralMatcher</span><span class='period'>.</span><span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='lbrace'>{</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>$gt</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='int'>10</span> <span class='rbrace'>}</span><span class='rparen'>)</span>
+<span class='id identifier rubyid_matcher'>matcher</span><span class='period'>.</span><span class='id identifier rubyid_match?'>match?</span><span class='lparen'>(</span><span class='int'>15</span><span class='rparen'>)</span>        <span class='comment'>#=&gt; true
+</span><span class='id identifier rubyid_matcher'>matcher</span><span class='period'>.</span><span class='id identifier rubyid_match?'>match?</span><span class='lparen'>(</span><span class='lbracket'>[</span><span class='int'>5</span><span class='comma'>,</span> <span class='int'>15</span><span class='rbracket'>]</span><span class='rparen'>)</span>   <span class='comment'>#=&gt; true</span></code></pre>
+    
+  </div>
+
+
+  <p class="tag_title">See Also:</p>
+  <ul class="see">
+    
+      <li><span class='object_link'><a href="AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">AbstractMatcher</a></span></li>
+    
+      <li><span class='object_link'><a href="ArrayRecordMatcher.html" title="Mongory::Matchers::ArrayRecordMatcher (class)">ArrayRecordMatcher</a></span></li>
+    
+  </ul>
+
+</div><div id="subclasses">
+  <h2>Direct Known Subclasses</h2>
+  <p class="children"><span class='object_link'><a href="FieldMatcher.html" title="Mongory::Matchers::FieldMatcher (class)">FieldMatcher</a></span>, <span class='object_link'><a href="NotMatcher.html" title="Mongory::Matchers::NotMatcher (class)">NotMatcher</a></span>, <span class='object_link'><a href="SizeMatcher.html" title="Mongory::Matchers::SizeMatcher (class)">SizeMatcher</a></span></p>
+</div>
+
+
+
+  <h2>Constant Summary</h2>
+  
+  <h3 class="inherited">Constants inherited
+     from <span class='object_link'><a href="AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">AbstractMatcher</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="AbstractMatcher.html#KEY_NOT_FOUND-constant" title="Mongory::Matchers::AbstractMatcher::KEY_NOT_FOUND (constant)">AbstractMatcher::KEY_NOT_FOUND</a></span></p>
+
+
+
+
+  <h2>Instance Attribute Summary</h2>
+  
+  <h3 class="inherited">Attributes inherited from <span class='object_link'><a href="AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">AbstractMatcher</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="AbstractMatcher.html#condition-instance_method" title="Mongory::Matchers::AbstractMatcher#condition (method)">#condition</a></span>, <span class='object_link'><a href="AbstractMatcher.html#context-instance_method" title="Mongory::Matchers::AbstractMatcher#context (method)">#context</a></span></p>
+
+
+  
+    <h2>
+      Instance Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#array_record_matcher-instance_method" title="#array_record_matcher (instance method)">#<strong>array_record_matcher</strong>  &#x21d2; ArrayRecordMatcher </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Lazily defines the collection matcher for array records.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#check_validity!-instance_method" title="#check_validity! (instance method)">#<strong>check_validity!</strong>  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Validates the nested condition matcher, if applicable.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#dispatched_matcher-instance_method" title="#dispatched_matcher (instance method)">#<strong>dispatched_matcher</strong>  &#x21d2; AbstractMatcher </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Selects and returns the appropriate matcher instance for a given literal condition.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#priority-instance_method" title="#priority (instance method)">#<strong>priority</strong>  &#x21d2; Object </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#raw_proc-instance_method" title="#raw_proc (instance method)">#<strong>raw_proc</strong>  &#x21d2; Proc </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Creates a raw Proc that performs the literal matching operation.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#render_tree-instance_method" title="#render_tree (instance method)">#<strong>render_tree</strong>(prefix = &#39;&#39;, is_last: true)  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Outputs the matcher tree by selecting either collection or condition matcher.</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">AbstractMatcher</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="AbstractMatcher.html#cached_proc-instance_method" title="Mongory::Matchers::AbstractMatcher#cached_proc (method)">#cached_proc</a></span>, <span class='object_link'><a href="AbstractMatcher.html#debug_proc-instance_method" title="Mongory::Matchers::AbstractMatcher#debug_proc (method)">#debug_proc</a></span>, <span class='object_link'><a href="AbstractMatcher.html#define_matcher-class_method" title="Mongory::Matchers::AbstractMatcher.define_matcher (method)">define_matcher</a></span>, <span class='object_link'><a href="AbstractMatcher.html#initialize-instance_method" title="Mongory::Matchers::AbstractMatcher#initialize (method)">#initialize</a></span>, <span class='object_link'><a href="AbstractMatcher.html#match-instance_method" title="Mongory::Matchers::AbstractMatcher#match (method)">#match</a></span>, <span class='object_link'><a href="AbstractMatcher.html#match%3F-instance_method" title="Mongory::Matchers::AbstractMatcher#match? (method)">#match?</a></span>, <span class='object_link'><a href="AbstractMatcher.html#uniq_key-instance_method" title="Mongory::Matchers::AbstractMatcher#uniq_key (method)">#uniq_key</a></span></p>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods included from <span class='object_link'><a href="../Utils.html" title="Mongory::Utils (module)">Utils</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="../Utils.html#included-class_method" title="Mongory::Utils.included (method)">included</a></span>, <span class='object_link'><a href="../Utils.html#included_classes-class_method" title="Mongory::Utils.included_classes (method)">included_classes</a></span>, <span class='object_link'><a href="../Utils.html#is_blank%3F-instance_method" title="Mongory::Utils#is_blank? (method)">#is_blank?</a></span>, <span class='object_link'><a href="../Utils.html#is_present%3F-instance_method" title="Mongory::Utils#is_present? (method)">#is_present?</a></span></p>
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <p class="notice">This class inherits a constructor from <span class='object_link'><a href="AbstractMatcher.html#initialize-instance_method" title="Mongory::Matchers::AbstractMatcher#initialize (method)">Mongory::Matchers::AbstractMatcher</a></span></p>
+  
+</div>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="array_record_matcher-instance_method">
+  
+    #<strong>array_record_matcher</strong>  &#x21d2; <tt><span class='object_link'><a href="ArrayRecordMatcher.html" title="Mongory::Matchers::ArrayRecordMatcher (class)">ArrayRecordMatcher</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Lazily defines the collection matcher for array records.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="ArrayRecordMatcher.html" title="Mongory::Matchers::ArrayRecordMatcher (class)">ArrayRecordMatcher</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the matcher used to match array-type records</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+  <p class="tag_title">See Also:</p>
+  <ul class="see">
+    
+      <li><span class='object_link'><a href="ArrayRecordMatcher.html" title="Mongory::Matchers::ArrayRecordMatcher (class)">ArrayRecordMatcher</a></span></li>
+    
+  </ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+96
+97
+98</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/matchers/literal_matcher.rb', line 96</span>
+
+<span class='id identifier rubyid_define_matcher'>define_matcher</span><span class='lparen'>(</span><span class='symbol'>:array_record</span><span class='rparen'>)</span> <span class='kw'>do</span>
+  <span class='const'><span class='object_link'><a href="ArrayRecordMatcher.html" title="Mongory::Matchers::ArrayRecordMatcher (class)">ArrayRecordMatcher</a></span></span><span class='period'>.</span><span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='ivar'>@condition</span><span class='comma'>,</span> <span class='label'>context:</span> <span class='ivar'>@context</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="check_validity!-instance_method">
+  
+    #<strong>check_validity!</strong>  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Validates the nested condition matcher, if applicable.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+103
+104
+105</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/matchers/literal_matcher.rb', line 103</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_check_validity!'>check_validity!</span>
+  <span class='id identifier rubyid_dispatched_matcher'>dispatched_matcher</span><span class='period'>.</span><span class='id identifier rubyid_check_validity!'>check_validity!</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="dispatched_matcher-instance_method">
+  
+    #<strong>dispatched_matcher</strong>  &#x21d2; <tt><span class='object_link'><a href="AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">AbstractMatcher</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Selects and returns the appropriate matcher instance for a given literal condition.</p>
+
+<p>This method analyzes the type of the raw condition (e.g., Hash, Regexp, nil)
+and returns a dedicated matcher instance accordingly:</p>
+
+<ul>
+<li>Hash → dispatches to <code>HashConditionMatcher</code></li>
+<li>Regexp → dispatches to <code>RegexMatcher</code></li>
+<li>nil → dispatches to an <code>OrMatcher</code> that emulates MongoDB&#39;s <code>{ field: nil }</code> behavior</li>
+</ul>
+
+<p>For all other literal types, this method returns <code>EqMatcher</code>, and fallback equality matching will be used.</p>
+
+<p>This matcher is cached after the first invocation using <code>define_instance_cache_method</code>
+to avoid unnecessary re-instantiation.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">AbstractMatcher</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the matcher used for non-array literal values</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+  <p class="tag_title">See Also:</p>
+  <ul class="see">
+    
+      <li><span class='object_link'><a href="HashConditionMatcher.html" title="Mongory::Matchers::HashConditionMatcher (class)">HashConditionMatcher</a></span></li>
+    
+      <li><span class='object_link'><a href="RegexMatcher.html" title="Mongory::Matchers::RegexMatcher (class)">RegexMatcher</a></span></li>
+    
+      <li><span class='object_link'><a href="OrMatcher.html" title="Mongory::Matchers::OrMatcher (class)">OrMatcher</a></span></li>
+    
+      <li><span class='object_link'><a href="EqMatcher.html" title="Mongory::Matchers::EqMatcher (class)">EqMatcher</a></span></li>
+    
+  </ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/matchers/literal_matcher.rb', line 75</span>
+
+<span class='id identifier rubyid_define_matcher'>define_matcher</span><span class='lparen'>(</span><span class='symbol'>:dispatched</span><span class='rparen'>)</span> <span class='kw'>do</span>
+  <span class='kw'>case</span> <span class='ivar'>@condition</span>
+  <span class='kw'>when</span> <span class='const'>Hash</span>
+    <span class='const'><span class='object_link'><a href="HashConditionMatcher.html" title="Mongory::Matchers::HashConditionMatcher (class)">HashConditionMatcher</a></span></span><span class='period'>.</span><span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='ivar'>@condition</span><span class='comma'>,</span> <span class='label'>context:</span> <span class='ivar'>@context</span><span class='rparen'>)</span>
+  <span class='kw'>when</span> <span class='const'>Regexp</span>
+    <span class='const'><span class='object_link'><a href="RegexMatcher.html" title="Mongory::Matchers::RegexMatcher (class)">RegexMatcher</a></span></span><span class='period'>.</span><span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='ivar'>@condition</span><span class='comma'>,</span> <span class='label'>context:</span> <span class='ivar'>@context</span><span class='rparen'>)</span>
+  <span class='kw'>when</span> <span class='kw'>nil</span>
+    <span class='const'><span class='object_link'><a href="OrMatcher.html" title="Mongory::Matchers::OrMatcher (class)">OrMatcher</a></span></span><span class='period'>.</span><span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='lbracket'>[</span>
+      <span class='lbrace'>{</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>$exists</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='kw'>false</span> <span class='rbrace'>}</span><span class='comma'>,</span>
+      <span class='lbrace'>{</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>$eq</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='kw'>nil</span> <span class='rbrace'>}</span>
+    <span class='rbracket'>]</span><span class='comma'>,</span> <span class='label'>context:</span> <span class='ivar'>@context</span><span class='rparen'>)</span>
+  <span class='kw'>else</span>
+    <span class='const'><span class='object_link'><a href="EqMatcher.html" title="Mongory::Matchers::EqMatcher (class)">EqMatcher</a></span></span><span class='period'>.</span><span class='id identifier rubyid_build'>build</span><span class='lparen'>(</span><span class='ivar'>@condition</span><span class='comma'>,</span> <span class='label'>context:</span> <span class='ivar'>@context</span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="priority-instance_method">
+  
+    #<strong>priority</strong>  &#x21d2; <tt>Object</tt> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+51
+52
+53</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/matchers/literal_matcher.rb', line 51</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_priority'>priority</span>
+  <span class='int'>1</span> <span class='op'>+</span> <span class='id identifier rubyid_dispatched_matcher'>dispatched_matcher</span><span class='period'>.</span><span class='id identifier rubyid_priority'>priority</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="raw_proc-instance_method">
+  
+    #<strong>raw_proc</strong>  &#x21d2; <tt>Proc</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Creates a raw Proc that performs the literal matching operation.
+The Proc handles both array and non-array records appropriately.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Proc</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>a Proc that performs the literal matching operation</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/matchers/literal_matcher.rb', line 37</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_raw_proc'>raw_proc</span>
+  <span class='id identifier rubyid_array_record_proc'>array_record_proc</span> <span class='op'>=</span> <span class='kw'>nil</span>
+  <span class='id identifier rubyid_dispatched_proc'>dispatched_proc</span> <span class='op'>=</span> <span class='id identifier rubyid_dispatched_matcher'>dispatched_matcher</span><span class='period'>.</span><span class='id identifier rubyid_to_proc'>to_proc</span>
+
+  <span class='const'>Proc</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_record'>record</span><span class='op'>|</span>
+    <span class='kw'>if</span> <span class='id identifier rubyid_record'>record</span><span class='period'>.</span><span class='id identifier rubyid_is_a?'>is_a?</span><span class='lparen'>(</span><span class='const'>Array</span><span class='rparen'>)</span>
+      <span class='id identifier rubyid_array_record_proc'>array_record_proc</span> <span class='op'>||=</span> <span class='id identifier rubyid_array_record_matcher'>array_record_matcher</span><span class='period'>.</span><span class='id identifier rubyid_to_proc'>to_proc</span>
+      <span class='id identifier rubyid_array_record_proc'>array_record_proc</span><span class='period'>.</span><span class='id identifier rubyid_call'>call</span><span class='lparen'>(</span><span class='id identifier rubyid_record'>record</span><span class='rparen'>)</span>
+    <span class='kw'>else</span>
+      <span class='id identifier rubyid_dispatched_proc'>dispatched_proc</span><span class='period'>.</span><span class='id identifier rubyid_call'>call</span><span class='lparen'>(</span><span class='id identifier rubyid_record'>record</span><span class='rparen'>)</span>
+    <span class='kw'>end</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="render_tree-instance_method">
+  
+    #<strong>render_tree</strong>(prefix = &#39;&#39;, is_last: true)  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Outputs the matcher tree by selecting either collection or condition matcher.
+Delegates <code>render_tree</code> to whichever submatcher was active.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>prefix</span>
+      
+      
+        <span class='type'>(<tt>String</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>&#39;&#39;</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>the prefix string for tree rendering</p>
+</div>
+      
+    </li>
+  
+    <li>
+      
+        <span class='name'>is_last</span>
+      
+      
+        <span class='type'>(<tt>Boolean</tt>)</span>
+      
+      
+        <em class="default">(defaults to: <tt>true</tt>)</em>
+      
+      
+        &mdash;
+        <div class='inline'><p>whether this is the last node in the tree</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+113
+114
+115
+116
+117
+118</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/matchers/literal_matcher.rb', line 113</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_render_tree'>render_tree</span><span class='lparen'>(</span><span class='id identifier rubyid_prefix'>prefix</span> <span class='op'>=</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='label'>is_last:</span> <span class='kw'>true</span><span class='rparen'>)</span>
+  <span class='kw'>super</span>
+
+  <span class='id identifier rubyid_target_matcher'>target_matcher</span> <span class='op'>=</span> <span class='ivar'>@array_record_matcher</span> <span class='op'>||</span> <span class='id identifier rubyid_dispatched_matcher'>dispatched_matcher</span>
+  <span class='id identifier rubyid_target_matcher'>target_matcher</span><span class='period'>.</span><span class='id identifier rubyid_render_tree'>render_tree</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_prefix'>prefix</span><span class='embexpr_end'>}</span><span class='embexpr_beg'>#{</span><span class='id identifier rubyid_is_last'>is_last</span> <span class='op'>?</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>   </span><span class='tstring_end'>&#39;</span></span> <span class='op'>:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>│  </span><span class='tstring_end'>&#39;</span></span><span class='embexpr_end'>}</span><span class='tstring_end'>&quot;</span></span><span class='comma'>,</span> <span class='label'>is_last:</span> <span class='kw'>true</span><span class='rparen'>)</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Sat Aug 30 05:39:03 2025 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.37 (ruby-3.2.9).
+</div>
+
+    </div>
+  </body>
+</html>

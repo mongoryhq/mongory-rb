@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  Class: Mongory::Converters::ConditionConverter
+  
+    &mdash; Documentation by YARD 0.9.37
+  
+</title>
+
+  <link rel="stylesheet" href="../../css/style.css" type="text/css" />
+
+  <link rel="stylesheet" href="../../css/common.css" type="text/css" />
+
+<script type="text/javascript">
+  pathId = "Mongory::Converters::ConditionConverter";
+  relpath = '../../';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="../../js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="../../js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div class="nav_wrap">
+      <iframe id="nav" src="../../class_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="../../_index.html">Index (C)</a> &raquo;
+    <span class='title'><span class='object_link'><a href="../../Mongory.html" title="Mongory (module)">Mongory</a></span></span> &raquo; <span class='title'><span class='object_link'><a href="../Converters.html" title="Mongory::Converters (module)">Converters</a></span></span>
+     &raquo; 
+    <span class="title">ConditionConverter</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="../../class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><h1>Class: Mongory::Converters::ConditionConverter
+  
+  
+  
+</h1>
+<div class="box_info">
+  
+  <dl>
+    <dt>Inherits:</dt>
+    <dd>
+      <span class="inheritName"><span class='object_link'><a href="AbstractConverter.html" title="Mongory::Converters::AbstractConverter (class)">AbstractConverter</a></span></span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next"><span class='object_link'><a href="../Utils/SingletonBuilder.html" title="Mongory::Utils::SingletonBuilder (class)">Utils::SingletonBuilder</a></span></li>
+          
+            <li class="next"><span class='object_link'><a href="AbstractConverter.html" title="Mongory::Converters::AbstractConverter (class)">AbstractConverter</a></span></li>
+          
+            <li class="next">Mongory::Converters::ConditionConverter</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+    </dd>
+  </dl>
+  
+
+  
+  
+  
+  
+  
+
+  
+
+  
+  <dl>
+    <dt>Defined in:</dt>
+    <dd>lib/mongory/converters/condition_converter.rb</dd>
+  </dl>
+  
+</div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    <p>ConditionConverter transforms a flat condition hash into nested hash form.
+This is used internally by ValueConverter to normalize condition structures
+like { &quot;foo.bar&quot; =&gt; 1, &quot;foo.baz&quot; =&gt; 2 } into nested Mongo-style conditions.
+Used by QueryMatcher to normalize condition input for internal matching.</p>
+
+<p>Combines key transformation (via KeyConverter) and
+value normalization (via ValueConverter), and merges overlapping keys.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+  <div class="examples">
+    <h4 class="tag_title">Examples:</h4>
+    
+      
+        <h5 class="example_title"><div class='inline'><p>Convert condition hash</p>
+</div></h5>
+      
+      <pre class="example code"><code><span class='const'>ConditionConverter</span><span class='period'>.</span><span class='id identifier rubyid_instance'>instance</span><span class='period'>.</span><span class='id identifier rubyid_convert'>convert</span><span class='lparen'>(</span><span class='lbrace'>{</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>a.b</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='int'>1</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>a.c</span><span class='tstring_end'>&quot;</span></span> <span class='op'>=&gt;</span> <span class='int'>2</span> <span class='rbrace'>}</span><span class='rparen'>)</span>
+<span class='comment'># =&gt; { &quot;a&quot; =&gt; { &quot;b&quot; =&gt; 1, &quot;c&quot; =&gt; 2 } }</span></code></pre>
+    
+  </div>
+
+
+</div>
+
+
+  <h2>Constant Summary</h2>
+  
+  <h3 class="inherited">Constants inherited
+     from <span class='object_link'><a href="AbstractConverter.html" title="Mongory::Converters::AbstractConverter (class)">AbstractConverter</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="AbstractConverter.html#NOTHING-constant" title="Mongory::Converters::AbstractConverter::NOTHING (constant)">AbstractConverter::NOTHING</a></span></p>
+
+
+
+
+
+  
+    <h2>
+      Instance Method Summary
+      <small><a href="#" class="summary_toggle">collapse</a></small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#convert-instance_method" title="#convert (instance method)">#<strong>convert</strong>(condition)  &#x21d2; Hash </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Converts a flat condition hash into a nested structure.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#freeze-instance_method" title="#freeze (instance method)">#<strong>freeze</strong>  &#x21d2; void </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Freezes internal converters to prevent further modification.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#key_converter-instance_method" title="#key_converter (instance method)">#<strong>key_converter</strong>  &#x21d2; AbstractConverter </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Returns the key converter used to transform condition keys.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#value_converter-instance_method" title="#value_converter (instance method)">#<strong>value_converter</strong>  &#x21d2; AbstractConverter </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'><p>Returns the value converter used to transform condition values.</p>
+</div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="AbstractConverter.html" title="Mongory::Converters::AbstractConverter (class)">AbstractConverter</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="AbstractConverter.html#configure-instance_method" title="Mongory::Converters::AbstractConverter#configure (method)">#configure</a></span>, <span class='object_link'><a href="AbstractConverter.html#fallback-instance_method" title="Mongory::Converters::AbstractConverter#fallback (method)">#fallback</a></span>, <span class='object_link'><a href="AbstractConverter.html#find_strategy-instance_method" title="Mongory::Converters::AbstractConverter#find_strategy (method)">#find_strategy</a></span>, <span class='object_link'><a href="AbstractConverter.html#initialize-instance_method" title="Mongory::Converters::AbstractConverter#initialize (method)">#initialize</a></span>, <span class='object_link'><a href="AbstractConverter.html#register-instance_method" title="Mongory::Converters::AbstractConverter#register (method)">#register</a></span></p>
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <h3 class="inherited">Methods inherited from <span class='object_link'><a href="../Utils/SingletonBuilder.html" title="Mongory::Utils::SingletonBuilder (class)">Utils::SingletonBuilder</a></span></h3>
+  <p class="inherited"><span class='object_link'><a href="../Utils/SingletonBuilder.html#initialize-instance_method" title="Mongory::Utils::SingletonBuilder#initialize (method)">#initialize</a></span>, <span class='object_link'><a href="../Utils/SingletonBuilder.html#inspect-instance_method" title="Mongory::Utils::SingletonBuilder#inspect (method)">#inspect</a></span>, <span class='object_link'><a href="../Utils/SingletonBuilder.html#to_s-instance_method" title="Mongory::Utils::SingletonBuilder#to_s (method)">#to_s</a></span></p>
+<div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <p class="notice">This class inherits a constructor from <span class='object_link'><a href="AbstractConverter.html#initialize-instance_method" title="Mongory::Converters::AbstractConverter#initialize (method)">Mongory::Converters::AbstractConverter</a></span></p>
+  
+</div>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="convert-instance_method">
+  
+    #<strong>convert</strong>(condition)  &#x21d2; <tt>Hash</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p>Converts a flat condition hash into a nested structure.
+Applies both key and value conversion, and merges overlapping keys.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  <p class="tag_title">Parameters:</p>
+<ul class="param">
+  
+    <li>
+      
+        <span class='name'>condition</span>
+      
+      
+        <span class='type'>(<tt>Hash</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the flat condition hash to convert</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt>Hash</tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the transformed nested condition</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/converters/condition_converter.rb', line 23</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_convert'>convert</span><span class='lparen'>(</span><span class='id identifier rubyid_condition'>condition</span><span class='rparen'>)</span>
+  <span class='kw'>return</span> <span class='id identifier rubyid_condition'>condition</span> <span class='kw'>if</span> <span class='id identifier rubyid_condition'>condition</span><span class='period'>.</span><span class='id identifier rubyid_is_a?'>is_a?</span><span class='lparen'>(</span><span class='const'><span class='object_link'><a href="Converted.html" title="Mongory::Converters::Converted (module)">Converted</a></span></span><span class='rparen'>)</span>
+
+  <span class='id identifier rubyid_result'>result</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="Converted.html" title="Mongory::Converters::Converted (module)">Converted</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="Converted/Hash.html" title="Mongory::Converters::Converted::Hash (class)">Hash</a></span></span><span class='period'>.</span><span class='id identifier rubyid_new'><span class='object_link'><a href="Converted/Hash.html#initialize-instance_method" title="Mongory::Converters::Converted::Hash#initialize (method)">new</a></span></span>
+  <span class='id identifier rubyid_condition'>condition</span><span class='period'>.</span><span class='id identifier rubyid_each_pair'>each_pair</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_k'>k</span><span class='comma'>,</span> <span class='id identifier rubyid_v'>v</span><span class='op'>|</span>
+    <span class='id identifier rubyid_converted_value'>converted_value</span> <span class='op'>=</span> <span class='id identifier rubyid_value_converter'>value_converter</span><span class='period'>.</span><span class='id identifier rubyid_convert'>convert</span><span class='lparen'>(</span><span class='id identifier rubyid_v'>v</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_converted_pair'>converted_pair</span> <span class='op'>=</span> <span class='id identifier rubyid_key_converter'>key_converter</span><span class='period'>.</span><span class='id identifier rubyid_convert'>convert</span><span class='lparen'>(</span><span class='id identifier rubyid_k'>k</span><span class='comma'>,</span> <span class='id identifier rubyid_converted_value'>converted_value</span><span class='rparen'>)</span>
+    <span class='id identifier rubyid_result'>result</span><span class='period'>.</span><span class='id identifier rubyid_deep_merge!'>deep_merge!</span><span class='lparen'>(</span><span class='id identifier rubyid_converted_pair'>converted_pair</span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+
+  <span class='id identifier rubyid_result'>result</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="freeze-instance_method">
+  
+    #<strong>freeze</strong>  &#x21d2; <tt>void</tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    <p class="note returns_void">This method returns an undefined value.</p><p>Freezes internal converters to prevent further modification.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+55
+56
+57
+58
+59</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/converters/condition_converter.rb', line 55</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_freeze'>freeze</span>
+  <span class='kw'>super</span>
+  <span class='id identifier rubyid_key_converter'>key_converter</span><span class='period'>.</span><span class='id identifier rubyid_freeze'>freeze</span>
+  <span class='id identifier rubyid_value_converter'>value_converter</span><span class='period'>.</span><span class='id identifier rubyid_freeze'>freeze</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="key_converter-instance_method">
+  
+    #<strong>key_converter</strong>  &#x21d2; <tt><span class='object_link'><a href="AbstractConverter.html" title="Mongory::Converters::AbstractConverter (class)">AbstractConverter</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+  <div class="note notetag">
+    <strong>Note:</strong>
+    <div class='inline'><p>Singleton instance, not configurable after initialization</p>
+</div>
+  </div>
+
+<p>Returns the key converter used to transform condition keys.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="AbstractConverter.html" title="Mongory::Converters::AbstractConverter (class)">AbstractConverter</a></span></tt>)</span>
+      
+      
+      
+        &mdash;
+        <div class='inline'><p>the key converter instance</p>
+</div>
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+40
+41
+42</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/converters/condition_converter.rb', line 40</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_key_converter'>key_converter</span>
+  <span class='const'><span class='object_link'><a href="KeyConverter.html" title="Mongory::Converters::KeyConverter (class)">KeyConverter</a></span></span><span class='period'>.</span><span class='id identifier rubyid_instance'>instance</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="value_converter-instance_method">
+  
+    #<strong>value_converter</strong>  &#x21d2; <tt><span class='object_link'><a href="AbstractConverter.html" title="Mongory::Converters::AbstractConverter (class)">AbstractConverter</a></span></tt> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+  <div class="note notetag">
+    <strong>Note:</strong>
+    <div class='inline'><p>Singleton instance, not configurable after initialization</p>
+</div>
+  </div>
+
+<p>Returns the value converter used to transform condition values.</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+<p class="tag_title">Returns:</p>
+<ul class="return">
+  
+    <li>
+      
+      
+        <span class='type'>(<tt><span class='object_link'><a href="AbstractConverter.html" title="Mongory::Converters::AbstractConverter (class)">AbstractConverter</a></span></tt>)</span>
+      
+      
+      
+    </li>
+  
+</ul>
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+48
+49
+50</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/mongory/converters/condition_converter.rb', line 48</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_value_converter'>value_converter</span>
+  <span class='const'><span class='object_link'><a href="ValueConverter.html" title="Mongory::Converters::ValueConverter (class)">ValueConverter</a></span></span><span class='period'>.</span><span class='id identifier rubyid_instance'>instance</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+      <div id="footer">
+  Generated on Sat Aug 30 05:39:03 2025 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.37 (ruby-3.2.9).
+</div>
+
+    </div>
+  </body>
+</html>
