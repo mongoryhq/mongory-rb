@@ -10,8 +10,12 @@ module Mongory
   #   collection.mongory.c.where(condition).to_a
   class CMatcher
     # @!method self.new(condition)
-    #   @param condition [Object] the condition
+    #   @param condition [Hash] the condition
     #   @return [Mongory::CMatcher] a new matcher
+    #   @note This method is implemented in the C extension
+    # @!method self.trace_result_colorful=(colorful)
+    #   @param colorful [Boolean] whether to enable colorful trace result
+    #   @return [void]
     #   @note This method is implemented in the C extension
     #
     #   @!method match?(record)
@@ -20,7 +24,7 @@ module Mongory
     #     @note This method is implemented in the C extension
     #   @!method explain
     #     @return [void]
-    #     @note This method will print metcher tree structure
+    #     @note This method will print matcher tree structure
     #     @note This method is implemented in the C extension
     #   @!method trace
     #     @return [Boolean] true if the record matches the condition, false otherwise
@@ -39,14 +43,10 @@ module Mongory
     #     @note This method will print trace result
     #     @note This method is implemented in the C extension
     #   @!method condition
-    #     @return [Object] the condition
+    #     @return [Hash] the condition
     #     @note This method is implemented in the C extension
     #   @!method context
     #     @return [Utils::Context] the context
-    #     @note This method is implemented in the C extension
-    #   @!method trace_result_colorful=
-    #     @param colorful [Boolean] whether to enable colorful trace result
-    #     @return [Boolean]
     #     @note This method is implemented in the C extension
 
     # @return [Proc] a Proc that performs the matching operation

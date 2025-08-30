@@ -55,10 +55,16 @@ module Mongory
     # Iterates through all records that match the current matcher.
     # Uses a compiled Proc for faster matching.
     #
+    # @deprecated
+    # Since C extension has implemented, the fast mode is no longer needed. Use C extension instead.
+    #
+    # This method is deprecated and will be removed in future versions.
+    #
     # @yieldparam record [Object] each matching record
     # @return [Enumerator] if no block given
     # @return [void] if block given
     def fast
+      warn("Deprecated: Since C extension has implemented, the fast mode is no longer needed. Use C extension instead.")
       return to_enum(:fast) unless block_given?
 
       @context.need_convert = false
