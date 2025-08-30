@@ -25,6 +25,16 @@ users.mongory
 posts.mongory
   .where(:tags.elem_match => { :name => 'ruby', :priority.gt => 5 })
   .where(:comments.every => { :approved => true })
+
+# Since Matcher provide `to_proc` method, you could treat Matcher as a block
+matcher = Mongory::QueryMatcher.new({
+  :tags.elem_match => { :name => 'ruby', :priority.gt => 5 },
+  :comments.every => { :approved => true }
+})
+
+# Will filter
+posts_1.select!(&matcher)
+posts_2.select!(&matcher)
 ```
 
 ## Integration with ActiveRecord
