@@ -110,6 +110,18 @@ records = [
 result = records.mongory
   .where(:age.gte => 18)
   .or({ :name => /J/ }, { :name.eq => 'Bob' })
+  .to_a
+
+# Or input condition via json string from front-end
+result = records.mongory
+  .where(JSON.parse('{
+    "age": {"$gt": 18},
+    "$or": [
+      {"name": {"$regex": "J"}},
+      {"name": "Bob"}
+    ]
+  }'))
+  .to_a
 
 # Using limit to restrict results
 # Note: limit executes immediately and affects subsequent conditions
