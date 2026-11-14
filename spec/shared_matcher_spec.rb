@@ -985,4 +985,67 @@ RSpec.shared_examples 'matcher behavior' do
       expect(subject.match?(name: 'Mary')).to be false
     end
   end
+
+  context 'MongoDB array field comparison and equality semantics' do
+    context 'when querying array field with $gt / $lt' do
+      let(:condition) { { scores: { '$gt' => 5, '$lt' => 8 } } }
+
+      it { is_expected.to be_match(scores: [3, 6, 9]) }
+      it { is_expected.not_to be_match(scores: [1, 2, 3]) }
+      it { is_expected.not_to be_match(scores: [3, 9]) }
+    end
+
+    context 'when querying array field with $gte / $lte' do
+      let(:condition) { { scores: { '$gte' => 6, '$lte' => 6 } } }
+
+      it { is_expected.to be_match(scores: [3, 6, 9]) }
+      it { is_expected.not_to be_match(scores: [3, 7, 9]) }
+    end
+
+    context 'when querying array field with $regex' do
+      let(:condition) { { tags: { '$regex' => '^ru' } } }
+
+      it { is_expected.to be_match(tags: %w(go ruby c)) }
+      it { is_expected.not_to be_match(tags: %w(go python c)) }
+    end
+
+    context 'when querying array field with scalar $eq' do
+      let(:condition) { { tags: { '$eq' => 'ruby' } } }
+
+      it { is_expected.to be_match(tags: %w(go ruby)) }
+      it { is_expected.not_to be_match(tags: %w(go c)) }
+    end
+
+    context 'when querying array field with array $eq' do
+      let(:condition) { { tags: { '$eq' => %w(go ruby) } } }
+
+      it { is_expected.to be_match(tags: %w(go ruby)) }
+      it { is_expected.to be_match(tags: [%w(go ruby), 'c']) }
+      it { is_expected.not_to be_match(tags: %w(ruby go)) }
+    end
+
+    context 'when querying array field with scalar $ne' do
+      let(:condition) { { tags: { '$ne' => 'ruby' } } }
+
+      it { is_expected.not_to be_match(tags: %w(go ruby)) }
+      it { is_expected.to be_match(tags: %w(go c)) }
+    end
+
+    context 'when querying array field with array $ne' do
+      let(:condition) { { tags: { '$ne' => %w(go ruby) } } }
+
+      it { is_expected.not_to be_match(tags: %w(go ruby)) }
+      it { is_expected.not_to be_match(tags: [%w(go ruby), 'c']) }
+      it { is_expected.to be_match(tags: %w(ruby go)) }
+    end
+
+    context 'when querying array of hashes for exact equality' do
+      let(:condition) { { items: [{ a: 1, b: 'x' }] } }
+
+      it { is_expected.to be_match(items: [{ 'a' => 1, 'b' => 'x' }]) }
+      it { is_expected.to be_match(items: [{ 'b' => 'x', 'a' => 1 }]) }
+      it { is_expected.not_to be_match(items: [{ 'a' => 1, 'b' => 'y' }]) }
+      it { is_expected.not_to be_match(items: [{ 'a' => 1, 'b' => 'x', 'c' => 2 }]) }
+    end
+  end
 end

@@ -5,14 +5,15 @@ module Mongory
     # NeMatcher implements the `$ne` (not equal) operator.
     #
     # It returns true if the record is *not equal* to the condition.
-    #
-    # This matcher inherits its logic from AbstractMatcher
-    # and uses Ruby's `!=` operator for comparison.
+    # If the record is an `Array`, it returns false if either the array itself
+    # equals the condition or any element in the array equals the condition.
     #
     # @example
     #   matcher = NeMatcher.build(42)
-    #   matcher.match?(41)  #=> true
-    #   matcher.match?(42)  #=> false
+    #   matcher.match?(41)       #=> true
+    #   matcher.match?(42)       #=> false
+    #   matcher.match?([10, 42]) #=> false
+    #   matcher.match?([10, 20]) #=> true
     #
     # @see AbstractMatcher
     class NeMatcher < AbstractMatcher
@@ -24,7 +25,7 @@ module Mongory
         condition = @condition
 
         Proc.new do |record|
-          record != condition
+          record != condition && !(record.is_a?(Array) && record.include?(condition))
         end
       end
 

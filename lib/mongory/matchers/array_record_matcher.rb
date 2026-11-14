@@ -59,13 +59,17 @@ module Mongory
         result.sort_by(&:priority)
       end
 
+      ELEM_MATCH_OPERATORS = %w($gt $gte $lt $lte $regex).freeze
+
       private
 
       # Parses the original condition hash into a normalized structure suitable for HashConditionMatcher.
       #
       # This method classifies keys in the condition hash as:
       # - Numeric (integers or numeric strings): treated as index-based field matchers
-      # - Operator keys (e.g., `$size`, `$type`): retained at the top level
+      # - Element-level comparison operators (`$gt`, `$gte`, `$lt`, `$lte`, `$regex`, non-array `$eq`):
+      #   grouped under `$elemMatch`
+      # - Container-level operator keys (e.g., `$size`, `$in`, `$nin`, `$every`, `$ne`): retained at the top level
       # - All other keys: grouped under a `$elemMatch` clause for element-wise comparison
       #
       # @return [Hash] A normalized condition hash, potentially containing `$elemMatch`
@@ -73,20 +77,28 @@ module Mongory
         h_parsed = {}
         h_elem_match = {}
         @condition.each_pair do |key, value|
-          case key
-          when Integer, FieldMatcher::INTEGER_INDEX_REGEX
-            h_parsed[key.to_i] = value
-          when '$elemMatch'
-            h_elem_match.merge!(value)
-          when *Matchers.operators
-            h_parsed[key] = value
-          else
-            h_elem_match[key] = value
-          end
+          parse_condition_pair(key, value, h_parsed, h_elem_match)
         end
 
         h_parsed['$elemMatch'] = h_elem_match if is_present?(h_elem_match)
         h_parsed
+      end
+
+      def parse_condition_pair(key, value, h_parsed, h_elem_match)
+        case key
+        when Integer, FieldMatcher::INTEGER_INDEX_REGEX
+          h_parsed[key.to_i] = value
+        when '$elemMatch'
+          value.is_a?(Hash) ? h_elem_match.merge!(value) : h_parsed[key] = value
+        when *Matchers.operators
+          elem_match_operator?(key, value) ? h_elem_match[key] = value : h_parsed[key] = value
+        else
+          h_elem_match[key] = value
+        end
+      end
+
+      def elem_match_operator?(key, value)
+        ELEM_MATCH_OPERATORS.include?(key) || (key == '$eq' && !value.is_a?(Array))
       end
     end
   end

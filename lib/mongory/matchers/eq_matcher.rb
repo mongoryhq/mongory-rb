@@ -4,7 +4,8 @@ module Mongory
   module Matchers
     # EqMatcher matches values using the equality operator `==`.
     #
-    # It inherits from AbstractMatcher and defines its operator as `:==`.
+    # If the target record is an `Array`, it matches when either the array itself
+    # equals the condition or any element in the array equals the condition.
     #
     # Used for conditions like:
     # - { age: { '$eq' => 30 } }
@@ -15,6 +16,7 @@ module Mongory
     # @example
     #   matcher = EqMatcher.build(42)
     #   matcher.match?(42)       #=> true
+    #   matcher.match?([10, 42]) #=> true
     #   matcher.match?("42")     #=> false
     #
     # @note This matcher is also used as the fallback for non-operator literal values,
@@ -32,7 +34,7 @@ module Mongory
         condition = @condition
 
         Proc.new do |record|
-          record == condition
+          record == condition || (record.is_a?(Array) && record.include?(condition))
         end
       end
 

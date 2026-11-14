@@ -59,5 +59,20 @@ RSpec.describe Mongory::Matchers::ArrayRecordMatcher do
       it { is_expected.not_to be_match([1, 9]) }
       it { is_expected.to be_match([{ '01' => 9 }]) }
     end
+
+    context 'when condition is a comparison operator hash on array elements' do
+      let(:condition) { { '$gt' => 5 } }
+
+      it { is_expected.to be_match([3, 6, 9]) }
+      it { is_expected.not_to be_match([1, 2, 3]) }
+    end
+
+    context 'when condition has non-hash $elemMatch' do
+      let(:condition) { { '$elemMatch' => 123 } }
+
+      it 'raises Mongory::TypeError on check_validity!' do
+        expect { subject.check_validity! }.to raise_error(Mongory::TypeError, '$elemMatch needs a Hash.')
+      end
+    end
   end
 end
