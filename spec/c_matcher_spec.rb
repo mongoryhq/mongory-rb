@@ -11,7 +11,11 @@ RSpec.describe Mongory::CMatcher, type: :model do
   end
 
   describe 'trace lifecycle edge cases' do
-    subject(:matcher) { described_class.new(name: 'John') }
+    subject(:matcher) { described_class.new(condition) }
+
+    let(:condition) { { name: 'John' } }
+    let(:raw_hash) { { 0 => 'admin' } }
+    let(:custom_condition) { { user: DummyModel.new(raw_hash) } }
 
     it 'allows calling disable_trace without prior enable_trace' do
       expect { matcher.disable_trace }.not_to raise_error
@@ -27,7 +31,7 @@ RSpec.describe Mongory::CMatcher, type: :model do
     end
 
     it 'handles DataConverter-converted hashes with integer keys' do
-      custom_matcher = described_class.new(user: DummyModel.new(0 => 'admin'))
+      custom_matcher = described_class.new(custom_condition)
       expect(custom_matcher.match?(user: %w(admin guest))).to be true
       expect(custom_matcher.match?(user: { '0' => 'admin' })).to be true
       expect(custom_matcher.match?(user: %w(guest admin))).to be false
