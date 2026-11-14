@@ -108,11 +108,14 @@ static VALUE rb_mongory_matcher_new(int argc, VALUE *argv, VALUE class) {
   rb_mongory_matcher_parse_argv(wrapper, argc, argv);
 
   mongory_matcher *matcher = mongory_matcher_new(matcher_pool_base, wrapper->condition, wrapper->ctx);
-  if (rb_mongory_error_handling(matcher_pool_base, "Failed to create matcher")) {
+  if (matcher_pool_base->error) {
+    char err_msg[256];
+    snprintf(err_msg, sizeof(err_msg), "%s",
+             matcher_pool_base->error->message ? matcher_pool_base->error->message : "Unknown error");
     matcher_pool_base->free(matcher_pool_base);
     scratch_pool_base->free(scratch_pool_base);
     xfree(wrapper);
-    return Qnil;
+    rb_raise(eMongoryTypeError, "Failed to create matcher: %s", err_msg);
   }
 
   wrapper->matcher = matcher;
@@ -182,16 +185,21 @@ static VALUE rb_mongory_matcher_explain(VALUE self) {
 static VALUE rb_mongory_matcher_trace(VALUE self, VALUE data) {
   rb_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
-  mongory_memory_pool *trace_pool = mongory_memory_pool_new();
-  mongory_value *data_value = rb_to_mongory_value_shallow(trace_pool, data);
+  rb_mongory_memory_pool_t *trace_pool = rb_mongory_memory_pool_new();
+  trace_pool->owner = wrapper;
+  mongory_memory_pool *trace_pool_base = &trace_pool->base;
+  mongory_value *data_value = rb_to_mongory_value_shallow(trace_pool_base, data);
 
-  if (rb_mongory_error_handling(trace_pool, "Trace failed")) {
-    trace_pool->free(trace_pool);
-    return Qnil;
+  if (trace_pool_base->error) {
+    char err_msg[256];
+    snprintf(err_msg, sizeof(err_msg), "%s",
+             trace_pool_base->error->message ? trace_pool_base->error->message : "Unknown error");
+    trace_pool_base->free(trace_pool_base);
+    rb_raise(eMongoryTypeError, "Trace failed: %s", err_msg);
   }
 
   bool matched = mongory_matcher_trace(wrapper->matcher, data_value);
-  trace_pool->free(trace_pool);
+  trace_pool_base->free(trace_pool_base);
 
   return matched ? Qtrue : Qfalse;
 }
@@ -200,14 +208,23 @@ static VALUE rb_mongory_matcher_trace(VALUE self, VALUE data) {
 static VALUE rb_mongory_matcher_enable_trace(VALUE self) {
   rb_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
-  mongory_memory_pool *trace_pool = rb_mongory_memory_pool_new();
-  mongory_matcher_enable_trace(wrapper->matcher, trace_pool);
-
-  if (rb_mongory_error_handling(trace_pool, "Enable trace failed")) {
-    trace_pool->free(trace_pool);
-    return Qnil;
+  if (wrapper->trace_pool) {
+    wrapper->trace_pool->free(wrapper->trace_pool);
+    wrapper->trace_pool = NULL;
   }
-  wrapper->trace_pool = trace_pool;
+  rb_mongory_memory_pool_t *trace_pool = rb_mongory_memory_pool_new();
+  trace_pool->owner = wrapper;
+  mongory_memory_pool *trace_pool_base = &trace_pool->base;
+  mongory_matcher_enable_trace(wrapper->matcher, trace_pool_base);
+
+  if (trace_pool_base->error) {
+    char err_msg[256];
+    snprintf(err_msg, sizeof(err_msg), "%s",
+             trace_pool_base->error->message ? trace_pool_base->error->message : "Unknown error");
+    trace_pool_base->free(trace_pool_base);
+    rb_raise(eMongoryTypeError, "Enable trace failed: %s", err_msg);
+  }
+  wrapper->trace_pool = trace_pool_base;
 
   return Qnil;
 }
@@ -218,9 +235,17 @@ static VALUE rb_mongory_matcher_disable_trace(VALUE self) {
   TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
   mongory_memory_pool *trace_pool = wrapper->trace_pool;
   mongory_matcher_disable_trace(wrapper->matcher);
-  rb_mongory_error_handling(trace_pool, "Disable trace failed");
-  trace_pool->free(trace_pool);
-  wrapper->trace_pool = NULL;
+  if (trace_pool) {
+    wrapper->trace_pool = NULL;
+    if (trace_pool->error) {
+      char err_msg[256];
+      snprintf(err_msg, sizeof(err_msg), "%s",
+               trace_pool->error->message ? trace_pool->error->message : "Unknown error");
+      trace_pool->free(trace_pool);
+      rb_raise(eMongoryTypeError, "Disable trace failed: %s", err_msg);
+    }
+    trace_pool->free(trace_pool);
+  }
 
   return Qnil;
 }
@@ -229,6 +254,9 @@ static VALUE rb_mongory_matcher_disable_trace(VALUE self) {
 static VALUE rb_mongory_matcher_print_trace(VALUE self) {
   rb_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  if (!wrapper->trace_pool) {
+    return Qnil;
+  }
   mongory_matcher_print_trace(wrapper->matcher);
   rb_mongory_error_handling(wrapper->trace_pool, "Print trace failed");
 
@@ -266,6 +294,7 @@ static rb_mongory_memory_pool_t *rb_mongory_memory_pool_new() {
   rb_mongory_memory_pool_t *pool = malloc(sizeof(rb_mongory_memory_pool_t));
   mongory_memory_pool *base = mongory_memory_pool_new();
   memcpy(&pool->base, base, sizeof(mongory_memory_pool));
+  pool->owner = NULL;
   free(base);
 
   return pool;
@@ -407,12 +436,16 @@ static int hash_foreach_deep_convert_cb(VALUE key, VALUE val, VALUE ptr) {
     key_str = (char *)rb_id2name(SYM2ID(key));
     store_map = owner->symbol_map;
   } else {
+    if (!RB_TYPE_P(key, T_STRING)) {
+      key = rb_obj_as_string(key);
+    }
     key_str = StringValueCStr(key);
     store_map = owner->string_map;
   }
   mongory_value *store = mongory_value_wrap_u(ctx->pool, NULL);
   store->origin = (void *)key;
   store_map->set(store_map, key_str, store);
+  owner->mark_list->push(owner->mark_list, store);
   mongory_value *cval = rb_to_mongory_value_deep(ctx->pool, val);
   ctx->table->set(ctx->table, key_str, cval);
   return ST_CONTINUE;
@@ -591,6 +624,10 @@ static bool rb_mongory_regex_match_adapter(mongory_memory_pool *pool, mongory_va
     mongory_value *temp_value = mongory_value_wrap_regex(pool, (void *)rb_re);
     memcpy(pattern, temp_value, sizeof(mongory_value));
     pattern->origin = (void *)rb_re;
+    rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
+    if (rb_pool->owner) {
+      rb_pool->owner->mark_list->push(rb_pool->owner->mark_list, pattern);
+    }
   } else {
     return false;
   }
