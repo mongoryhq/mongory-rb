@@ -31,6 +31,11 @@ Mongory.configure do |mc|
   #       It only defines missing ones, and is safe to use with Mongoid or other libraries.
   mc.enable_symbol_snippets!
 
+  # Here to use the C extension (`Mongory::CQueryBuilder`) by default for `.mongory` and `Mongory.build_query`.
+  # If the C extension is not available on the current platform, it automatically falls back to pure Ruby.
+  # Comment this out if you prefer using the pure Ruby implementation by default (you can still opt in per query via `.mongory.c`).
+  mc.enable_c_extension_by_default!
+
   # Here to let you use `some_collection.mongory.where(...)` to build mongory query filter.
   # Or disable it, and use `Mongory.build_query(some_collection).where(...)` instead.
   mc.register(Array)

@@ -77,11 +77,14 @@ module Mongory
   end
 
   # Builds a new query over the given record set.
+  # Uses `CQueryBuilder` when `enable_c_extension_by_default!` is enabled and the C extension is available;
+  # otherwise uses `QueryBuilder`.
   #
   # @param records [Enumerable] any enumerable object (Array, AR::Relation, etc.)
-  # @return [QueryBuilder] a new query builder
+  # @return [QueryBuilder, CQueryBuilder] a new query builder
   def self.build_query(records)
-    QueryBuilder.new(records)
+    builder_class = c_extension_by_default? ? CQueryBuilder : QueryBuilder
+    builder_class.new(records)
   end
 
   # Registers a class to support `.mongory` query DSL.
@@ -103,15 +106,42 @@ module Mongory
     Matchers.enable_symbol_snippets!
   end
 
+  # Enables using the C extension (`CQueryBuilder`) by default when building queries
+  # via `Mongory.build_query` or `.mongory`.
+  #
+  # Automatically falls back to the pure Ruby `QueryBuilder` if the C extension is unavailable.
+  #
+  # @return [Boolean] true if C extension is available and enabled by default
+  def self.enable_c_extension_by_default!
+    @c_extension_by_default = !defined?(Mongory::CMatcher).nil?
+  end
+
+  singleton_class.alias_method :use_c_extension_by_default!, :enable_c_extension_by_default!
+
+  # Disables using the C extension by default, reverting `.mongory` and `Mongory.build_query`
+  # to the pure Ruby `QueryBuilder`.
+  #
+  # @return [void]
+  def self.disable_c_extension_by_default!
+    @c_extension_by_default = false
+  end
+
+  # Returns whether the C extension is used by default for queries.
+  #
+  # @return [Boolean]
+  def self.c_extension_by_default?
+    @c_extension_by_default == true && !defined?(Mongory::CMatcher).nil?
+  end
+
   # Adds a `#mongory` method to the target class via inclusion.
   #
   # Typically used internally by `Mongory.register(...)`.
   module ClassExtention
     # Returns a query builder scoped to `self`.
     #
-    # @return [QueryBuilder]
+    # @return [QueryBuilder, CQueryBuilder]
     def mongory
-      Mongory::QueryBuilder.new(self)
+      Mongory.build_query(self)
     end
   end
 end
