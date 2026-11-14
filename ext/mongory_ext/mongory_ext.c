@@ -715,6 +715,7 @@ void Init_mongory_ext(void) {
   // Define modules and classes
   mMongory = rb_define_module("Mongory");
   cMongoryMatcher = rb_define_class_under(mMongory, "CMatcher", rb_cObject);
+  rb_undef_alloc_func(cMongoryMatcher);
   mMongoryMatchers = rb_define_module_under(mMongory, "Matchers");
   VALUE mMongoryUtils = rb_define_module_under(mMongory, "Utils");
   cMongoryMatcherContext = rb_define_class_under(mMongoryUtils, "Context", rb_cObject);
