@@ -69,6 +69,12 @@ query.explain          # print core-level matcher tree
 # Or use CMatcher directly
 matcher = Mongory::CMatcher.new(:age.gte => 18)
 records.select { |r| matcher.match?(r) }
+
+# Or enable the C extension globally by default in Mongory.configure:
+Mongory.configure do |mc|
+  mc.enable_c_extension_by_default!
+end
+records.mongory.where(:age.gte => 18).to_a # automatically uses CQueryBuilder
 ```
 
 ## Tracing and debugging
