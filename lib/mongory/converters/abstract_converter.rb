@@ -27,7 +27,7 @@ module Mongory
 
       # @private
       # A sentinel value used to indicate absence of a secondary argument.
-      NOTHING = Utils::SingletonBuilder.new('NOTHING')
+      NOTHING = Utils::SingletonBuilder.new('NOTHING').freeze
 
       # Initializes the builder with a label and optional configuration block.
       def initialize
@@ -76,14 +76,15 @@ module Mongory
       # @return [void]
       def configure
         yield self
-        freeze
       end
 
-      # Freezes all internal registries.
+      # Freezes the converter and all internal registries.
       #
-      # @return [void]
+      # @return [self]
       def freeze
+        @registries.each(&:freeze)
         @registries.freeze
+        super
       end
 
       # Registers a conversion rule for a given class.
@@ -100,7 +101,7 @@ module Mongory
         if converter.is_a?(Symbol)
           register(klass) { |*args, &bl| send(converter, *args, &bl) }
         elsif block.is_a?(Proc)
-          @registries.unshift(Registry.new(klass, block))
+          @registries.unshift(Registry.new(klass, block).freeze)
           @convert_strategy_map[klass] = block
         else
           raise 'Support Symbol and block only.'

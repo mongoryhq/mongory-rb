@@ -55,4 +55,35 @@ RSpec.describe Mongory::Converters::DataConverter do
       expect(subject.convert(instance)).to eq('new:FOO')
     end
   end
+
+  describe '#configure and #freeze' do
+    let(:isolated_converter) { Class.new(described_class).instance }
+    let(:base_class) { Class.new }
+    let(:sub_class) { Class.new(base_class) }
+
+    it 'does not freeze immediately after #configure so multiple configure blocks can run' do
+      isolated_converter.configure do |dc|
+        dc.register(base_class) { 'from_first_configure' }
+      end
+      expect(isolated_converter).not_to be_frozen
+
+      isolated_converter.configure do |dc|
+        dc.register(sub_class) { 'from_second_configure' }
+      end
+      expect(isolated_converter.convert(sub_class.new)).to eq('from_second_configure')
+    end
+
+    it 'freezes converter and registries on #freeze while still allowing runtime strategy caching' do
+      isolated_converter.register(base_class) { 'converted_base' }
+      expect(isolated_converter.freeze).to equal(isolated_converter)
+      expect(isolated_converter).to be_frozen
+
+      expect do
+        isolated_converter.register(sub_class) { 'blocked' }
+      end.to raise_error(FrozenError)
+
+      # Subclass lookup caches into @convert_strategy_map at runtime even after freeze
+      expect(isolated_converter.convert(sub_class.new)).to eq('converted_base')
+    end
+  end
 end

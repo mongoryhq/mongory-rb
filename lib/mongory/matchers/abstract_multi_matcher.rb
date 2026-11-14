@@ -18,11 +18,11 @@ module Mongory
     class AbstractMultiMatcher < AbstractMatcher
       # A Proc that always returns true, used as a default for empty AND conditions
       # @return [Proc] A proc that always returns true
-      TRUE_PROC = Proc.new { |_| true }
+      TRUE_PROC = Proc.new { |_| true }.freeze
 
       # A Proc that always returns false, used as a default for empty OR conditions
       # @return [Proc] A proc that always returns false
-      FALSE_PROC = Proc.new { |_| false }
+      FALSE_PROC = Proc.new { |_| false }.freeze
 
       # Enables auto-unwrap logic.
       # When used, `.build` may unwrap to first matcher if only one is present.

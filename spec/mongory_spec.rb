@@ -36,4 +36,27 @@ RSpec.describe Mongory do
       expect(records.mongory).to be_an_instance_of(Mongory::QueryBuilder)
     end
   end
+
+  describe '.configure and internal constants' do
+    it 'freezes internal sentinel and proc constants' do
+      expect(Mongory::Converters::AbstractConverter::NOTHING).to be_frozen
+      expect(Mongory::Matchers::AbstractMatcher::KEY_NOT_FOUND).to be_frozen
+      expect(Mongory::Matchers::AbstractMultiMatcher::TRUE_PROC).to be_frozen
+      expect(Mongory::Matchers::AbstractMultiMatcher::FALSE_PROC).to be_frozen
+    end
+
+    it 'yields self and calls freeze at the end of .configure' do
+      expect(described_class).to receive(:freeze).and_return(described_class)
+      yielded = nil
+      result = described_class.configure { |mc| yielded = mc }
+      expect(yielded).to equal(described_class)
+      expect(result).to equal(described_class)
+    end
+
+    it 'warns without NameError when validating a duplicate operator' do
+      expect do
+        Mongory::Matchers::Validator.validate_operator('$eq', Mongory::Matchers::EqMatcher)
+      end.to output(/Duplicate operator registration: \$eq/).to_stderr
+    end
+  end
 end

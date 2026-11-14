@@ -51,11 +51,11 @@ module Mongory
 
       # Freezes internal converters to prevent further modification.
       #
-      # @return [void]
+      # @return [self]
       def freeze
-        super
         key_converter.freeze
         value_converter.freeze
+        super
       end
 
       undef_method :register

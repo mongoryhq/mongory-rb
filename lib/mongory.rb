@@ -29,6 +29,8 @@ module Mongory
   class Error < StandardError; end
   class TypeError < Error; end
 
+  @c_extension_by_default = false
+
   # Yields Mongory for configuration and freezes key components.
   #
   # @example Configure converters
@@ -47,12 +49,21 @@ module Mongory
   #   end
   #
   # @yieldparam self [Mongory]
-  # @return [void]
+  # @return [self]
   def self.configure
     yield self
+    freeze
+  end
+
+  # Freezes Mongory configuration, converters, and matchers.
+  #
+  # @return [self]
+  def self.freeze
     data_converter.freeze
     condition_converter.freeze
+    @debugger = Utils::Debugger.instance
     Matchers.freeze
+    super
   end
 
   # Returns the data converter instance.

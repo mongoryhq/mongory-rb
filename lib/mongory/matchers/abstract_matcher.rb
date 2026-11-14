@@ -38,7 +38,7 @@ module Mongory
       # This is used instead of nil to distinguish between missing keys and nil values.
       #
       # @api private
-      KEY_NOT_FOUND = SingletonBuilder.new('KEY_NOT_FOUND')
+      KEY_NOT_FOUND = SingletonBuilder.new('KEY_NOT_FOUND').freeze
 
       # Defines a lazily-evaluated matcher accessor with instance-level caching.
       # This is used to create cached accessors for submatcher instances.

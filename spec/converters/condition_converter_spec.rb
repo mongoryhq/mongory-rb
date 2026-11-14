@@ -54,4 +54,24 @@ RSpec.describe Mongory::Converters::ConditionConverter do
       end
     end
   end
+
+  describe '#freeze' do
+    let(:isolated_kc) { Class.new(Mongory::Converters::KeyConverter).instance }
+    let(:isolated_vc) { Class.new(Mongory::Converters::ValueConverter).instance }
+    let(:isolated_cc) do
+      kc = isolated_kc
+      vc = isolated_vc
+      Class.new(described_class) do
+        define_method(:key_converter) { kc }
+        define_method(:value_converter) { vc }
+      end.instance
+    end
+
+    it 'freezes key_converter, value_converter, and itself, returning self' do
+      expect(isolated_cc.freeze).to equal(isolated_cc)
+      expect(isolated_cc).to be_frozen
+      expect(isolated_kc).to be_frozen
+      expect(isolated_vc).to be_frozen
+    end
+  end
 end

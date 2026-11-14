@@ -16,6 +16,7 @@ module Mongory
   module Matchers
     @operator_mapping = {}
     @registries = []
+    @enable_symbol_snippets = false
 
     # Registers a matcher class for a given operator and method symbol.
     #
@@ -26,11 +27,11 @@ module Mongory
     # @raise [ArgumentError] if validations fail
     def self.register(method_sym, operator, klass)
       Validator.validate_method(method_sym)
-      Validator.validate_operator(operator)
+      Validator.validate_operator(operator, klass)
       Validator.validate_class(klass)
 
       @operator_mapping[operator] = klass
-      registry = Registry.new(method_sym, operator)
+      registry = Registry.new(method_sym, operator).freeze
       @registries << registry
       return unless @enable_symbol_snippets
 
@@ -62,9 +63,10 @@ module Mongory
     end
 
     def self.freeze
-      super
+      @registries.each(&:freeze)
       @operator_mapping.freeze
       @registries.freeze
+      super
     end
 
     # @private
@@ -85,9 +87,10 @@ module Mongory
       # Warns on duplicate registration.
       #
       # @param operator [String]
+      # @param klass [Class, nil]
       # @return [void]
       # @raise [Mongory::TypeError] if operator format is invalid
-      def self.validate_operator(operator)
+      def self.validate_operator(operator, klass = nil)
         if Matchers.lookup(operator)
           warn "Duplicate operator registration: #{operator} (#{Matchers.lookup(operator)} vs #{klass})"
         end
