@@ -25,7 +25,7 @@ RSpec.describe Mongory::Matchers::ElemMatchMatcher do
     end
 
     context 'when record is not an array' do
-      let(:condition) { { 'x' => 1 } }
+      let(:condition) { { '0' => 'x' } }
 
       it { is_expected.not_to be_match({ 'x' => 1 }) }
       it { is_expected.not_to be_match('invalid') }

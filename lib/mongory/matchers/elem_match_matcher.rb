@@ -28,6 +28,8 @@ module Mongory
         data_converter = Mongory.data_converter
 
         Proc.new do |collection|
+          next false unless collection.is_a?(Array)
+
           collection.any? do |record|
             record = data_converter.convert(record) if need_convert
             super_proc.call(record)

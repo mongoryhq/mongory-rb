@@ -37,7 +37,7 @@ module Mongory
       #
       # @return [Proc] a Proc that performs the in-matching operation
       def raw_proc
-        condition = Set.new(@condition)
+        condition = build_condition_set
 
         Proc.new do |record|
           if record.is_a?(Array)
@@ -60,6 +60,22 @@ module Mongory
         return if @condition.is_a?(Array)
 
         raise TypeError, '$in needs an array or range'
+      end
+
+      private
+
+      def build_condition_set
+        Set.new(@condition).tap do |set|
+          @condition.each do |item|
+            if item.is_a?(Integer)
+              float_val = item.to_f
+              set.add(float_val) if float_val == item
+            elsif item.is_a?(Float) && item.finite?
+              int_val = item.to_i
+              set.add(int_val) if int_val == item
+            end
+          end
+        end
       end
     end
 

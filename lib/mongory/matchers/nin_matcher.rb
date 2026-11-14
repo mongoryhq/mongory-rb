@@ -23,7 +23,7 @@ module Mongory
     #   matcher.match?([4, 5])     #=> false
     #
     # @see AbstractMatcher
-    class NinMatcher < AbstractMatcher
+    class NinMatcher < InMatcher
       def self.build(condition, context: Context.new)
         return super unless condition.is_a?(Range)
 
@@ -37,7 +37,7 @@ module Mongory
       #
       # @return [Proc] A proc that performs not-in matching
       def raw_proc
-        condition = Set.new(@condition)
+        condition = build_condition_set
 
         Proc.new do |record|
           if record.is_a?(Array)
@@ -46,10 +46,6 @@ module Mongory
             !condition.include?(record)
           end
         end
-      end
-
-      def priority
-        1 + Math.log(@condition.size + 1, 1.5)
       end
 
       # Ensures the condition is a valid array or range.

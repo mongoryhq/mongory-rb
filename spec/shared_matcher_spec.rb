@@ -1039,6 +1039,24 @@ RSpec.shared_examples 'matcher behavior' do
       it { is_expected.to be_match(tags: %w(ruby go)) }
     end
 
+    context 'when querying with empty $elemMatch or $every' do
+      context 'with empty $elemMatch' do
+        let(:condition) { { '$elemMatch' => {} } }
+
+        it { is_expected.to be_match([{ 'a' => 1 }]) }
+        it { is_expected.not_to be_match([]) }
+        it { is_expected.not_to be_match({ 'a' => 1 }) }
+      end
+
+      context 'with empty $every' do
+        let(:condition) { { '$every' => {} } }
+
+        it { is_expected.to be_match([{ 'a' => 1 }]) }
+        it { is_expected.not_to be_match([]) }
+        it { is_expected.not_to be_match({ 'a' => 1 }) }
+      end
+    end
+
     context 'when querying array of hashes for exact equality' do
       let(:condition) { { items: [{ a: 1, b: 'x' }] } }
 

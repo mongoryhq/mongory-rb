@@ -7,10 +7,12 @@ RSpec.describe Mongory::Matchers::NinMatcher do
     subject { described_class.build(condition) }
 
     context 'when condition is array of values' do
-      let(:condition) { [1, 2, 3] }
+      let(:condition) { [1, 2, 3.0] }
 
       it { is_expected.to be_match(4) }
       it { is_expected.not_to be_match(2) }
+      it { is_expected.not_to be_match(2.0) }
+      it { is_expected.not_to be_match(3) }
     end
 
     context 'when condition includes nil' do
