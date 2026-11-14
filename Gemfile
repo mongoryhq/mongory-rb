@@ -8,6 +8,8 @@ gemspec
 gem 'rake', '~> 13.0'
 
 group :test do
+  gem 'base64'
+  gem 'ostruct'
   gem 'rspec', '~> 3.0'
   gem 'rubocop', '~> 1.28.2'
   gem 'rubocop-rspec', '~> 2.10.0'
