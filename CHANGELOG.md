@@ -2,6 +2,9 @@
 
 ## [0.8.2] - 2026-11-14
 
+### Features & Platform Support
+- **Ruby 3.4 & 4.0 Support**: Added precompiled native gems and CI test coverage for Ruby `3.4` and `4.0` across Linux (`x86_64-linux`, `aarch64-linux`, `x86_64-linux-musl`, `aarch64-linux-musl`), macOS (`x86_64-darwin`, `arm64-darwin`), and Windows (`x64-mingw32`, `x64-mingw-ucrt`).
+
 ### Fixes
 - **Key & Array Index Matching (`QueryMatcher` & `CMatcher`)**:
   - Normalize `Integer` condition keys to `String` in `KeyConverter` (consistent with `Symbol` keys), preventing `TypeError` in `CMatcher` and `NoMethodError` in `FieldMatcher`.
@@ -13,6 +16,7 @@
   - Fix memory pool type mismatch and out-of-bounds `owner` read in `CMatcher#trace` and uninitialized `owner` pointer in `CMatcher#enable_trace`.
   - Prevent memory leaks when `CMatcher.new`, `trace`, `enable_trace`, or `disable_trace` raises `Mongory::TypeError`.
   - Coerce non-string/non-symbol hash keys in `DataConverter`-converted condition values and register them in `mark_list`.
+  - Undefine default allocator (`rb_undef_alloc_func`) on `Mongory::CMatcher` to eliminate `T_DATA` allocator warnings on Ruby 3.2+.
 - **Core (`mongory-core` submodule)**:
   - Fix off-by-one capacity growth condition in `mongory_array` and `mongory_table`.
   - Propagate `extern_ctx` in `mongory_matcher_field_new` so nested custom matchers receive the Ruby matcher context.
