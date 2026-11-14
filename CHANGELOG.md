@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+Aligns with mongory-spec `0.2.0`.
+
+### Breaking Changes
+- **Unknown operators raise `Mongory::TypeError`**: a condition key that starts with `$` and is not a registered operator (e.g. `{ age: { '$foo' => 1 } }`) is now rejected, as MongoDB does. It was previously matched as a field named `$foo`, which silently never matched.
+
+### Features
+- **`$options` for `$regex`**: `{ '$regex' => '^ab', '$options' => 'i' }` accepts the MongoDB flags `i`, `m` and `s`. Other flags, a non-string value, `$options` without `$regex`, or `$options` with a `Regexp` pattern raise `Mongory::TypeError`. On array fields, `$options` follows `$regex` into the implicit `$elemMatch`.
+- **C Extension (`CMatcher`)**: registers a `$options` regex adapter with mongory-core; both rules above are enforced by core, so `QueryMatcher` and `CMatcher` behave the same. Requires the mongory-core submodule bump that adds `mongory_regex_options_func_set`.
+
 ## [0.8.2] - 2026-11-14
 
 ### Features & Platform Support

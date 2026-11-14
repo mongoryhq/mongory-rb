@@ -31,6 +31,35 @@ module Mongory
     #
     # @see AbstractMatcher
     class RegexMatcher < AbstractMatcher
+      # MongoDB `$options` flags mapped to Ruby. Ruby's `^`/`$` always match at
+      # line boundaries, so `m` needs no flag; Ruby's MULTILINE is MongoDB's `s`.
+      OPTION_FLAGS = {
+        'i' => Regexp::IGNORECASE,
+        'm' => 0,
+        's' => Regexp::MULTILINE
+      }.freeze
+
+      # Compiles a `$regex` pattern string with MongoDB `$options` flags.
+      #
+      # @param pattern [String, Regexp, Object] the `$regex` value
+      # @param options [Object] the `$options` value
+      # @return [Regexp, Object] the compiled Regexp, or a non-string pattern
+      #   unchanged so that check_validity! reports it
+      # @raise [TypeError] if options is invalid or pattern is already a Regexp
+      def self.apply_options(pattern, options)
+        raise TypeError, '$options needs a string' unless options.is_a?(String)
+
+        flags = options.each_char.reduce(0) do |result, char|
+          raise TypeError, "unsupported $options flag #{char.inspect}" unless OPTION_FLAGS.key?(char)
+
+          result | OPTION_FLAGS[char]
+        end
+        raise TypeError, '$options cannot modify a Regexp' if pattern.is_a?(Regexp)
+        return pattern unless pattern.is_a?(String)
+
+        Regexp.new(pattern, flags)
+      end
+
       # Initializes the matcher with a regex pattern.
       # Converts string patterns to Regexp objects.
       #

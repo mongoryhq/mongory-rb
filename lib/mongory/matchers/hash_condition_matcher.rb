@@ -38,24 +38,41 @@ module Mongory
       # Returns the list of matchers for each key-value pair in the condition.
       #
       # For each pair:
+      # - `$regex` with a sibling `$options` builds a RegexMatcher with those flags
       # - If the key is a registered operator, uses the corresponding matcher
+      # - An unknown `$` key raises, as MongoDB rejects unknown operators
       # - Otherwise, wraps the value in a FieldMatcher for field path matching
       #
       # @return [Array<AbstractMatcher>] List of matchers for each condition
+      # @raise [TypeError] for an unknown operator or a `$options` without `$regex`
       define_instance_cache_method(:matchers) do
         @condition.map do |key, value|
-          if (matcher_class = Matchers.lookup(key))
-            matcher_class.build(value, context: @context)
-          else
-            FieldMatcher.build(key, value, context: @context)
-          end
-        end.sort_by(&:priority)
+          next if key == '$options' && @condition.key?('$regex')
+
+          build_matcher(key, value)
+        end.compact.sort_by(&:priority)
       end
 
       def check_validity!
         return super if @condition.is_a?(Hash)
 
         raise TypeError, 'condition needs a Hash.'
+      end
+
+      private
+
+      def build_matcher(key, value)
+        if key == '$regex' && @condition.key?('$options')
+          RegexMatcher.build(RegexMatcher.apply_options(value, @condition['$options']), context: @context)
+        elsif (matcher_class = Matchers.lookup(key))
+          matcher_class.build(value, context: @context)
+        elsif key == '$options'
+          raise TypeError, '$options needs a sibling $regex'
+        elsif key.to_s.start_with?('$')
+          raise TypeError, "unknown operator #{key}"
+        else
+          FieldMatcher.build(key, value, context: @context)
+        end
       end
     end
   end

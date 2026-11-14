@@ -605,6 +605,19 @@ static VALUE cache_fetch_symbol(rb_mongory_matcher_t *owner, const char *key) {
   return sym;
 }
 
+// Replaces a string pattern with its compiled Regexp so later matches reuse it,
+// and keeps the Regexp alive for the GC.
+static VALUE rb_mongory_regex_cache(mongory_memory_pool *pool, mongory_value *pattern, VALUE rb_re) {
+  mongory_value *temp_value = mongory_value_wrap_regex(pool, (void *)rb_re);
+  memcpy(pattern, temp_value, sizeof(mongory_value));
+  pattern->origin = (void *)rb_re;
+  rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
+  if (rb_pool->owner) {
+    rb_pool->owner->mark_list->push(rb_pool->owner->mark_list, pattern);
+  }
+  return rb_re;
+}
+
 // Regex adapter bridging to Ruby's Regexp
 static bool rb_mongory_regex_match_adapter(mongory_memory_pool *pool, mongory_value *pattern, mongory_value *value) {
   if (!pattern || !value) {
@@ -620,20 +633,37 @@ static bool rb_mongory_regex_match_adapter(mongory_memory_pool *pool, mongory_va
   if (pattern->type == MONGORY_TYPE_REGEX && pattern->data.regex) {
     rb_re = (VALUE)pattern->data.regex;
   } else if (pattern->type == MONGORY_TYPE_STRING) {
-    rb_re = rb_funcall(rb_cRegexp, rb_intern("new"), 1, (VALUE)pattern->origin);
-    mongory_value *temp_value = mongory_value_wrap_regex(pool, (void *)rb_re);
-    memcpy(pattern, temp_value, sizeof(mongory_value));
-    pattern->origin = (void *)rb_re;
-    rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
-    if (rb_pool->owner) {
-      rb_pool->owner->mark_list->push(rb_pool->owner->mark_list, pattern);
-    }
+    rb_re = rb_mongory_regex_cache(pool, pattern, rb_funcall(rb_cRegexp, rb_intern("new"), 1, (VALUE)pattern->origin));
   } else {
     return false;
   }
 
   VALUE matched = rb_funcall(rb_re, rb_intern("match?"), 1, rb_str);
   return RTEST(matched);
+}
+
+// Regex adapter for `$options` (validated by core to i, m, s). Ruby's `^`/`$`
+// already match at line boundaries, so only i and s need flags; Ruby's
+// MULTILINE is MongoDB's `s`. Core rejects `$options` on a compiled regex, so
+// pattern is a string until the first match caches it.
+static bool rb_mongory_regex_options_match_adapter(mongory_memory_pool *pool, mongory_value *pattern,
+                                                   const char *options, mongory_value *value) {
+  if (!pattern || !value || value->type != MONGORY_TYPE_STRING) {
+    return false;
+  }
+  if (pattern->type == MONGORY_TYPE_STRING) {
+    int flags = 0;
+    for (const char *flag = options; *flag; flag++) {
+      if (*flag == 'i') {
+        flags |= NUM2INT(rb_const_get(rb_cRegexp, rb_intern("IGNORECASE")));
+      } else if (*flag == 's') {
+        flags |= NUM2INT(rb_const_get(rb_cRegexp, rb_intern("MULTILINE")));
+      }
+    }
+    rb_mongory_regex_cache(pool, pattern,
+                           rb_funcall(rb_cRegexp, rb_intern("new"), 2, (VALUE)pattern->origin, INT2FIX(flags)));
+  }
+  return rb_mongory_regex_match_adapter(pool, pattern, value);
 }
 
 // Regex adapter bridging to Ruby's Regexp
@@ -741,6 +771,7 @@ void Init_mongory_ext(void) {
 
   // Set regex adapter to use Ruby's Regexp
   mongory_regex_func_set(rb_mongory_regex_match_adapter);
+  mongory_regex_options_func_set(rb_mongory_regex_options_match_adapter);
   mongory_regex_stringify_func_set(rb_mongory_regex_stringify_adapter);
 
   // Set value converter functions
