@@ -17,6 +17,14 @@ RSpec.describe Mongory::Converters::KeyConverter do
       end
     end
 
+    context 'when input is an integer key' do
+      let(:input) { { 0 => anything } }
+
+      it 'converts integer to string and applies key normalization' do
+        expect(result).to eq('0' => anything)
+      end
+    end
+
     context 'when input is a QueryOperator' do
       let(:input) do
         op = Mongory::QueryOperator.new('score', '$lte')

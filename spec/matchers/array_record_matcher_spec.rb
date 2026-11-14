@@ -52,5 +52,12 @@ RSpec.describe Mongory::Matchers::ArrayRecordMatcher do
       it { is_expected.to be_match([[0, 9], [1, 2]]) }
       it { is_expected.not_to be_match([[0, 3], [1, 2]]) }
     end
+
+    context 'when condition has leading zero key' do
+      let(:condition) { { '01' => 9 } }
+
+      it { is_expected.not_to be_match([1, 9]) }
+      it { is_expected.to be_match([{ '01' => 9 }]) }
+    end
   end
 end

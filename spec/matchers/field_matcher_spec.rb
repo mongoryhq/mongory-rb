@@ -36,5 +36,34 @@ RSpec.describe Mongory::Matchers::FieldMatcher do
       it { is_expected.to be_match('x' => [1, 2]) }
       it { is_expected.not_to be_match('x' => [3, 4]) }
     end
+
+    context 'when field is a string integer index and record is an array or hash' do
+      let(:field) { '0' }
+      let(:condition) { 'ruby' }
+
+      it { is_expected.to be_match(%w(ruby c)) }
+      it { is_expected.not_to be_match(%w(c ruby)) }
+      it { is_expected.to be_match('0' => 'ruby') }
+      it { is_expected.to be_match('0': 'ruby') }
+    end
+
+    context 'when field is an integer and record is an array or hash' do
+      let(:field) { 0 }
+      let(:condition) { 'ruby' }
+
+      it { is_expected.to be_match(%w(ruby c)) }
+      it { is_expected.not_to be_match(%w(c ruby)) }
+      it { is_expected.to be_match('0' => 'ruby') }
+      it { is_expected.to be_match('0': 'ruby') }
+    end
+
+    context 'when field has leading zero and record is an array or hash' do
+      let(:field) { '01' }
+      let(:condition) { 'c' }
+
+      it { is_expected.not_to be_match(%w(ruby c)) }
+      it { is_expected.to be_match('01' => 'c') }
+      it { is_expected.to be_match('01': 'c') }
+    end
   end
 end

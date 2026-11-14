@@ -42,7 +42,7 @@ module Mongory
         case target
         when String
           convert_string_key(target, other)
-        when Symbol
+        when Symbol, Integer
           convert_string_key(target.to_s, other)
         when QueryOperator
           # Handle special case for QueryOperator

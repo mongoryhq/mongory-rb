@@ -74,7 +74,7 @@ module Mongory
         h_elem_match = {}
         @condition.each_pair do |key, value|
           case key
-          when Integer, /^-?\d+$/
+          when Integer, FieldMatcher::INTEGER_INDEX_REGEX
             h_parsed[key.to_i] = value
           when '$elemMatch'
             h_elem_match.merge!(value)

@@ -33,6 +33,8 @@ module Mongory
         ::Symbol
       ].freeze
 
+      INTEGER_INDEX_REGEX = /\A(?:0|-?[1-9]\d*)\z/.freeze
+
       # Initializes a new field matcher.
       #
       # @param field [String, Symbol] the field to match against
@@ -84,6 +86,7 @@ module Mongory
       def raw_proc
         super_proc = super
         field = @field
+        str_field, sym_field, int_field = parse_field_keys(field)
         need_convert = @context.need_convert
         data_converter = Mongory.data_converter
 
@@ -91,11 +94,11 @@ module Mongory
           sub_record =
             case record
             when Hash
-              record.fetch(field) do
-                record.fetch(field.to_sym, KEY_NOT_FOUND)
+              record.fetch(str_field) do
+                record.fetch(sym_field, KEY_NOT_FOUND)
               end
             when Array
-              record.fetch(field, KEY_NOT_FOUND)
+              int_field ? record.fetch(int_field, KEY_NOT_FOUND) : KEY_NOT_FOUND
             when KEY_NOT_FOUND, *CLASSES_NOT_ALLOW_TO_DIG
               next false
             else
@@ -123,6 +126,16 @@ module Mongory
       end
 
       private
+
+      def parse_field_keys(field)
+        str_field = field.to_s
+        int_field = if field.is_a?(Integer)
+                      field
+                    elsif field.is_a?(String) && INTEGER_INDEX_REGEX.match?(field)
+                      field.to_i
+                    end
+        [str_field, str_field.to_sym, int_field]
+      end
 
       # Returns a single-line summary of the field matcher including the field and condition.
       #

@@ -908,4 +908,81 @@ RSpec.shared_examples 'matcher behavior' do
       it { is_expected.not_to be_match(abilities: []) }
     end
   end
+
+  context 'numeric and array index keys' do
+    context 'top-level string numeric key' do
+      let(:condition) { { '0' => 'ruby' } }
+
+      it { is_expected.to be_match(%w(ruby c)) }
+      it { is_expected.not_to be_match(%w(c ruby)) }
+      it { is_expected.to be_match('0' => 'ruby') }
+      it { is_expected.to be_match('0': 'ruby') }
+      it { is_expected.not_to be_match([{ '0' => 'ruby' }]) }
+    end
+
+    context 'top-level integer key' do
+      let(:condition) { { 0 => 'ruby' } }
+
+      it { is_expected.to be_match(%w(ruby c)) }
+      it { is_expected.not_to be_match(%w(c ruby)) }
+      it { is_expected.to be_match('0' => 'ruby') }
+      it { is_expected.to be_match('0': 'ruby') }
+      it { is_expected.not_to be_match([{ '0' => 'ruby' }]) }
+    end
+
+    context 'nested dotted string numeric key' do
+      let(:condition) { { 'tags.0' => 'ruby' } }
+
+      it { is_expected.to be_match(tags: %w(ruby c)) }
+      it { is_expected.not_to be_match(tags: %w(c ruby)) }
+      it { is_expected.to be_match(tags: { '0' => 'ruby' }) }
+      it { is_expected.not_to be_match(tags: [{ '0' => 'ruby' }]) }
+    end
+
+    context 'nested integer key' do
+      let(:condition) { { tags: { 0 => 'ruby', -1 => 'c' } } }
+
+      it { is_expected.to be_match(tags: %w(ruby go c)) }
+      it { is_expected.not_to be_match(tags: %w(c go ruby)) }
+      it { is_expected.to be_match(tags: { '0' => 'ruby', '-1' => 'c' }) }
+      it { is_expected.not_to be_match(tags: [{ '0' => 'ruby', '-1' => 'c' }]) }
+    end
+
+    context 'leading zero and malformed numeric keys are not treated as array indices' do
+      context 'with leading zero "01"' do
+        let(:condition) { { 'tags.01' => 'c' } }
+
+        it { is_expected.not_to be_match(tags: %w(ruby c)) }
+        it { is_expected.to be_match(tags: { '01' => 'c' }) }
+        it { is_expected.to be_match(tags: [{ '01' => 'c' }]) }
+      end
+
+      context 'with negative zero "-0"' do
+        let(:condition) { { 'tags.-0' => 'ruby' } }
+
+        it { is_expected.not_to be_match(tags: %w(ruby c)) }
+        it { is_expected.to be_match(tags: { '-0' => 'ruby' }) }
+        it { is_expected.to be_match(tags: [{ '-0' => 'ruby' }]) }
+      end
+
+      context 'with multiline string "0\nfoo"' do
+        let(:condition) { { "tags.0\nfoo" => 'ruby' } }
+
+        it { is_expected.not_to be_match(tags: %w(ruby c)) }
+        it { is_expected.to be_match(tags: { "0\nfoo" => 'ruby' }) }
+        it { is_expected.to be_match(tags: [{ "0\nfoo" => 'ruby' }]) }
+      end
+    end
+  end
+
+  context 'use operator $regex with string pattern across GC runs' do
+    let(:condition) { { name: { '$regex' => '^J' } } }
+
+    it 'survives GC.start between match? calls' do
+      expect(subject.match?(name: 'John')).to be true
+      GC.start
+      expect(subject.match?(name: 'John')).to be true
+      expect(subject.match?(name: 'Mary')).to be false
+    end
+  end
 end
