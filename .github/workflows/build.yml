@@ -31,9 +31,9 @@ jobs:
       matrix:
         include:
           - platform: x86_64-darwin
-            runner: macos-13
+            runner: macos-15-intel
           - platform: arm64-darwin
-            runner: macos-14
+            runner: macos-15
     uses: ./.github/workflows/_macos_cross_compile.yml
     with:
       platform: ${{ matrix.platform }}
