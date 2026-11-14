@@ -1,4 +1,39 @@
 # Changelog
+
+## [0.8.2] - 2026-11-14
+
+### Fixes
+- **Key & Array Index Matching (`QueryMatcher` & `CMatcher`)**:
+  - Normalize `Integer` condition keys to `String` in `KeyConverter` (consistent with `Symbol` keys), preventing `TypeError` in `CMatcher` and `NoMethodError` in `FieldMatcher`.
+  - Enforce strict integer index format (`\A(?:0|-?[1-9]\d*)\z`) when matching against arrays so keys with leading zeros (e.g., `"01"`, `"-0"`) or multiline strings are treated as document field keys rather than array indices.
+  - Treat valid numeric keys on `Array` records strictly as array indices in both `FieldMatcher` and `mongory-core`.
+- **C Extension (`mongory_ext`)**:
+  - Fix GC use-after-free crash when `$regex` condition is given as a `String` pattern by registering the compiled `Regexp` in the matcher's GC `mark_list`.
+  - Fix NULL pointer dereference crash when calling `CMatcher#disable_trace` or `CMatcher#print_trace` before `enable_trace`.
+  - Fix memory pool type mismatch and out-of-bounds `owner` read in `CMatcher#trace` and uninitialized `owner` pointer in `CMatcher#enable_trace`.
+  - Prevent memory leaks when `CMatcher.new`, `trace`, `enable_trace`, or `disable_trace` raises `Mongory::TypeError`.
+  - Coerce non-string/non-symbol hash keys in `DataConverter`-converted condition values and register them in `mark_list`.
+- **Core (`mongory-core` submodule)**:
+  - Fix off-by-one capacity growth condition in `mongory_array` and `mongory_table`.
+  - Propagate `extern_ctx` in `mongory_matcher_field_new` so nested custom matchers receive the Ruby matcher context.
+  - Sync trace state across `literal_matcher`'s `delegate_matcher` and `array_record_matcher`.
+  - Return `mongory_value_compare_fail` when comparing `NaN` float/double values instead of treating `NaN` as equal.
+
+## [0.8.1] - 2025-08-30
+
+### Fixes
+- Use `require_relative` instead of `require` for internal file loading.
+
+### Docs & Chores
+- Deprecate `QueryBuilder#fast` and update YARD documentation and README.
+
+## [0.8.0] - 2025-08-30
+
+### Features
+- Add trace mode support to `QueryBuilder` and `CQueryBuilder`, printing trace output and resetting trace pool on each match.
+- Expose `CMatcher.trace_result_colorful=` configuration option.
+- Support cross-platform precompiled native gems for Linux (`x86_64`, `aarch64`, musl/glibc), macOS (`x86_64-darwin`, `arm64-darwin`), and Windows (`x64-mingw32`, `x64-mingw-ucrt`).
+
 ## [0.7.1] - 2025-08-17
 ### Fixes
 - Linter error
