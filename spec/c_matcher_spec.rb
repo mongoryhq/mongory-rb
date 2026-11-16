@@ -86,6 +86,17 @@ RSpec.describe Mongory::CMatcher, type: :model do
       expect { matcher.dup }.to raise_error(TypeError, /can't copy/)
       expect { matcher.clone }.to raise_error(TypeError, /can't copy/)
     end
+
+    it 'accepts bare hash conditions and context keyword across Ruby versions' do
+      ctx = Mongory::Utils::Context.new
+      with_ctx = described_class.new({ name: 'John' }, context: ctx)
+      bare_ctx_field = described_class.new(context: 'admin')
+
+      expect(with_ctx.context).to equal(ctx)
+      expect(with_ctx.match?(name: 'John')).to be true
+      expect(bare_ctx_field.match?(context: 'admin')).to be true
+      expect { described_class.new({ name: 'John' }, unknown: 1) }.to raise_error(ArgumentError, /unknown keyword/)
+    end
   end
 
   describe 'thread safety' do

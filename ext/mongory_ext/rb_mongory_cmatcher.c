@@ -121,11 +121,18 @@ static VALUE rb_mongory_matcher_initialize_copy(VALUE self, VALUE orig) {
 
 static void rb_mongory_matcher_parse_argv(rb_mongory_matcher_t *self, int argc, VALUE *argv) {
   VALUE condition, kw_hash;
-  rb_scan_args(argc, argv, "1:", &condition, &kw_hash);
+  if (argc == 1) {
+    // In Ruby 3.0+, a single bare hash like `CMatcher.new(name: 'John')` is marked
+    // as keywords, which would fail `rb_scan_args(..., "1:", ...)` with 0 positional args.
+    rb_scan_args(argc, argv, "1", &condition);
+    kw_hash = Qnil;
+  } else {
+    rb_scan_args(argc, argv, "1:", &condition, &kw_hash);
+  }
   const ID ctx_id[1] = { rb_intern("context") };
   VALUE kw_vals[1] = { Qundef };
   if (kw_hash != Qnil) {
-    rb_get_kwargs(kw_hash, ctx_id, 1, 0, kw_vals);
+    rb_get_kwargs(kw_hash, ctx_id, 0, 1, kw_vals);
   }
   if (kw_vals[0] != Qundef) {
     self->ctx = kw_vals[0];
