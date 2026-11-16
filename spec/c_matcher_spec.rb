@@ -87,4 +87,27 @@ RSpec.describe Mongory::CMatcher, type: :model do
       expect { matcher.clone }.to raise_error(TypeError, /can't copy/)
     end
   end
+
+  describe 'thread safety' do
+    it 'safely shares a CMatcher across threads with lazy array and regex matching' do
+      matcher = described_class.new(
+        tags: 'ruby',
+        scores: { '$gt' => 5, '$lt' => 8 },
+        note: { '$regex' => '^ok', '$options' => 'i' }
+      )
+
+      results = Array.new(8) do |t|
+        Thread.new do
+          200.times.all? do |i|
+            matcher.match?(tags: %w(go ruby), scores: [3, 6, 9], note: "OK_#{t}_#{i}") &&
+              !matcher.match?(tags: %w(py), scores: [1, 9], note: 'no')
+          end
+        end
+      end.map(&:value)
+
+      GC.start
+      expect(results).to all(be true)
+      expect(matcher.match?(tags: 'ruby', scores: 6, note: 'ok')).to be true
+    end
+  end
 end
