@@ -98,6 +98,17 @@ module Mongory
     builder_class.new(records)
   end
 
+  # Builds a new matcher for the given condition.
+  # Uses `CMatcher` when `enable_c_extension_by_default!` is enabled and the C extension is available;
+  # otherwise uses `QueryMatcher`.
+  #
+  # @param condition [Hash] the query condition
+  # @return [QueryMatcher, CMatcher] a new matcher
+  def self.build_matcher(condition)
+    matcher_class = c_extension_by_default? ? CMatcher : QueryMatcher
+    matcher_class.new(condition)
+  end
+
   # Registers a class to support `.mongory` query DSL.
   # This injects a `#mongory` method into the given class.
   #

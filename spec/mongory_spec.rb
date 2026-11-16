@@ -17,6 +17,7 @@ RSpec.describe Mongory do
     it 'uses QueryBuilder by default when not enabled' do
       expect(described_class.c_extension_by_default?).to be false
       expect(described_class.build_query(records)).to be_an_instance_of(Mongory::QueryBuilder)
+      expect(described_class.build_matcher(name: 'Alice')).to be_an_instance_of(Mongory::QueryMatcher)
       expect(records.mongory).to be_an_instance_of(Mongory::QueryBuilder)
     end
 
@@ -25,6 +26,7 @@ RSpec.describe Mongory do
       expect(result).to be true
       expect(described_class.c_extension_by_default?).to be true
       expect(described_class.build_query(records)).to be_an_instance_of(Mongory::CQueryBuilder)
+      expect(described_class.build_matcher(name: 'Alice')).to be_an_instance_of(Mongory::CMatcher)
       expect(records.mongory).to be_an_instance_of(Mongory::CQueryBuilder)
     end
 
@@ -33,6 +35,7 @@ RSpec.describe Mongory do
       described_class.disable_c_extension_by_default!
       expect(described_class.c_extension_by_default?).to be false
       expect(described_class.build_query(records)).to be_an_instance_of(Mongory::QueryBuilder)
+      expect(described_class.build_matcher(name: 'Alice')).to be_an_instance_of(Mongory::QueryMatcher)
       expect(records.mongory).to be_an_instance_of(Mongory::QueryBuilder)
     end
   end
