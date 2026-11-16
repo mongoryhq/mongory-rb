@@ -66,7 +66,8 @@ end
 $INCFLAGS << ' -I.'
 $INCFLAGS << " -I#{File.join(core_src_dir, 'foundations')}"
 $INCFLAGS << " -I#{File.join(core_src_dir, 'matchers')}"
-all_sources = ['mongory_ext.c'] + foundations_src + matchers_src
+ext_src = Dir.glob(File.join(__dir__, '*.c')).map { |src| File.basename(src) }.sort
+all_sources = ext_src + foundations_src + matchers_src
 $srcs = all_sources
 $objs = all_sources.map { |src| "#{File.basename(src, '.c')}.o" }
 
