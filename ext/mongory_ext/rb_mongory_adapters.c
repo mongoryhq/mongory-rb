@@ -8,6 +8,9 @@
 // Replaces a string pattern with its compiled Regexp so later matches reuse it,
 // and keeps the Regexp alive for the GC.
 static VALUE rb_mongory_regex_cache(mongory_memory_pool *pool, mongory_value *pattern, VALUE rb_re) {
+  if (pattern->type == MONGORY_TYPE_REGEX && pattern->data.regex) {
+    return (VALUE)pattern->data.regex;
+  }
   mongory_memory_pool *pattern_pool = pattern->pool;
   mongory_value *temp_value = mongory_value_wrap_regex(pool, (void *)rb_re);
   if (temp_value) {

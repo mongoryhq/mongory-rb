@@ -20,12 +20,14 @@ extern VALUE rb_mongory_e_type_error;
 extern VALUE rb_mongory_data_converter;
 extern VALUE rb_mongory_condition_converter;
 
+typedef struct rb_mongory_memory_pool_t rb_mongory_memory_pool_t;
+
 // Matcher wrapper structure
 typedef struct rb_mongory_matcher_t {
   mongory_matcher *matcher;
   mongory_value *condition;
   mongory_memory_pool *pool;
-  mongory_memory_pool *scratch_pool;
+  rb_mongory_memory_pool_t *scratch_free_list;
   mongory_memory_pool *trace_pool;
   mongory_table *string_map;
   mongory_table *symbol_map;
@@ -33,10 +35,11 @@ typedef struct rb_mongory_matcher_t {
   VALUE ctx;
 } rb_mongory_matcher_t;
 
-typedef struct rb_mongory_memory_pool_t {
+struct rb_mongory_memory_pool_t {
   mongory_memory_pool base;
   rb_mongory_matcher_t *owner;
-} rb_mongory_memory_pool_t;
+  rb_mongory_memory_pool_t *next_scratch;
+};
 
 typedef struct rb_mongory_table_t {
   mongory_table base;

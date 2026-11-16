@@ -120,5 +120,55 @@ RSpec.describe Mongory::CMatcher, type: :model do
       expect(results).to all(be true)
       expect(matcher.match?(tags: 'ruby', scores: 6, note: 'ok')).to be true
     end
+
+    it 'protects scratch_pool on recursive re-entry from DataConverter' do
+      matcher = described_class.new(score: { '$gt' => 5 }, tag: 'ok')
+      nested_results = []
+      nested_record = DummyModel.new(nil)
+      nested_record.define_singleton_method(:as_json) do
+        nested_results << matcher.match?(score: 1, tag: 'no')
+        nested_results << matcher.match?(score: 9, tag: 'ok')
+        10
+      end
+
+      3.times do
+        nested_results.clear
+        expect(matcher.match?(score: nested_record, tag: 'ok')).to be true
+        expect(nested_results).to eq([false, true])
+      end
+      expect(matcher.match?(score: 7, tag: 'ok')).to be true
+    end
+
+    it 'protects scratch_pool when Ruby threads interleave mid-match' do
+      matcher = described_class.new(score: { '$gt' => 5 }, tag: 'ok')
+      entered = Queue.new
+      resume = Queue.new
+
+      slow_record = DummyModel.new(nil)
+      slow_record.define_singleton_method(:as_json) do
+        entered << true
+        resume.pop
+        10
+      end
+
+      t1 = Thread.new { matcher.match?(score: slow_record, tag: 'ok') }
+      entered.pop
+      expect(matcher.match?(score: 2, tag: 'no')).to be false
+      expect(matcher.match?(score: 8, tag: 'ok')).to be true
+      resume << true
+
+      expect(t1.value).to be true
+      expect(matcher.match?(score: 6, tag: 'ok')).to be true
+    end
+
+    it 'resets and releases scratch_pool when a callback raises an exception' do
+      matcher = described_class.new(score: { '$gt' => 5 }, tag: 'ok')
+      boom_record = DummyModel.new(nil)
+      boom_record.define_singleton_method(:as_json) { raise 'boom' }
+
+      expect { matcher.match?(score: boom_record, tag: 'ok') }.to raise_error(RuntimeError, 'boom')
+      expect(matcher.match?(score: 8, tag: 'ok')).to be true
+      expect(matcher.match?(score: 2, tag: 'ok')).to be false
+    end
   end
 end

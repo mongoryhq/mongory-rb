@@ -17,9 +17,17 @@ VALUE rb_mongory_condition_converter;
 
 rb_mongory_memory_pool_t *rb_mongory_memory_pool_new(void) {
   rb_mongory_memory_pool_t *pool = malloc(sizeof(rb_mongory_memory_pool_t));
+  if (!pool) {
+    return NULL;
+  }
   mongory_memory_pool *base = mongory_memory_pool_new();
+  if (!base) {
+    free(pool);
+    return NULL;
+  }
   memcpy(&pool->base, base, sizeof(mongory_memory_pool));
   pool->owner = NULL;
+  pool->next_scratch = NULL;
   free(base);
 
   return pool;

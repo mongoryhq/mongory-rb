@@ -25,9 +25,11 @@ static void rb_mongory_matcher_release_pools(rb_mongory_matcher_t *wrapper) {
     wrapper->pool->free(wrapper->pool);
     wrapper->pool = NULL;
   }
-  if (wrapper->scratch_pool) {
-    wrapper->scratch_pool->free(wrapper->scratch_pool);
-    wrapper->scratch_pool = NULL;
+  while (wrapper->scratch_free_list) {
+    rb_mongory_memory_pool_t *scratch = wrapper->scratch_free_list;
+    wrapper->scratch_free_list = scratch->next_scratch;
+    scratch->next_scratch = NULL;
+    scratch->base.free(&scratch->base);
   }
   if (wrapper->trace_pool) {
     wrapper->trace_pool->free(wrapper->trace_pool);
@@ -44,7 +46,7 @@ static void rb_mongory_matcher_release_pools(rb_mongory_matcher_t *wrapper) {
 static rb_mongory_matcher_t *get_initialized_matcher(VALUE self) {
   rb_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
-  if (!wrapper || !wrapper->matcher || !wrapper->condition || !wrapper->pool || !wrapper->scratch_pool) {
+  if (!wrapper || !wrapper->matcher || !wrapper->condition || !wrapper->pool) {
     rb_raise(rb_mongory_e_error, "uninitialized %s", rb_obj_classname(self));
   }
   return wrapper;
@@ -86,11 +88,15 @@ static VALUE rb_mongory_matcher_initialize(int argc, VALUE *argv, VALUE self) {
   rb_mongory_matcher_release_pools(wrapper);
 
   rb_mongory_memory_pool_t *matcher_pool = rb_mongory_memory_pool_new();
-  mongory_memory_pool *matcher_pool_base = &matcher_pool->base;
   rb_mongory_memory_pool_t *scratch_pool = rb_mongory_memory_pool_new();
-  mongory_memory_pool *scratch_pool_base = &scratch_pool->base;
+  if (!matcher_pool || !scratch_pool) {
+    if (matcher_pool) matcher_pool->base.free(&matcher_pool->base);
+    if (scratch_pool) scratch_pool->base.free(&scratch_pool->base);
+    rb_raise(rb_mongory_e_error, "Failed to allocate matcher memory pools");
+  }
+  mongory_memory_pool *matcher_pool_base = &matcher_pool->base;
   wrapper->pool = matcher_pool_base;
-  wrapper->scratch_pool = scratch_pool_base;
+  wrapper->scratch_free_list = scratch_pool;
   wrapper->string_map = mongory_table_new(matcher_pool_base);
   wrapper->symbol_map = mongory_table_new(matcher_pool_base);
   wrapper->mark_list = mongory_array_new(matcher_pool_base);
@@ -147,13 +153,71 @@ static void rb_mongory_matcher_parse_argv(rb_mongory_matcher_t *self, int argc, 
   self->mark_list->push(self->mark_list, store_ctx);
 }
 
-// Mongory::CMatcher#match?(data)
-static VALUE rb_mongory_matcher_match(VALUE self, VALUE data) {
-  rb_mongory_matcher_t *self_wrapper = get_initialized_matcher(self);
+typedef struct {
+  rb_mongory_matcher_t *wrapper;
+  mongory_memory_pool *owner_pool;
+  rb_mongory_memory_pool_t *scratch;
+} rb_mongory_scratch_lease_t;
+
+typedef struct {
+  rb_mongory_matcher_t *wrapper;
+  mongory_memory_pool *scratch_pool;
+  VALUE data;
+} rb_mongory_match_call_t;
+
+typedef struct {
+  rb_mongory_matcher_t *wrapper;
+  mongory_memory_pool *scratch_pool;
+} rb_mongory_explain_call_t;
+
+// Pops an idle scratch pool from wrapper->scratch_free_list, or allocates a new
+// reusable pool when re-entered concurrently; release resets and pushes it back.
+static rb_mongory_scratch_lease_t rb_mongory_scratch_acquire(rb_mongory_matcher_t *wrapper) {
+  rb_mongory_memory_pool_t *scratch = wrapper->scratch_free_list;
+  if (scratch) {
+    wrapper->scratch_free_list = scratch->next_scratch;
+    scratch->next_scratch = NULL;
+    scratch->base.error = NULL;
+  } else {
+    scratch = rb_mongory_memory_pool_new();
+    if (!scratch) {
+      rb_raise(rb_mongory_e_error, "Failed to allocate scratch pool");
+    }
+    scratch->owner = wrapper;
+  }
+  rb_mongory_scratch_lease_t lease = {
+    .wrapper = wrapper,
+    .owner_pool = wrapper->pool,
+    .scratch = scratch,
+  };
+  return lease;
+}
+
+static VALUE rb_mongory_scratch_release(VALUE arg) {
+  rb_mongory_scratch_lease_t *lease = (rb_mongory_scratch_lease_t *)arg;
+  rb_mongory_memory_pool_t *scratch = lease->scratch;
+  if (!scratch) {
+    return Qnil;
+  }
+  lease->scratch = NULL;
+  if (lease->wrapper && lease->wrapper->pool == lease->owner_pool) {
+    scratch->base.error = NULL;
+    scratch->base.reset(&scratch->base);
+    scratch->next_scratch = lease->wrapper->scratch_free_list;
+    lease->wrapper->scratch_free_list = scratch;
+  } else {
+    scratch->base.free(&scratch->base);
+  }
+  return Qnil;
+}
+
+static VALUE rb_mongory_matcher_match_body(VALUE arg) {
+  rb_mongory_match_call_t *call = (rb_mongory_match_call_t *)arg;
+  rb_mongory_matcher_t *self_wrapper = call->wrapper;
   mongory_matcher *matcher = self_wrapper->matcher;
-  mongory_memory_pool *scratch_pool = self_wrapper->scratch_pool;
+  mongory_memory_pool *scratch_pool = call->scratch_pool;
   mongory_memory_pool *trace_pool = self_wrapper->trace_pool;
-  mongory_value *data_value = rb_to_mongory_value_shallow(scratch_pool, data);
+  mongory_value *data_value = rb_to_mongory_value_shallow(scratch_pool, call->data);
 
   if (rb_mongory_error_handling(scratch_pool, "Match failed")) {
     return Qnil;
@@ -167,20 +231,41 @@ static VALUE rb_mongory_matcher_match(VALUE self, VALUE data) {
     mongory_matcher_enable_trace(matcher, trace_pool);
   }
 
-  scratch_pool->reset(scratch_pool);
-
   return result ? Qtrue : Qfalse;
+}
+
+// Mongory::CMatcher#match?(data)
+static VALUE rb_mongory_matcher_match(VALUE self, VALUE data) {
+  rb_mongory_matcher_t *self_wrapper = get_initialized_matcher(self);
+  rb_mongory_scratch_lease_t lease = rb_mongory_scratch_acquire(self_wrapper);
+  rb_mongory_match_call_t call = {
+    .wrapper = self_wrapper,
+    .scratch_pool = &lease.scratch->base,
+    .data = data,
+  };
+  VALUE result = rb_ensure(rb_mongory_matcher_match_body, (VALUE)&call, rb_mongory_scratch_release, (VALUE)&lease);
+  RB_GC_GUARD(self);
+  return result;
+}
+
+static VALUE rb_mongory_matcher_explain_body(VALUE arg) {
+  rb_mongory_explain_call_t *call = (rb_mongory_explain_call_t *)arg;
+  mongory_matcher_explain(call->wrapper->matcher, call->scratch_pool);
+  rb_mongory_error_handling(call->scratch_pool, "Explain failed");
+  return Qnil;
 }
 
 // Mongory::CMatcher#explain
 static VALUE rb_mongory_matcher_explain(VALUE self) {
   rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
-  mongory_matcher_explain(wrapper->matcher, wrapper->scratch_pool);
-  if (rb_mongory_error_handling(wrapper->scratch_pool, "Explain failed")) {
-    return Qnil;
-  }
-  wrapper->scratch_pool->reset(wrapper->scratch_pool);
-  return Qnil;
+  rb_mongory_scratch_lease_t lease = rb_mongory_scratch_acquire(wrapper);
+  rb_mongory_explain_call_t call = {
+    .wrapper = wrapper,
+    .scratch_pool = &lease.scratch->base,
+  };
+  VALUE result = rb_ensure(rb_mongory_matcher_explain_body, (VALUE)&call, rb_mongory_scratch_release, (VALUE)&lease);
+  RB_GC_GUARD(self);
+  return result;
 }
 
 // Mongory::CMatcher#trace(data)
