@@ -1,15 +1,31 @@
 # Changelog
 
-## [Unreleased]
+## [0.9.0] - 2026-11-17
 
-Aligns with mongory-spec `0.2.0`.
+Aligns with mongory-spec `0.2.0` and `mongory-core` `v0.2.0`.
 
 ### Breaking Changes
 - **Unknown operators raise `Mongory::TypeError`**: a condition key that starts with `$` and is not a registered operator (e.g. `{ age: { '$foo' => 1 } }`) is now rejected, as MongoDB does. It was previously matched as a field named `$foo`, which silently never matched.
 
 ### Features
 - **`$options` for `$regex`**: `{ '$regex' => '^ab', '$options' => 'i' }` accepts the MongoDB flags `i`, `m` and `s`. Other flags, a non-string value, `$options` without `$regex`, or `$options` with a `Regexp` pattern raise `Mongory::TypeError`. On array fields, `$options` follows `$regex` into the implicit `$elemMatch`.
-- **C Extension (`CMatcher`)**: registers a `$options` regex adapter with mongory-core; both rules above are enforced by core, so `QueryMatcher` and `CMatcher` behave the same. Requires the mongory-core submodule bump that adds `mongory_regex_options_func_set`.
+- **C Extension (`CMatcher`) `$options` Adapter**: registers a `$options` regex adapter with `mongory-core` so `QueryMatcher` and `CMatcher` enforce identical regex option rules.
+- **Configuration & Helpers**:
+  - Add `Mongory.enable_c_extension_by_default!` configuration option and Rails initializer template update.
+  - Add `Mongory.build_matcher` helper returning `CMatcher` or `QueryMatcher` according to `c_extension_by_default?`.
+- **MongoDB Array & Equality Alignment**:
+  - Route element-level comparison operators (`$gt`, `$gte`, `$lt`, `$lte`, `$regex`, scalar `$eq`) on array records into implicit `$elemMatch`.
+  - Support array element inclusion semantics in `$eq` / `$ne`, and enforce non-Hash `$elemMatch` validation.
+
+### Fixes
+- **`QueryMatcher` & Config**:
+  - Expand integer/whole-float numeric equivalents in `$in` / `$nin` and guard `$elemMatch` against non-`Array` records.
+  - Unify freeze behavior across converters and matchers in `Mongory.configure`.
+- **C Extension (`mongory_ext`)**:
+  - Refactor `mongory_ext.c` into focused modules (`rb_mongory_cmatcher.c`, `rb_mongory_value.c`, `rb_mongory_adapters.c`), switch `CMatcher` to standard `TypedData` `alloc_func` / `initialize`, forbid `initialize_copy`, and handle single bare keyword-style hash arguments on Ruby 3.0+.
+  - Make per-matcher scratch pools re-entrant, thread-safe, and exception-safe using `scratch_free_list` and `rb_ensure` in `CMatcher#match?` and `CMatcher#explain`, and preserve `pattern->pool` in `rb_mongory_regex_cache`.
+  - Link `-lpthread` directly in `extconf.rb` without the `mkmf` executable link probe to avoid prebuilt Linux Ruby 3.2 build failures.
+  - Switch `mongory-core` submodule URL in `.gitmodules` to HTTPS and update `mongory-core` to `v0.2.0` (thread safety, `mongory_table` equality, LLP64 `ERANGE` check, and empty `$elemMatch`/`$every` array handling).
 
 ## [0.8.2] - 2026-11-14
 
