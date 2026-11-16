@@ -60,8 +60,10 @@ if RbConfig::CONFIG['host_os'] =~ /darwin/
   # Use dynamic_lookup so Ruby symbols (rb_*) are resolved by the host interpreter at dlopen time
   $LDFLAGS  << ' -Wl,-undefined,dynamic_lookup'
   $DLDFLAGS << ' -Wl,-undefined,dynamic_lookup'
-elsif RbConfig::CONFIG['host_os'] !~ /mswin|mingw/
-  have_library('pthread', 'pthread_mutex_lock')
+elsif RbConfig::CONFIG['host_os'] !~ /mswin|mingw|android|haiku/
+  # Avoid mkmf link probes (`have_library` -> `have_devel?` executable link test) which can fail
+  # on prebuilt toolcache Rubies; pass -lpthread directly where POSIX pthreads may be separate.
+  $LOCAL_LIBS << ' -lpthread' unless $LIBS.include?('-lpthread') || $LOCAL_LIBS.include?('-lpthread')
 end
 
 # Let mkmf generate rules by listing all sources and corresponding objects
