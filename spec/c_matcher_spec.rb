@@ -44,4 +44,47 @@ RSpec.describe Mongory::CMatcher, type: :model do
       expect { matcher.disable_trace }.not_to raise_error
     end
   end
+
+  describe 'allocation and initialization lifecycle' do
+    it 'supports subclassing with custom #initialize calling super' do
+      subclass = Class.new(described_class) do
+        attr_reader :tag
+
+        def initialize(cond, tag:)
+          super(cond)
+          @tag = tag
+        end
+      end
+
+      instance = subclass.new({ name: 'John' }, tag: :custom)
+      expect(instance.tag).to eq(:custom)
+      expect(instance.match?(name: 'John')).to be true
+      expect(instance.match?(name: 'Mary')).to be false
+    end
+
+    it 'raises Mongory::Error when using an allocated but uninitialized instance' do
+      uninitialized = described_class.allocate
+      expect { uninitialized.match?(name: 'John') }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.condition }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.context }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.explain }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.trace(name: 'John') }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.enable_trace }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.disable_trace }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.print_trace }.to raise_error(Mongory::Error, /uninitialized/)
+      GC.start
+    end
+
+    it 'cleans up safely when #initialize raises and GC runs' do
+      expect { described_class.new }.to raise_error(ArgumentError)
+      expect { described_class.new(name: { '$unknown' => 1 }) }.to raise_error(Mongory::TypeError)
+      GC.start
+    end
+
+    it 'forbids dup and clone to prevent sharing C memory pools' do
+      matcher = described_class.new(name: 'John')
+      expect { matcher.dup }.to raise_error(TypeError, /can't copy/)
+      expect { matcher.clone }.to raise_error(TypeError, /can't copy/)
+    end
+  end
 end

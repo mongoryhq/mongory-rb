@@ -87,39 +87,82 @@ static const rb_data_type_t rb_mongory_matcher_type = {
  * Ruby method implementations
  */
 
-// Mongory::CMatcher.new(condition)
-static VALUE rb_mongory_matcher_new(int argc, VALUE *argv, VALUE class) {
+// Allocator & lifecycle helpers for Mongory::CMatcher
+static void rb_mongory_matcher_release_pools(rb_mongory_matcher_t *wrapper) {
+  if (wrapper->pool) {
+    wrapper->pool->free(wrapper->pool);
+    wrapper->pool = NULL;
+  }
+  if (wrapper->scratch_pool) {
+    wrapper->scratch_pool->free(wrapper->scratch_pool);
+    wrapper->scratch_pool = NULL;
+  }
+  if (wrapper->trace_pool) {
+    wrapper->trace_pool->free(wrapper->trace_pool);
+    wrapper->trace_pool = NULL;
+  }
+  wrapper->matcher = NULL;
+  wrapper->condition = NULL;
+  wrapper->string_map = NULL;
+  wrapper->symbol_map = NULL;
+  wrapper->mark_list = NULL;
+  wrapper->ctx = 0;
+}
+
+static rb_mongory_matcher_t *get_initialized_matcher(VALUE self) {
+  rb_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  if (!wrapper || !wrapper->matcher || !wrapper->condition || !wrapper->pool || !wrapper->scratch_pool) {
+    rb_raise(eMongoryError, "uninitialized %s", rb_obj_classname(self));
+  }
+  return wrapper;
+}
+
+static VALUE rb_mongory_matcher_alloc(VALUE klass) {
+  rb_mongory_matcher_t *wrapper;
+  VALUE obj = TypedData_Make_Struct(klass, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  memset(wrapper, 0, sizeof(rb_mongory_matcher_t));
+  return obj;
+}
+
+// Mongory::CMatcher#initialize(condition, context: ...)
+static VALUE rb_mongory_matcher_initialize(int argc, VALUE *argv, VALUE self) {
+  rb_mongory_matcher_t *wrapper;
+  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  rb_mongory_matcher_release_pools(wrapper);
+
   rb_mongory_memory_pool_t *matcher_pool = rb_mongory_memory_pool_new();
   mongory_memory_pool *matcher_pool_base = &matcher_pool->base;
   rb_mongory_memory_pool_t *scratch_pool = rb_mongory_memory_pool_new();
   mongory_memory_pool *scratch_pool_base = &scratch_pool->base;
-  rb_mongory_matcher_t *wrapper = ALLOC(rb_mongory_matcher_t);
   wrapper->pool = matcher_pool_base;
   wrapper->scratch_pool = scratch_pool_base;
-  wrapper->trace_pool = NULL;
-  wrapper->ctx = NULL;
   wrapper->string_map = mongory_table_new(matcher_pool_base);
   wrapper->symbol_map = mongory_table_new(matcher_pool_base);
   wrapper->mark_list = mongory_array_new(matcher_pool_base);
-  wrapper->condition = NULL;
-  wrapper->matcher = NULL;
   matcher_pool->owner = wrapper;
   scratch_pool->owner = wrapper;
   rb_mongory_matcher_parse_argv(wrapper, argc, argv);
 
   mongory_matcher *matcher = mongory_matcher_new(matcher_pool_base, wrapper->condition, wrapper->ctx);
-  if (matcher_pool_base->error) {
+  if (matcher_pool_base->error || !matcher) {
     char err_msg[256];
     snprintf(err_msg, sizeof(err_msg), "%s",
-             matcher_pool_base->error->message ? matcher_pool_base->error->message : "Unknown error");
-    matcher_pool_base->free(matcher_pool_base);
-    scratch_pool_base->free(scratch_pool_base);
-    xfree(wrapper);
+             (matcher_pool_base->error && matcher_pool_base->error->message)
+                 ? matcher_pool_base->error->message
+                 : "Unknown error");
+    rb_mongory_matcher_release_pools(wrapper);
     rb_raise(eMongoryTypeError, "Failed to create matcher: %s", err_msg);
   }
 
   wrapper->matcher = matcher;
-  return TypedData_Wrap_Struct(class, &rb_mongory_matcher_type, wrapper);
+  return self;
+}
+
+// Disallow dup/clone so C memory pools are never shared across instances
+static VALUE rb_mongory_matcher_initialize_copy(VALUE self, VALUE orig) {
+  (void)orig;
+  rb_raise(rb_eTypeError, "can't copy %s", rb_obj_classname(self));
 }
 
 static void rb_mongory_matcher_parse_argv(rb_mongory_matcher_t *self, int argc, VALUE *argv) {
@@ -145,8 +188,7 @@ static void rb_mongory_matcher_parse_argv(rb_mongory_matcher_t *self, int argc, 
 
 // Mongory::CMatcher#match(data)
 static VALUE rb_mongory_matcher_match(VALUE self, VALUE data) {
-  rb_mongory_matcher_t *self_wrapper;
-  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, self_wrapper);
+  rb_mongory_matcher_t *self_wrapper = get_initialized_matcher(self);
   mongory_matcher *matcher = self_wrapper->matcher;
   mongory_memory_pool *scratch_pool = self_wrapper->scratch_pool;
   mongory_memory_pool *trace_pool = self_wrapper->trace_pool;
@@ -171,8 +213,7 @@ static VALUE rb_mongory_matcher_match(VALUE self, VALUE data) {
 
 // Mongory::CMatcher#explain
 static VALUE rb_mongory_matcher_explain(VALUE self) {
-  rb_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   mongory_matcher_explain(wrapper->matcher, wrapper->scratch_pool);
   if (rb_mongory_error_handling(wrapper->scratch_pool, "Explain failed")) {
     return Qnil;
@@ -183,8 +224,7 @@ static VALUE rb_mongory_matcher_explain(VALUE self) {
 
 // Mongory::CMatcher#trace(data)
 static VALUE rb_mongory_matcher_trace(VALUE self, VALUE data) {
-  rb_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   rb_mongory_memory_pool_t *trace_pool = rb_mongory_memory_pool_new();
   trace_pool->owner = wrapper;
   mongory_memory_pool *trace_pool_base = &trace_pool->base;
@@ -206,8 +246,7 @@ static VALUE rb_mongory_matcher_trace(VALUE self, VALUE data) {
 
 // Mongory::CMatcher#enable_trace
 static VALUE rb_mongory_matcher_enable_trace(VALUE self) {
-  rb_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   if (wrapper->trace_pool) {
     wrapper->trace_pool->free(wrapper->trace_pool);
     wrapper->trace_pool = NULL;
@@ -231,8 +270,7 @@ static VALUE rb_mongory_matcher_enable_trace(VALUE self) {
 
 // Mongory::CMatcher#disable_trace
 static VALUE rb_mongory_matcher_disable_trace(VALUE self) {
-  rb_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   mongory_memory_pool *trace_pool = wrapper->trace_pool;
   mongory_matcher_disable_trace(wrapper->matcher);
   if (trace_pool) {
@@ -252,8 +290,7 @@ static VALUE rb_mongory_matcher_disable_trace(VALUE self) {
 
 // Mongory::CMatcher#print_trace
 static VALUE rb_mongory_matcher_print_trace(VALUE self) {
-  rb_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   if (!wrapper->trace_pool) {
     return Qnil;
   }
@@ -265,16 +302,14 @@ static VALUE rb_mongory_matcher_print_trace(VALUE self) {
 
 // Mongory::CMatcher#condition
 static VALUE rb_mongory_matcher_condition(VALUE self) {
-  rb_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
 
   return (VALUE)wrapper->condition->origin;
 }
 
 // Mongory::CMatcher#context
 static VALUE rb_mongory_matcher_context(VALUE self) {
-  rb_mongory_matcher_t *wrapper;
-  TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
+  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
 
   return wrapper->ctx ? wrapper->ctx : Qnil;
 }
@@ -305,14 +340,8 @@ static rb_mongory_memory_pool_t *rb_mongory_memory_pool_new() {
  */
 static void rb_mongory_matcher_free(void *ptr) {
   rb_mongory_matcher_t *wrapper = (rb_mongory_matcher_t *)ptr;
-  mongory_memory_pool *pool = wrapper->pool;
-  mongory_memory_pool *scratch_pool = wrapper->scratch_pool;
-  mongory_memory_pool *trace_pool = wrapper->trace_pool;
-  pool->free(pool);
-  scratch_pool->free(scratch_pool);
-  if (trace_pool) {
-    trace_pool->free(trace_pool);
-  }
+  if (!wrapper) return;
+  rb_mongory_matcher_release_pools(wrapper);
   xfree(wrapper);
 }
 
@@ -331,7 +360,10 @@ static bool gc_mark_array_cb(mongory_value *value, void *acc) {
 static void rb_mongory_matcher_mark(void *ptr) {
   rb_mongory_matcher_t *self = (rb_mongory_matcher_t *)ptr;
   if (!self) return;
-  self->mark_list->each(self->mark_list, NULL, gc_mark_array_cb);
+  if (self->ctx) rb_gc_mark(self->ctx);
+  if (self->mark_list) {
+    self->mark_list->each(self->mark_list, NULL, gc_mark_array_cb);
+  }
 }
 
 /**
@@ -745,7 +777,7 @@ void Init_mongory_ext(void) {
   // Define modules and classes
   mMongory = rb_define_module("Mongory");
   cMongoryMatcher = rb_define_class_under(mMongory, "CMatcher", rb_cObject);
-  rb_undef_alloc_func(cMongoryMatcher);
+  rb_define_alloc_func(cMongoryMatcher, rb_mongory_matcher_alloc);
   mMongoryMatchers = rb_define_module_under(mMongory, "Matchers");
   VALUE mMongoryUtils = rb_define_module_under(mMongory, "Utils");
   cMongoryMatcherContext = rb_define_class_under(mMongoryUtils, "Context", rb_cObject);
@@ -758,7 +790,8 @@ void Init_mongory_ext(void) {
   eMongoryTypeError = rb_define_class_under(mMongory, "TypeError", eMongoryError);
 
   // Define Matcher methods
-  rb_define_singleton_method(cMongoryMatcher, "new", rb_mongory_matcher_new, -1);
+  rb_define_method(cMongoryMatcher, "initialize", rb_mongory_matcher_initialize, -1);
+  rb_define_method(cMongoryMatcher, "initialize_copy", rb_mongory_matcher_initialize_copy, 1);
   rb_define_singleton_method(cMongoryMatcher, "trace_result_colorful=", rb_mongory_matcher_trace_result_colorful, 1);
   rb_define_method(cMongoryMatcher, "match?", rb_mongory_matcher_match, 1);
   rb_define_method(cMongoryMatcher, "explain", rb_mongory_matcher_explain, 0);
