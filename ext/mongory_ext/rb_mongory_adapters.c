@@ -8,12 +8,16 @@
 // Replaces a string pattern with its compiled Regexp so later matches reuse it,
 // and keeps the Regexp alive for the GC.
 static VALUE rb_mongory_regex_cache(mongory_memory_pool *pool, mongory_value *pattern, VALUE rb_re) {
+  mongory_memory_pool *pattern_pool = pattern->pool;
   mongory_value *temp_value = mongory_value_wrap_regex(pool, (void *)rb_re);
-  memcpy(pattern, temp_value, sizeof(mongory_value));
-  pattern->origin = (void *)rb_re;
-  rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
-  if (rb_pool->owner) {
-    rb_pool->owner->mark_list->push(rb_pool->owner->mark_list, pattern);
+  if (temp_value) {
+    memcpy(pattern, temp_value, sizeof(mongory_value));
+    pattern->pool = pattern_pool;
+    pattern->origin = (void *)rb_re;
+    rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
+    if (rb_pool->owner) {
+      rb_pool->owner->mark_list->push(rb_pool->owner->mark_list, pattern);
+    }
   }
   return rb_re;
 }
