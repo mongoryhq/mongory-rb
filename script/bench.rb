@@ -26,7 +26,14 @@ def bench(label)
   count = 0
   ROUNDS.times { count = yield }
   elapsed_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000.0) / ROUNDS
-  puts format('%-34s %8.2f ms / 100k  (%6.1f ns/rec, matched=%d)', label, elapsed_ms, (elapsed_ms * 1_000_000.0) / N, count)
+  ns_per_rec = (elapsed_ms * 1_000_000.0) / N
+  puts format(
+    '%<label>-34s %<ms>8.2f ms / 100k  (%<ns>6.1f ns/rec, matched=%<count>d)',
+    label: label,
+    ms: elapsed_ms,
+    ns: ns_per_rec,
+    count: count
+  )
 end
 
 bench('Plain Ruby (simple)') do
