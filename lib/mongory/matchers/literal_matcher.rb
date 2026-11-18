@@ -49,7 +49,7 @@ module Mongory
       end
 
       def priority
-        1 + dispatched_matcher.priority
+        1 + (@array_record_matcher || dispatched_matcher).priority
       end
 
       # Selects and returns the appropriate matcher instance for a given literal condition.

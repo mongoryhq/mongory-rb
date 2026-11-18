@@ -76,4 +76,35 @@ RSpec.describe Mongory::Matchers::HashConditionMatcher do
       it { is_expected.to be_match('price$' => 1) }
     end
   end
+
+  describe '#priority with lazy ArrayRecordMatcher' do
+    it 'updates field and root priorities once array fields are matched' do
+      condition = {
+        'scores' => { '$size' => { '$gte' => 3, '$lte' => 5 }, '$every' => { '$gte' => 60 } },
+        'tags' => 'ts',
+        'reviews' => { 'approved' => true, 'rating' => { '$gte' => 4 } }
+      }
+      matcher = described_class.build(condition)
+      before_root = matcher.priority
+      before_children = matcher.matchers.map(&:priority)
+
+      record = {
+        'candidate' => 'Alice',
+        'tags' => %w[go ts rust],
+        'scores' => [82, 91, 77],
+        'reviews' => [
+          { 'reviewer' => 'r1', 'approved' => false, 'rating' => 5 },
+          { 'reviewer' => 'r2', 'approved' => true, 'rating' => 5 },
+          { 'reviewer' => 'r3', 'approved' => true, 'rating' => 4 }
+        ]
+      }
+      expect(matcher).to be_match(record)
+
+      after_children = matcher.matchers.map(&:priority)
+      expect(after_children[0]).to be > before_children[0]
+      expect(after_children[1]).to be > before_children[1]
+      expect(matcher.priority).to eq(1 + after_children.sum)
+      expect(matcher.priority).to be > before_root
+    end
+  end
 end
