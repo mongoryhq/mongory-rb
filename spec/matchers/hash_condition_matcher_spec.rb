@@ -90,7 +90,7 @@ RSpec.describe Mongory::Matchers::HashConditionMatcher do
 
       record = {
         'candidate' => 'Alice',
-        'tags' => %w[go ts rust],
+        'tags' => %w(go ts rust),
         'scores' => [82, 91, 77],
         'reviews' => [
           { 'reviewer' => 'r1', 'approved' => false, 'rating' => 5 },
@@ -125,17 +125,17 @@ RSpec.describe Mongory::Matchers::HashConditionMatcher do
         'items' => { '$size' => { '$gte' => 1 } }
       }
       matcher = described_class.build(condition)
-      expect(matcher.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w[tags age items])
+      expect(matcher.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w(tags age items))
 
-      rec1, visited1 = track_fetches('tags' => %w[go ts], 'age' => 20, 'items' => %w[x])
+      rec1, visited1 = track_fetches('tags' => %w(go ts), 'age' => 20, 'items' => %w(x))
       expect(matcher).to be_match(rec1)
-      expect(visited1).to eq(%w[tags age items])
+      expect(visited1).to eq(%w(tags age items))
 
-      expect(matcher.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w[age tags items])
+      expect(matcher.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w(age tags items))
 
-      rec2, visited2 = track_fetches('tags' => %w[ts], 'age' => 10, 'items' => %w[x])
+      rec2, visited2 = track_fetches('tags' => %w(ts), 'age' => 10, 'items' => %w(x))
       expect(matcher).not_to be_match(rec2)
-      expect(visited2).to eq(%w[age])
+      expect(visited2).to eq(%w(age))
     end
 
     it 're-sorts OrMatcher and QueryMatcher children across nested array and $not wrappers' do
@@ -143,14 +143,14 @@ RSpec.describe Mongory::Matchers::HashConditionMatcher do
         { 'tags' => 'ts' },
         { 'age' => { '$gte' => 18 } }
       ])
-      rec_or1, visited_or1 = track_fetches('tags' => %w[go ts], 'age' => 10)
+      rec_or1, visited_or1 = track_fetches('tags' => %w(go ts), 'age' => 10)
       expect(or_matcher).to be_match(rec_or1)
-      expect(visited_or1).to eq(%w[tags])
-      expect(or_matcher.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w[age tags])
+      expect(visited_or1).to eq(%w(tags))
+      expect(or_matcher.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w(age tags))
 
-      rec_or2, visited_or2 = track_fetches('tags' => %w[ts], 'age' => 25)
+      rec_or2, visited_or2 = track_fetches('tags' => %w(ts), 'age' => 25)
       expect(or_matcher).to be_match(rec_or2)
-      expect(visited_or2).to eq(%w[age])
+      expect(visited_or2).to eq(%w(age))
 
       query_cond = {
         'matrix' => { 'tags' => { '$not' => 'bad' } },
@@ -158,14 +158,14 @@ RSpec.describe Mongory::Matchers::HashConditionMatcher do
       }
       query = Mongory::QueryMatcher.new(query_cond)
       query.prepare_query
-      expect(query.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w[matrix score])
+      expect(query.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w(matrix score))
 
-      expect(query).to be_match('matrix' => [{ 'tags' => %w[good] }], 'score' => 50)
-      expect(query.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w[score matrix])
+      expect(query).to be_match('matrix' => [{ 'tags' => %w(good) }], 'score' => 50)
+      expect(query.matchers.map { |m| m.instance_variable_get(:@field) }).to eq(%w(score matrix))
 
-      rec_q2, visited_q2 = track_fetches('matrix' => [{ 'tags' => %w[good] }], 'score' => 200)
+      rec_q2, visited_q2 = track_fetches('matrix' => [{ 'tags' => %w(good) }], 'score' => 200)
       expect(query).not_to be_match(rec_q2)
-      expect(visited_q2).to eq(%w[score])
+      expect(visited_q2).to eq(%w(score))
     end
   end
 end
