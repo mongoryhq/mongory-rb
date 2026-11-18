@@ -43,9 +43,10 @@ module Mongory
       #
       # @return [Array<AbstractMatcher>] array of submatchers
       define_instance_cache_method(:matchers) do
-        @condition.map do |condition|
+        children = @condition.map do |condition|
           HashConditionMatcher.build(condition, context: @context)
-        end.sort_by(&:priority)
+        end
+        sort_and_adopt(children)
       end
 
       # Ensures the condition is an array of hashes.

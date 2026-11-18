@@ -47,9 +47,10 @@ module Mongory
       # @return [Array<AbstractMatcher>] A flattened, deduplicated list of matchers
       # @see AbstractMatcher#uniq_key
       define_instance_cache_method(:matchers) do
-        @condition.flat_map do |condition|
+        children = @condition.flat_map do |condition|
           HashConditionMatcher.new(condition, context: @context).matchers
-        end.uniq(&:uniq_key).sort_by(&:priority)
+        end.uniq(&:uniq_key)
+        sort_and_adopt(children)
       end
 
       # Ensures the condition is an array of hashes.

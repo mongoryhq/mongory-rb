@@ -46,11 +46,12 @@ module Mongory
       # @return [Array<AbstractMatcher>] List of matchers for each condition
       # @raise [TypeError] for an unknown operator or a `$options` without `$regex`
       define_instance_cache_method(:matchers) do
-        @condition.map do |key, value|
+        children = @condition.map do |key, value|
           next if key == '$options' && @condition.key?('$regex')
 
           build_matcher(key, value)
-        end.compact.sort_by(&:priority)
+        end.compact
+        sort_and_adopt(children)
       end
 
       def check_validity!

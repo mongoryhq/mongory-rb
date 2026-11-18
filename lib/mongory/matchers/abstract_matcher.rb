@@ -60,6 +60,9 @@ module Mongory
       # @return [Context] the query context containing configuration and current record
       attr_reader :context
 
+      # @return [AbstractMatcher, nil] the enclosing matcher notified when priority changes
+      attr_accessor :parent
+
       # Returns a unique key representing this matcher instance.
       # Used for deduplication in multi-matchers.
       #
@@ -165,7 +168,32 @@ module Mongory
         20
       end
 
+      # Clears memoized match procs after a descendant changes priority or order.
+      #
+      # @return [void]
+      def invalidate_proc_cache!
+        @cached_proc = nil
+        remove_instance_variable(:@debug_proc) if instance_variable_defined?(:@debug_proc)
+      end
+
+      # Called by a child matcher after its priority increases dynamically.
+      #
+      # @return [void]
+      def on_child_priority_changed
+        notify_priority_changed
+      end
+
       private
+
+      def notify_priority_changed
+        invalidate_proc_cache!
+        @parent&.on_child_priority_changed
+      end
+
+      def attach_child(child)
+        child.parent = self if child.respond_to?(:parent=)
+        child
+      end
 
       # Returns a single-line string representing this matcher in the tree output.
       # Format: `<MatcherType>: <condition.inspect>`

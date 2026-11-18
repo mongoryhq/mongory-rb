@@ -46,9 +46,11 @@ module Mongory
       def self.build_or_unwrap(*args, context: Context.new)
         matcher = new(*args, context: context)
         return matcher unless @enable_unwrap
+        return matcher unless matcher.matchers.count == 1
 
-        matcher = matcher.matchers.first if matcher.matchers.count == 1
-        matcher
+        unwrapped = matcher.matchers.first
+        unwrapped.parent = nil if unwrapped.respond_to?(:parent=)
+        unwrapped
       end
 
       # Recursively checks all submatchers for validity.
@@ -80,7 +82,31 @@ module Mongory
         1 + matchers.sum(&:priority)
       end
 
+      # Re-sorts active child matchers after a lazy submatcher increases priority
+      # and invalidates memoized procs up the tree.
+      #
+      # @return [void]
+      def on_child_priority_changed
+        resort_matchers!
+        super
+      end
+
       private
+
+      def sort_and_adopt(children)
+        children.each { |child| attach_child(child) }
+        stable_sort_by_priority(children)
+      end
+
+      def resort_matchers!
+        return unless instance_variable_defined?(:@matchers)
+
+        @matchers = stable_sort_by_priority(@matchers)
+      end
+
+      def stable_sort_by_priority(children)
+        children.each_with_index.sort_by { |child, idx| [child.priority, idx] }.map(&:first)
+      end
 
       # Recursively combines multiple matcher procs with AND logic.
       # This method optimizes the combination of multiple matchers by building

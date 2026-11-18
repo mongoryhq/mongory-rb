@@ -35,12 +35,16 @@ module Mongory
       #
       # @return [Proc] a Proc that performs the literal matching operation
       def raw_proc
-        array_record_proc = nil
+        array_record_proc = @array_record_matcher&.to_proc
         dispatched_proc = dispatched_matcher.to_proc
 
         Proc.new do |record|
           if record.is_a?(Array)
-            array_record_proc ||= array_record_matcher.to_proc
+            unless array_record_proc
+              built = !instance_variable_defined?(:@array_record_matcher)
+              array_record_proc = array_record_matcher.to_proc
+              notify_priority_changed if built
+            end
             array_record_proc.call(record)
           else
             dispatched_proc.call(record)
@@ -73,19 +77,20 @@ module Mongory
       # @return [AbstractMatcher] the matcher used for non-array literal values
       # @!method dispatched_matcher
       define_matcher(:dispatched) do
-        case @condition
-        when Hash
-          HashConditionMatcher.build(@condition, context: @context)
-        when Regexp
-          RegexMatcher.build(@condition, context: @context)
-        when nil
-          OrMatcher.build([
-            { '$exists' => false },
-            { '$eq' => nil }
-          ], context: @context)
-        else
-          EqMatcher.build(@condition, context: @context)
-        end
+        matcher = case @condition
+                  when Hash
+                    HashConditionMatcher.build(@condition, context: @context)
+                  when Regexp
+                    RegexMatcher.build(@condition, context: @context)
+                  when nil
+                    OrMatcher.build([
+                      { '$exists' => false },
+                      { '$eq' => nil }
+                    ], context: @context)
+                  else
+                    EqMatcher.build(@condition, context: @context)
+                  end
+        attach_child(matcher)
       end
 
       # Lazily defines the collection matcher for array records.
@@ -94,7 +99,7 @@ module Mongory
       # @return [ArrayRecordMatcher] the matcher used to match array-type records
       # @!method array_record_matcher
       define_matcher(:array_record) do
-        ArrayRecordMatcher.build(@condition, context: @context)
+        attach_child(ArrayRecordMatcher.build(@condition, context: @context))
       end
 
       # Validates the nested condition matcher, if applicable.

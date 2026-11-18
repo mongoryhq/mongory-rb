@@ -56,7 +56,7 @@ module Mongory
                   else
                     ElemMatchMatcher.build({ '$eq' => @condition }, context: @context)
                   end
-        result.sort_by(&:priority)
+        sort_and_adopt(result)
       end
 
       ELEM_MATCH_OPERATORS = %w($gt $gte $lt $lte $regex).freeze
