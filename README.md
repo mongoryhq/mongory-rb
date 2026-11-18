@@ -1,9 +1,13 @@
-# Mongory
-### Let you query everywhere !
+# Mongory (Ruby)
 
-This is a Mongo-like in-memory query DSL for Ruby.
+**Cross-language, in-memory Mongo-style rule engine & query matcher with built-in Explain & Trace debugging** — optional C99 acceleration ([`mongory-core`](https://github.com/mongoryhq/mongory-core)), pure Ruby fallback, and cross-language parity via [`mongory-spec`](https://github.com/mongoryhq/mongory-spec).
 
-Mongory lets you filter and query in-memory collections using syntax and semantics similar to MongoDB. It is designed for expressive chaining, symbolic operators, and composable matchers.
+**[Try the Interactive Playground & Visual Explain/Trace Debugger ↗](https://mongoryhq.github.io/mongory-central/)**
+
+[![Mongory Playground & Visual Trace](https://mongoryhq.github.io/mongory-central/playground-trace.png)](https://mongoryhq.github.io/mongory-central/)
+
+> **Zero database required:** Mongory evaluates MongoDB-style conditions (`$gte`, `$elemMatch`, `$every`, `$present`, `$regex`, etc.) directly against in-memory Ruby objects, hashes, and ActiveRecord relations.  
+> **Ecosystem:** [Interactive Playground](https://mongoryhq.github.io/mongory-central/) · [`mongory-go` (Go)](https://github.com/mongoryhq/mongory-go) · [`mongory-js` (TypeScript/JS)](https://github.com/mongoryhq/mongory-js) · [`mongory-core` (C99)](https://github.com/mongoryhq/mongory-core) · [`mongory-spec`](https://github.com/mongoryhq/mongory-spec)
 
 ## Table of Contents
 
