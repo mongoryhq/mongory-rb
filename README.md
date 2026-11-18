@@ -31,7 +31,7 @@ In a Rails project, generate the initializer (`config/initializers/mongory.rb`):
 rails g mongory:install
 ```
 
-> **Note:** Precompiled native gems are installed automatically on supported Linux, macOS, and Windows platforms. When compiling from source on other platforms, ensure `gcc`/`clang` and `make` are installed.
+> **Note:** Precompiled native gems are installed automatically on supported Linux, macOS, and Windows platforms (Ruby 2.6–4.0). On older Apple Silicon macOS system Ruby (`universal-darwin`), run `gem install mongory --platform arm64-darwin` or `bundle lock --add-platform arm64-darwin`. When compiling from source on other platforms, ensure `gcc`/`clang` and `make` are installed.
 
 ## Quick Start
 
@@ -116,6 +116,8 @@ query.trace { |record| puts record['name'] }
 | Array | `$elemMatch`, `$every`, `$size` | `$every` requires a non-empty array where all elements match; `$size` accepts an integer or range object |
 | Existence | `$exists`, `$present` | `$present` checks non-nil and non-empty (`String`, `Array`, `Hash`) |
 | Regex | `$regex` (`$options`: `i`, `m`, `s`) | Accepts `Regexp` or pattern string with optional `$options` |
+
+> **Differences from MongoDB:** `$every` (returns `false` on `[]`) and `$present` are Mongory extensions; `$options` only permits `i`/`m`/`s`; unknown `$` operators raise `Mongory::TypeError`. See [`mongory-spec`](https://github.com/mongoryhq/mongory-spec#37-differences-from-mongodb-query-syntax).
 
 ## Custom Matchers & Configuration
 

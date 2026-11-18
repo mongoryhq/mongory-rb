@@ -1,0 +1,60 @@
+# frozen_string_literal: true
+
+require 'benchmark'
+require_relative '../lib/mongory'
+
+Mongory.register(Array)
+Mongory.enable_symbol_snippets!
+
+N = 100_000
+ROUNDS = 5
+
+records = Array.new(N) do |i|
+  {
+    'age' => 10 + (i % 50),
+    'status' => (i % 3).zero? ? 'active' : 'inactive'
+  }
+end
+
+puts "Ruby: #{RUBY_VERSION} (#{RUBY_PLATFORM}), records=#{N}, rounds=#{ROUNDS}"
+puts "CMatcher available: #{defined?(Mongory::CMatcher) ? 'yes' : 'no'}"
+
+def bench(label)
+  # Warmup
+  yield
+  t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  count = 0
+  ROUNDS.times { count = yield }
+  elapsed_ms = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000.0) / ROUNDS
+  puts format('%-34s %8.2f ms / 100k  (%6.1f ns/rec, matched=%d)', label, elapsed_ms, (elapsed_ms * 1_000_000.0) / N, count)
+end
+
+bench('Plain Ruby (simple)') do
+  records.count { |r| r['age'].is_a?(Numeric) && r['age'] >= 18 }
+end
+
+simple_qm = Mongory::QueryMatcher.new({ age: { :$gte => 18 } }).tap(&:prepare_query)
+bench('Pure Ruby QueryMatcher (simple)') do
+  records.count { |r| simple_qm.match?(r) }
+end
+
+bench('Plain Ruby ($or)') do
+  records.count { |r| (r['age'].is_a?(Numeric) && r['age'] >= 18) || r['status'] == 'active' }
+end
+
+or_qm = Mongory::QueryMatcher.new({ :$or => [{ age: { :$gte => 18 } }, { status: 'active' }] }).tap(&:prepare_query)
+bench('Pure Ruby QueryMatcher ($or)') do
+  records.count { |r| or_qm.match?(r) }
+end
+
+if defined?(Mongory::CMatcher)
+  simple_cm = Mongory::CMatcher.new({ age: { :$gte => 18 } })
+  bench('C Extension CMatcher (simple)') do
+    records.count { |r| simple_cm.match?(r) }
+  end
+
+  or_cm = Mongory::CMatcher.new({ :$or => [{ age: { :$gte => 18 } }, { status: 'active' }] })
+  bench('C Extension CMatcher ($or)') do
+    records.count { |r| or_cm.match?(r) }
+  end
+end
