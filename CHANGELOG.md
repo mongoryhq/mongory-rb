@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.1] - 2026-11-18
+
+Aligns with `mongory-core` `v0.2.1`.
+
+### Fixes
+- **`QueryMatcher` (`LiteralMatcher` & `AbstractMultiMatcher`)**:
+  - Reflect lazily built `array_record_matcher` priority in `LiteralMatcher#priority` and `render_tree`.
+  - Propagate priority increases up enclosing matchers (`FieldMatcher`, `NotMatcher`, `SizeMatcher`, `ElemMatchMatcher`, `EveryMatcher`, `HashConditionMatcher`, `AndMatcher`, `OrMatcher`, `ArrayRecordMatcher`, `QueryMatcher`), stably re-sort child `@matchers`, and invalidate memoized `@cached_proc` / `@debug_proc` closures so subsequent evaluations short-circuit on cheaper conditions first.
+- **Core (`mongory-core` submodule `v0.2.1`)**:
+  - Propagate lazy `array_record_matcher` priority delta up ancestor matchers and copy-on-write re-sort enclosing composite matchers (`mongory_matcher_resort_composite`) with atomic acquire/release publication.
+- **CI**:
+  - Auto-create GitHub Release after gem push in `.github/workflows/build.yml`.
+
 ## [0.9.0] - 2026-11-17
 
 Aligns with mongory-spec `0.2.0` and `mongory-core` `v0.2.0`.
