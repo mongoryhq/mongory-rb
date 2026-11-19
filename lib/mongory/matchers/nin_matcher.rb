@@ -24,6 +24,10 @@ module Mongory
     #
     # @see AbstractMatcher
     class NinMatcher < InMatcher
+      def matcher_name
+        'Nin'
+      end
+
       def self.build(condition, context: Context.new)
         return super unless condition.is_a?(Range)
 

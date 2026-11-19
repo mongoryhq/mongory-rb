@@ -8,7 +8,7 @@ module Mongory
     # if *any one* of them matches. For empty conditions, it returns false
     # (using FALSE_PROC).
     #
-    # Each subcondition is handled by a HashConditionMatcher with conversion disabled,
+    # Each subcondition is handled by a ConditionMatcher with conversion disabled,
     # since the parent matcher already manages data conversion.
     #
     # This matcher inherits submatcher dispatch and evaluation logic
@@ -27,6 +27,10 @@ module Mongory
     #
     # @see AbstractMultiMatcher
     class OrMatcher < AbstractMultiMatcher
+      def matcher_name
+        'Or'
+      end
+
       enable_unwrap!
 
       # Creates a raw Proc that performs the or-matching operation.
@@ -39,12 +43,12 @@ module Mongory
       end
 
       # Builds an array of matchers from the subconditions.
-      # Each subcondition is wrapped in a HashConditionMatcher.
+      # Each subcondition is wrapped in a ConditionMatcher.
       #
       # @return [Array<AbstractMatcher>] array of submatchers
       define_instance_cache_method(:matchers) do
         children = @condition.map do |condition|
-          HashConditionMatcher.build(condition, context: @context)
+          ConditionMatcher.build(condition, context: @context)
         end
         sort_and_adopt(children)
       end

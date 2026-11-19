@@ -22,6 +22,10 @@ module Mongory
     #
     # @see AbstractMatcher
     class PresentMatcher < AbstractMatcher
+      def matcher_name
+        'Present'
+      end
+
       # Creates a raw Proc that performs the presence check.
       # The Proc checks if the record's presence matches the condition.
       #

@@ -31,6 +31,10 @@ module Mongory
     #
     # @see AbstractMatcher
     class RegexMatcher < AbstractMatcher
+      def matcher_name
+        'Regex'
+      end
+
       # MongoDB `$options` flags mapped to Ruby. Ruby's `^`/`$` always match at
       # line boundaries, so `m` needs no flag; Ruby's MULTILINE is MongoDB's `s`.
       OPTION_FLAGS = {

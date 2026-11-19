@@ -19,8 +19,12 @@ module Mongory
     #   matcher.match?({ 'age' => 30 })  #=> true
     #   matcher.match?({ age: 30 })      #=> true
     #
-    # @see LiteralMatcher
-    class FieldMatcher < LiteralMatcher
+    # @see ValueMatcher
+    class FieldMatcher < ValueMatcher
+      def matcher_name
+        'Field'
+      end
+
       # A list of classes that should never be used for value digging.
       # These typically respond to `#[]` but are semantically invalid for this context.
       CLASSES_NOT_ALLOW_TO_DIG = [

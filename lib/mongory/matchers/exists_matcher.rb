@@ -19,6 +19,10 @@ module Mongory
     #
     # @see AbstractMatcher
     class ExistsMatcher < AbstractMatcher
+      def matcher_name
+        'Exists'
+      end
+
       # Creates a raw Proc that performs the existence check.
       # The Proc checks if the record exists and compares it to the condition.
       #

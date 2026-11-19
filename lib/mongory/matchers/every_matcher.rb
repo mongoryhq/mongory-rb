@@ -6,15 +6,19 @@ module Mongory
     #
     # It is used to determine if *all* element in an array matches the given condition.
     #
-    # This matcher delegates element-wise comparison to HashConditionMatcher,
+    # This matcher delegates element-wise comparison to ConditionMatcher,
     # allowing nested conditions to be applied recursively.
     #
     # @example
     #   matcher = EveryMatcher.build({ status: 'active' })
     #   matcher.match?([{ status: 'inactive' }, { status: 'active' }]) #=> false
     #
-    # @see HashConditionMatcher
-    class EveryMatcher < HashConditionMatcher
+    # @see ConditionMatcher
+    class EveryMatcher < ConditionMatcher
+      def matcher_name
+        'Every'
+      end
+
       # Creates a raw Proc that performs the element matching operation.
       # The Proc checks if all elements in the array match the condition.
       #

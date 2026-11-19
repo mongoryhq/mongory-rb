@@ -2,7 +2,7 @@
 
 module Mongory
   module Matchers
-    # ArrayRecordMatcher handles matching against array-type records.
+    # ImplicitArrayMatcher handles matching against array-type records.
     #
     # This matcher is used when a field value is an array and needs to be matched
     # against a condition. It supports both exact array matching and element-wise
@@ -11,21 +11,25 @@ module Mongory
     # For empty conditions, it returns false (using FALSE_PROC).
     #
     # @example Match exact array
-    #   matcher = ArrayRecordMatcher.build([1, 2, 3])
+    #   matcher = ImplicitArrayMatcher.build([1, 2, 3])
     #   matcher.match?([1, 2, 3])  #=> true
     #   matcher.match?([1, 2])     #=> false
     #
     # @example Match with hash condition
-    #   matcher = ArrayRecordMatcher.build({ '$gt' => 5 })
+    #   matcher = ImplicitArrayMatcher.build({ '$gt' => 5 })
     #   matcher.match?([3, 6, 9])  #=> true (6 and 9 match)
     #   matcher.match?([1, 2, 3])  #=> false
     #
     # @example Empty conditions
-    #   matcher = ArrayRecordMatcher.build([])
+    #   matcher = ImplicitArrayMatcher.build([])
     #   matcher.match?(record) #=> false (uses FALSE_PROC)
     #
     # @see AbstractMultiMatcher
-    class ArrayRecordMatcher < AbstractMultiMatcher
+    class ImplicitArrayMatcher < AbstractMultiMatcher
+      def matcher_name
+        'ImplicitArray'
+      end
+
       enable_unwrap!
 
       # Creates a raw Proc that performs the array matching operation.
@@ -50,7 +54,7 @@ module Mongory
         result << EqMatcher.build(@condition, context: @context) if @condition.is_a?(Array)
         result << case @condition
                   when Hash
-                    HashConditionMatcher.build(parsed_condition, context: @context)
+                    ConditionMatcher.build(parsed_condition, context: @context)
                   when Regexp
                     ElemMatchMatcher.build({ '$regex' => @condition }, context: @context)
                   else
@@ -63,7 +67,7 @@ module Mongory
 
       private
 
-      # Parses the original condition hash into a normalized structure suitable for HashConditionMatcher.
+      # Parses the original condition hash into a normalized structure suitable for ConditionMatcher.
       #
       # This method classifies keys in the condition hash as:
       # - Numeric (integers or numeric strings): treated as index-based field matchers

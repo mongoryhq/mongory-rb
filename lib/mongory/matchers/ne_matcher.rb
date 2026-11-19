@@ -17,6 +17,10 @@ module Mongory
     #
     # @see AbstractMatcher
     class NeMatcher < AbstractMatcher
+      def matcher_name
+        'Ne'
+      end
+
       # Creates a raw Proc that performs the not-equal comparison.
       # The Proc uses the `!=` operator to compare values.
       #

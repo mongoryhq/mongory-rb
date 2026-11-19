@@ -156,10 +156,10 @@ end
 
 require_relative 'matchers/abstract_matcher'
 require_relative 'matchers/abstract_multi_matcher'
-require_relative 'matchers/literal_matcher'
-require_relative 'matchers/hash_condition_matcher'
+require_relative 'matchers/value_matcher'
+require_relative 'matchers/condition_matcher'
 require_relative 'matchers/and_matcher'
-require_relative 'matchers/array_record_matcher'
+require_relative 'matchers/implicit_array_matcher'
 require_relative 'matchers/elem_match_matcher'
 require_relative 'matchers/every_matcher'
 require_relative 'matchers/eq_matcher'

@@ -156,7 +156,7 @@ module Mongory
       #
       # @return [String]
       def matcher_name
-        self.class.name.split('::').last
+        self.class.name.split('::').last.sub(/Matcher\z/, '')
       end
 
       # Returns active child matchers for tree inspection and trace skipping.
@@ -221,7 +221,7 @@ module Mongory
       #
       # @return [String] a formatted title for tree display
       def tree_title
-        matcher_name = self.class.name.split('::').last.sub('Matcher', '')
+        matcher_name = self.class.name.split('::').last.sub(/Matcher\z/, '').sub('Matcher', '')
         "#{matcher_name}: #{@condition.inspect}"
       end
 
@@ -245,7 +245,7 @@ module Mongory
       # @param result [Boolean, Exception] whether the match succeeded or an error occurred
       # @return [String] the formatted output string
       def debug_display(record, result)
-        "#{self.class.name.split('::').last} #{colored_result(result)}, " \
+        "#{self.class.name.split('::').last.sub(/Matcher\z/, '')} #{colored_result(result)}, " \
           "condition: #{@condition.inspect}, " \
           "record: #{record.inspect}"
       end

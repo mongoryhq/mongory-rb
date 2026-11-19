@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Mongory::Matchers::ArrayRecordMatcher do
+RSpec.describe Mongory::Matchers::ImplicitArrayMatcher do
   describe '#match?' do
     subject { described_class.new(condition) }
     let(:condition) { [] }

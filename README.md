@@ -90,7 +90,7 @@ query = records.mongory
 
 # Structured explain tree (Hash)
 plan = query.explain_tree
-# => { name: "QueryMatcher", condition: ..., priority: ..., children: [...] }
+# => { name: "Query", condition: ..., priority: ..., children: [...] }
 
 # Prints the explain tree to STDOUT
 query.explain
@@ -113,7 +113,7 @@ And: {"age"=>{"$gte"=>18}, "$or"=>[{"status"=>"active"}, {"name"=>{"$regex"=>/^J
 trees = query.trace_tree
 # => [
 #   {
-#     name: "QueryMatcher",
+#     name: "Query",
 #     condition: ...,
 #     record: { "name" => "Bob", "age" => 15, "status" => "inactive" },
 #     result: :fail, # :pass | :fail | :skip

@@ -5,7 +5,7 @@ require_relative 'utils'
 module Mongory
   # The top-level matcher for compiled query conditions.
   #
-  # Delegates to {Matchers::LiteralMatcher} after transforming input
+  # Delegates to {Matchers::ValueMatcher} after transforming input
   # via {Converters::ConditionConverter}.
   #
   # Typically used internally by `QueryBuilder`.
@@ -26,9 +26,9 @@ module Mongory
   #     ]
   #   })
   #
-  # @see Matchers::LiteralMatcher
+  # @see Matchers::ValueMatcher
   # @see Converters::ConditionConverter
-  class QueryMatcher < Matchers::HashConditionMatcher
+  class QueryMatcher < Matchers::ConditionMatcher
     # Initializes a new query matcher with the given condition.
     # The condition is converted using Mongory.condition_converter
     # before being passed to the parent matcher.
@@ -71,7 +71,7 @@ module Mongory
     # `#render_tree(prefix, is_last:)` for internal recursion.
     #
     # @return [void]
-    # @see Matchers::LiteralMatcher#render_tree
+    # @see Matchers::ValueMatcher#render_tree
     def render_tree
       super
     end

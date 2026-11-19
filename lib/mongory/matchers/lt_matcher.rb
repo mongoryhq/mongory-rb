@@ -16,6 +16,10 @@ module Mongory
     #
     # @see AbstractMatcher
     class LtMatcher < AbstractMatcher
+      def matcher_name
+        'Lt'
+      end
+
       # Creates a raw Proc that performs the less-than comparison.
       # The Proc uses the `<` operator to compare values.
       #

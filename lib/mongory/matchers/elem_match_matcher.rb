@@ -6,18 +6,22 @@ module Mongory
     #
     # It is used to determine if *any* element in an array matches the given condition.
     #
-    # This matcher delegates element-wise comparison to HashConditionMatcher,
+    # This matcher delegates element-wise comparison to ConditionMatcher,
     # allowing nested conditions to be applied recursively.
     #
-    # Typically used internally by ArrayRecordMatcher when dealing with
+    # Typically used internally by ImplicitArrayMatcher when dealing with
     # non-indexed hash-style subconditions.
     #
     # @example
     #   matcher = ElemMatchMatcher.build({ status: 'active' })
     #   matcher.match?([{ status: 'inactive' }, { status: 'active' }]) #=> true
     #
-    # @see HashConditionMatcher
-    class ElemMatchMatcher < HashConditionMatcher
+    # @see ConditionMatcher
+    class ElemMatchMatcher < ConditionMatcher
+      def matcher_name
+        'ElemMatch'
+      end
+
       # Creates a raw Proc that performs the element matching operation.
       # The Proc checks if any element in the array matches the condition.
       #

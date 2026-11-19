@@ -8,7 +8,7 @@ module Mongory
     # For empty conditions, it returns true (using TRUE_PROC), following MongoDB's behavior.
     #
     # Unlike other matchers, AndMatcher flattens the underlying matcher tree by
-    # delegating each subcondition to a `HashConditionMatcher`, and further extracting
+    # delegating each subcondition to a `ConditionMatcher`, and further extracting
     # all inner matchers. Duplicate matchers are deduplicated by `uniq_key`.
     #
     # This allows the matcher trace (`.explain`) to render as a flat list of independent conditions.
@@ -26,7 +26,11 @@ module Mongory
     #
     # @see AbstractMultiMatcher
     class AndMatcher < AbstractMultiMatcher
-      # Constructs a HashConditionMatcher for each subcondition.
+      def matcher_name
+        'And'
+      end
+
+      # Constructs a ConditionMatcher for each subcondition.
       # Conversion is disabled to avoid double-processing.
       enable_unwrap!
 
@@ -41,14 +45,14 @@ module Mongory
 
       # Returns the flattened list of all matchers from each subcondition.
       #
-      # Each condition is passed to a HashConditionMatcher, then recursively flattened.
+      # Each condition is passed to a ConditionMatcher, then recursively flattened.
       # All matchers are then deduplicated using `uniq_key`.
       #
       # @return [Array<AbstractMatcher>] A flattened, deduplicated list of matchers
       # @see AbstractMatcher#uniq_key
       define_instance_cache_method(:matchers) do
         children = @condition.flat_map do |condition|
-          HashConditionMatcher.new(condition, context: @context).matchers
+          ConditionMatcher.new(condition, context: @context).matchers
         end.uniq(&:uniq_key)
         sort_and_adopt(children)
       end

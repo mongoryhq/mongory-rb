@@ -19,7 +19,7 @@ module Mongory
     # Mongory.where(tags: { '$size' => { '$in' => [1, 2, 3] } })  # 1, 2, or 3 elements
     # ```
     #
-    # @see LiteralMatcher
+    # @see ValueMatcher
     #
     # @note Ruby's Symbol class already defines a `#size` method,
     #       that will return the size of the symbol object.
@@ -27,7 +27,11 @@ module Mongory
     #       the symbol snippet syntax (e.g. `:tags.size`).
     #
     #       Use string key syntax instead: `:"tags.$size" => ...`
-    class SizeMatcher < LiteralMatcher
+    class SizeMatcher < ValueMatcher
+      def matcher_name
+        'Size'
+      end
+
       # Creates a raw Proc that performs the size matching operation.
       #
       # The returned Proc checks if the input is an Array. If so, it calculates

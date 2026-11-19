@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Mongory::Matchers::HashConditionMatcher do
+RSpec.describe Mongory::Matchers::ConditionMatcher do
   describe '#match?' do
     subject { described_class.new(condition) }
     let(:condition) { {} }
@@ -77,7 +77,7 @@ RSpec.describe Mongory::Matchers::HashConditionMatcher do
     end
   end
 
-  describe '#priority with lazy ArrayRecordMatcher' do
+  describe '#priority with lazy ImplicitArrayMatcher' do
     it 'updates field and root priorities once array fields are matched' do
       condition = {
         'scores' => { '$size' => { '$gte' => 3, '$lte' => 5 }, '$every' => { '$gte' => 60 } },
@@ -118,7 +118,7 @@ RSpec.describe Mongory::Matchers::HashConditionMatcher do
       [klass[hash], visited]
     end
 
-    it 're-sorts sibling matchers and rebuilds procs after lazy ArrayRecordMatcher build' do
+    it 're-sorts sibling matchers and rebuilds procs after lazy ImplicitArrayMatcher build' do
       condition = {
         'tags' => 'ts',
         'age' => { '$gte' => 18 },

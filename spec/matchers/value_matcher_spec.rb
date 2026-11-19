@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe Mongory::Matchers::LiteralMatcher do
+RSpec.describe Mongory::Matchers::ValueMatcher do
   describe '#match?' do
     subject { described_class.new(condition) }
 
@@ -36,7 +36,7 @@ RSpec.describe Mongory::Matchers::LiteralMatcher do
       it { is_expected.not_to be_match(3) }
     end
 
-    context 'when record is an array (triggers ArrayRecordMatcher)' do
+    context 'when record is an array (triggers ImplicitArrayMatcher)' do
       let(:condition) { 123 }
 
       it { is_expected.to be_match([123, 456]) }

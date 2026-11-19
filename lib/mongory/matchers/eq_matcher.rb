@@ -26,6 +26,10 @@ module Mongory
     #
     # @see AbstractMatcher
     class EqMatcher < AbstractMatcher
+      def matcher_name
+        'Eq'
+      end
+
       # Creates a raw Proc that performs the equality check.
       # The Proc uses the `==` operator to compare values.
       #

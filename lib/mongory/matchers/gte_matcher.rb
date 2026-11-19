@@ -16,6 +16,10 @@ module Mongory
     #
     # @see AbstractMatcher
     class GteMatcher < AbstractMatcher
+      def matcher_name
+        'Gte'
+      end
+
       # Creates a raw Proc that performs the greater-than-or-equal comparison.
       # The Proc uses the `>=` operator to compare values.
       #
