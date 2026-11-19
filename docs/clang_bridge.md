@@ -63,8 +63,10 @@ query = records.mongory.c # => returns Mongory::CQueryBuilder
 
 query.each.to_a        # enumerate matches via C
 query.fast.to_a        # alias of each
-query.trace.to_a       # print value compare progression
+query.explain_tree     # return structured matcher tree Hash
 query.explain          # print core-level matcher tree
+query.trace_tree       # return Array<Hash> of structured per-record trace trees (with recursive :skip)
+query.trace.to_a       # print value compare progression
 
 # Or use CMatcher directly
 matcher = Mongory::CMatcher.new(:age.gte => 18)
@@ -86,7 +88,11 @@ records.each { |r| matcher.match?(r) }
 matcher.print_trace    # prints detailed trace
 matcher.disable_trace
 
-# Or trace single record compare progression
+# Structured explain/trace trees on a single CMatcher
+plan = matcher.explain_tree               # => Hash ({ name:, condition:, priority:, children:, ... })
+tree = matcher.trace_tree(records.first)  # => Hash ({ ..., record:, result: :pass | :fail | :skip })
+
+# Print single-record trace tree to STDOUT and return boolean match result
 matcher.trace(records.first)
 ```
 

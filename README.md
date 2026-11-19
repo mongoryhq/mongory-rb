@@ -79,15 +79,20 @@ records.mongory.c.where(:age.gte => 18).to_a
 | `with_context` | Passes shared context/options to matchers | `with_context(tenant: current_tenant)` |
 | `c` | Evaluates the query with the C extension (`CQueryBuilder`) | `records.mongory.c.where(...)` |
 
-## Debugging: `explain` & `trace`
+## Debugging: `explain`, `trace`, `explain_tree` & `trace_tree`
 
-Use `explain` to inspect the compiled, priority-sorted matcher tree, and `trace` to see color-coded per-node evaluation:
+Use `explain_tree` and `trace_tree` to inspect structured Ruby Hashes (for logging, JSON APIs, or UIs), or `explain` and `trace` to print those trees directly to STDOUT:
 
 ```ruby
 query = records.mongory
   .where(:age.gte => 18)
   .any_of({ status: 'active' }, { :name.regex => /^J/ })
 
+# Structured explain tree (Hash)
+plan = query.explain_tree
+# => { name: "QueryMatcher", condition: ..., priority: ..., children: [...] }
+
+# Prints the explain tree to STDOUT
 query.explain
 ```
 
@@ -103,8 +108,26 @@ And: {"age"=>{"$gte"=>18}, "$or"=>[{"status"=>"active"}, {"name"=>{"$regex"=>/^J
 ```
 
 ```ruby
+# Structured trace trees across all records (Array<Hash>);
+# short-circuited branches are recursively expanded with result: :skip.
+trees = query.trace_tree
+# => [
+#   {
+#     name: "QueryMatcher",
+#     condition: ...,
+#     record: { "name" => "Bob", "age" => 15, "status" => "inactive" },
+#     result: :fail, # :pass | :fail | :skip
+#     priority: ...,
+#     children: [...]
+#   },
+#   ...
+# ]
+
+# Prints each record's trace tree to STDOUT and yields matching records
 query.trace { |record| puts record['name'] }
 ```
+
+Single-record structured tracing is also available on matchers directly via `matcher.explain_tree` and `matcher.trace_tree(record)` (supported on both `QueryMatcher` and `CMatcher`).
 
 ## Supported Operators
 
