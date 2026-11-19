@@ -154,14 +154,26 @@ module Mongory
       # @return [void]
       def check_validity!; end
 
-      # Recursively prints the matcher structure into a formatted tree.
+      # Recursively builds the matcher structure into a formatted tree string.
       # Supports indentation and branching layout using prefix symbols.
+      #
+      # @param prefix [String] tree prefix (indentation + lines)
+      # @param is_last [Boolean] whether this node is the last among siblings
+      # @param buffer [String] accumulator string buffer
+      # @return [String] formatted matcher tree
+      def explain_tree(prefix = '', is_last: true, buffer: +'')
+        buffer << "#{prefix}#{is_last ? '└─ ' : '├─ '}#{tree_title}\n"
+        buffer
+      end
+
+      # Prints the formatted matcher tree to STDOUT.
       #
       # @param prefix [String] tree prefix (indentation + lines)
       # @param is_last [Boolean] whether this node is the last among siblings
       # @return [void]
       def render_tree(prefix = '', is_last: true)
-        puts "#{prefix}#{is_last ? '└─ ' : '├─ '}#{tree_title}\n"
+        print explain_tree(prefix, is_last: is_last)
+        nil
       end
 
       def priority

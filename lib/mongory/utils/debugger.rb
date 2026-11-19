@@ -62,17 +62,23 @@ module Mongory
         @indent_level -= 1
       end
 
-      # Prints the visualized trace tree to STDOUT.
+      # Formats the visualized trace tree into a String and clears buffered entries.
       #
       # This processes the internal trace_entries (post-order) into
-      # a structured pre-order list that represents nested matcher evaluation.
+      # a structured pre-order string that represents nested matcher evaluation.
+      # @return [String]
+      def format_trace
+        lines = reorder_traces_for_display(@trace_entries).map(&:formatted)
+        @trace_entries.clear
+        lines.empty? ? +'' : "#{lines.join("\n")}\n"
+      end
+
+      # Prints the visualized trace tree to STDOUT.
+      #
       # @return [void]
       def display
-        reorder_traces_for_display(@trace_entries).each do |trace|
-          puts trace.formatted
-        end
-
-        @trace_entries.clear
+        output = format_trace
+        print output unless output.empty?
         nil
       end
 

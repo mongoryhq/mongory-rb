@@ -109,17 +109,18 @@ module Mongory
         dispatched_matcher.check_validity!
       end
 
-      # Outputs the matcher tree by selecting either collection or condition matcher.
-      # Delegates `render_tree` to whichever submatcher was active.
+      # Builds the matcher tree by selecting either collection or condition matcher.
+      # Delegates `explain_tree` to whichever submatcher was active.
       #
       # @param prefix [String] the prefix string for tree rendering
       # @param is_last [Boolean] whether this is the last node in the tree
-      # @return [void]
-      def render_tree(prefix = '', is_last: true)
+      # @param buffer [String] accumulator string buffer
+      # @return [String] formatted matcher tree
+      def explain_tree(prefix = '', is_last: true, buffer: +'')
         super
 
         target_matcher = @array_record_matcher || dispatched_matcher
-        target_matcher.render_tree("#{prefix}#{is_last ? '   ' : '│  '}", is_last: true)
+        target_matcher.explain_tree("#{prefix}#{is_last ? '   ' : '│  '}", is_last: true, buffer: buffer)
       end
     end
   end

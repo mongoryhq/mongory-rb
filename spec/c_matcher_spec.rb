@@ -40,8 +40,41 @@ RSpec.describe Mongory::CMatcher, type: :model do
     it 'supports enable_trace, match?, print_trace, and disable_trace lifecycle' do
       matcher.enable_trace
       expect(matcher.match?(name: 'John')).to be true
+      expect(matcher.format_trace).to be_a(String)
       expect { matcher.print_trace }.not_to raise_error
       expect { matcher.disable_trace }.not_to raise_error
+    end
+
+    it 'returns strings from explain_tree and trace_tree and prints them in explain and trace' do
+      explain_str = matcher.explain_tree
+      expect(explain_str).to be_a(String).and include('Field: "name"')
+      expect { matcher.explain }.to output(explain_str).to_stdout
+
+      trace_str = matcher.trace_tree(name: 'John')
+      expect(trace_str).to be_a(String).and include('Matched')
+      expect { expect(matcher.trace(name: 'John')).to be true }.to output(trace_str).to_stdout
+    end
+
+    it 'supports explain_tree and trace_tree on both QueryBuilder and CQueryBuilder' do
+      records = [{ 'name' => 'John' }, { 'name' => 'Mary' }]
+      rb_builder = records.mongory.where(name: 'John')
+      c_builder = rb_builder.c
+
+      rb_explain = rb_builder.explain_tree
+      expect(rb_explain).to be_a(String).and include('name')
+      expect { rb_builder.explain }.to output(rb_explain).to_stdout
+
+      rb_trace = rb_builder.trace_tree
+      expect(rb_trace).to be_a(String).and include('Matched')
+      expect { rb_builder.trace { |_r| nil } }.to output(rb_trace).to_stdout
+
+      c_explain = c_builder.explain_tree
+      expect(c_explain).to be_a(String).and include('Field: "name"')
+      expect { c_builder.explain }.to output(c_explain).to_stdout
+
+      c_trace = c_builder.trace_tree
+      expect(c_trace).to be_a(String).and include('Matched')
+      expect { c_builder.trace { |_r| nil } }.to output(c_trace).to_stdout
     end
   end
 
@@ -67,8 +100,11 @@ RSpec.describe Mongory::CMatcher, type: :model do
       expect { uninitialized.match?(name: 'John') }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.condition }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.context }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.explain_tree }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.explain }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.trace_tree(name: 'John') }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.trace(name: 'John') }.to raise_error(Mongory::Error, /uninitialized/)
+      expect { uninitialized.format_trace }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.enable_trace }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.disable_trace }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.print_trace }.to raise_error(Mongory::Error, /uninitialized/)

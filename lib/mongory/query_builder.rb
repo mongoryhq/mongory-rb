@@ -76,6 +76,27 @@ module Mongory
       end
     end
 
+    # Traces matcher evaluation for all records and returns the formatted trace tree string.
+    # If a block is given, matched records are also yielded.
+    #
+    # @yieldparam record [Object] each matching record
+    # @return [String] formatted trace tree across all evaluated records
+    def trace_tree
+      buffer = +''
+      Mongory.debugger.enable
+      @matcher.prepare_query
+      @records.each do |record|
+        @context.current_record = record
+        matched = @matcher.match?(record)
+        buffer << Mongory.debugger.format_trace
+        yield record if matched && block_given?
+        Mongory.debugger.clear
+      end
+      buffer
+    ensure
+      Mongory.debugger.disable
+    end
+
     def trace
       return to_enum(:trace) unless block_given?
 
@@ -211,14 +232,21 @@ module Mongory
       end
     end
 
+    # Returns the internal matcher tree structure as a formatted string.
+    #
+    # @return [String] formatted matcher tree
+    def explain_tree
+      @matcher.match?(@records.first)
+      @matcher.explain_tree
+    end
+
     # Prints the internal matcher tree structure for the current query.
     # Will output a human-readable visual tree of matchers.
     # This is useful for debugging and visualizing complex conditions.
     #
     # @return [void]
     def explain
-      @matcher.match?(@records.first)
-      @matcher.render_tree
+      print explain_tree
       nil
     end
 

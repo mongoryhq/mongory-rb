@@ -17,22 +17,35 @@ module Mongory
 
     alias_method :fast, :each
 
-    def explain
+    def explain_tree
       @matcher.match?(@records.first)
-      @matcher.explain
+      @matcher.explain_tree
+    end
+
+    def explain
+      print explain_tree
+      nil
+    end
+
+    def trace_tree
+      buffer = +''
+      @records.each do |record|
+        @context.current_record = record
+        buffer << @matcher.trace_tree(record)
+        yield record if block_given? && @matcher.match?(record)
+      end
+      buffer
     end
 
     def trace
       return to_enum(:trace) unless block_given?
 
-      @matcher.enable_trace
       @records.each do |record|
         @context.current_record = record
+        output = @matcher.trace_tree(record)
+        print output unless output.empty?
         yield record if @matcher.match?(record)
       end
-    ensure
-      @matcher.print_trace
-      @matcher.disable_trace
     end
 
     private
