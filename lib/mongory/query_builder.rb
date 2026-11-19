@@ -76,41 +76,27 @@ module Mongory
       end
     end
 
-    # Traces matcher evaluation for all records and returns the formatted trace tree string.
+    # Traces matcher evaluation for all records and returns an Array of structured trace tree Hashes.
     # If a block is given, matched records are also yielded.
     #
     # @yieldparam record [Object] each matching record
-    # @return [String] formatted trace tree across all evaluated records
-    def trace_tree
-      buffer = +''
+    # @return [Array<Hash>] structured trace tree per evaluated record
+    def trace_tree(&block)
       Mongory.debugger.enable
       @matcher.prepare_query
-      @records.each do |record|
-        @context.current_record = record
-        matched = @matcher.match?(record)
-        buffer << Mongory.debugger.format_trace
-        yield record if matched && block_given?
-        Mongory.debugger.clear
+      @records.each_with_object([]) do |record, trees|
+        tree = trace_record(record, &block)
+        trees << tree if tree
       end
-      buffer
     ensure
       Mongory.debugger.disable
     end
 
-    def trace
-      return to_enum(:trace) unless block_given?
+    def trace(&block)
+      return to_enum(:trace) unless block
 
-      Mongory.debugger.enable
-      @matcher.prepare_query
-      @records.each do |record|
-        @context.current_record = record
-        matched = @matcher.match?(record)
-        Mongory.debugger.display
-        yield record if matched
-        Mongory.debugger.clear
-      end
-    ensure
-      Mongory.debugger.disable
+      trees = trace_tree(&block)
+      trees.each { |tree| Utils::TreeRenderer.print_trace(tree) }
     end
 
     # Adds a condition to filter records using the given condition.
@@ -232,9 +218,9 @@ module Mongory
       end
     end
 
-    # Returns the internal matcher tree structure as a formatted string.
+    # Returns the internal matcher tree structure as a structured Hash.
     #
-    # @return [String] formatted matcher tree
+    # @return [Hash] structured matcher tree
     def explain_tree
       @matcher.match?(@records.first)
       @matcher.explain_tree
@@ -246,8 +232,7 @@ module Mongory
     #
     # @return [void]
     def explain
-      print explain_tree
-      nil
+      Utils::TreeRenderer.print_explain(explain_tree)
     end
 
     def c
@@ -259,6 +244,16 @@ module Mongory
     end
 
     private
+
+    # @private
+    def trace_record(record)
+      @context.current_record = record
+      matched = @matcher.match?(record)
+      tree = Mongory.debugger.build_trace_trees.first
+      yield record if matched && block_given?
+      Mongory.debugger.clear
+      tree
+    end
 
     # @private
     # Duplicates the query and executes the block in context.

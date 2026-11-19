@@ -76,6 +76,20 @@ module Mongory
       super
     end
 
+    # Evaluates `record` with tracing enabled and returns the structured trace tree Hash.
+    #
+    # @param record [Object] the record to evaluate
+    # @return [Hash, nil] root trace tree node
+    def trace_tree(record)
+      Mongory.debugger.enable
+      prepare_query
+      match?(record)
+      Mongory.debugger.build_trace_trees.first
+    ensure
+      Mongory.debugger.clear
+      Mongory.debugger.disable
+    end
+
     # Prepares the query for execution by ensuring all necessary matchers are initialized.
     # This is called before query execution to avoid premature matcher tree construction.
     #

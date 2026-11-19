@@ -40,41 +40,54 @@ RSpec.describe Mongory::CMatcher, type: :model do
     it 'supports enable_trace, match?, print_trace, and disable_trace lifecycle' do
       matcher.enable_trace
       expect(matcher.match?(name: 'John')).to be true
-      expect(matcher.format_trace).to be_a(String)
       expect { matcher.print_trace }.not_to raise_error
       expect { matcher.disable_trace }.not_to raise_error
     end
 
-    it 'returns strings from explain_tree and trace_tree and prints them in explain and trace' do
-      explain_str = matcher.explain_tree
-      expect(explain_str).to be_a(String).and include('Field: "name"')
-      expect { matcher.explain }.to output(explain_str).to_stdout
+    it 'returns structured Hashes from explain_tree and trace_tree and prints them in explain and trace' do
+      explain = matcher.explain_tree
+      expect(explain).to be_a(Hash)
+      expect(explain[:name]).to eq('Field')
+      expect(explain[:field]).to eq('name')
+      expect(explain[:condition]).to eq('John')
+      expect(explain[:children]).to be_an(Array)
+      expect { matcher.explain }.to output(/Field: "name"/).to_stdout
 
-      trace_str = matcher.trace_tree(name: 'John')
-      expect(trace_str).to be_a(String).and include('Matched')
-      expect { expect(matcher.trace(name: 'John')).to be true }.to output(trace_str).to_stdout
+      trace = matcher.trace_tree(name: 'John')
+      expect(trace).to be_a(Hash)
+      expect(trace[:result]).to eq(:pass)
+      expect(trace[:record]).to eq(name: 'John')
+      expect { expect(matcher.trace(name: 'John')).to be true }.to output(/Matched/).to_stdout
     end
 
-    it 'supports explain_tree and trace_tree on both QueryBuilder and CQueryBuilder' do
-      records = [{ 'name' => 'John' }, { 'name' => 'Mary' }]
-      rb_builder = records.mongory.where(name: 'John')
+    it 'recursively marks short-circuited branches as :skip in both Ruby and C trace_tree' do
+      records = [{ 'status' => 'inactive', 'age' => 20 }, { 'status' => 'active', 'age' => 25 }]
+      rb_builder = records.mongory.where('status' => 'active', 'age' => { '$gte' => 18 })
       c_builder = rb_builder.c
 
-      rb_explain = rb_builder.explain_tree
-      expect(rb_explain).to be_a(String).and include('name')
-      expect { rb_builder.explain }.to output(rb_explain).to_stdout
+      [rb_builder, c_builder].each do |builder|
+        explain = builder.explain_tree
+        expect(explain).to be_a(Hash)
+        expect(explain[:children]).to be_an(Array)
+        expect { builder.explain }.to output(/status/).to_stdout
 
-      rb_trace = rb_builder.trace_tree
-      expect(rb_trace).to be_a(String).and include('Matched')
-      expect { rb_builder.trace { |_r| nil } }.to output(rb_trace).to_stdout
+        trees = builder.trace_tree
+        expect(trees).to be_an(Array)
+        expect(trees.length).to eq(2)
+        expect(trees[0][:result]).to eq(:fail)
+        expect(trees[1][:result]).to eq(:pass)
 
-      c_explain = c_builder.explain_tree
-      expect(c_explain).to be_a(String).and include('Field: "name"')
-      expect { c_builder.explain }.to output(c_explain).to_stdout
+        skipped_nodes = []
+        collect_skips = lambda do |node|
+          skipped_nodes << node if node[:result] == :skip
+          (node[:children] || []).each { |child| collect_skips.call(child) }
+        end
+        collect_skips.call(trees[0])
+        expect(skipped_nodes.length).to be >= 2
+        expect(skipped_nodes.all? { |n| n[:result] == :skip }).to be true
 
-      c_trace = c_builder.trace_tree
-      expect(c_trace).to be_a(String).and include('Matched')
-      expect { c_builder.trace { |_r| nil } }.to output(c_trace).to_stdout
+        expect { builder.trace { |_r| nil } }.to output(/Skipped/).to_stdout
+      end
     end
   end
 
@@ -104,7 +117,6 @@ RSpec.describe Mongory::CMatcher, type: :model do
       expect { uninitialized.explain }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.trace_tree(name: 'John') }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.trace(name: 'John') }.to raise_error(Mongory::Error, /uninitialized/)
-      expect { uninitialized.format_trace }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.enable_trace }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.disable_trace }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.print_trace }.to raise_error(Mongory::Error, /uninitialized/)

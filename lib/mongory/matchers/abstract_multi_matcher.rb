@@ -62,22 +62,11 @@ module Mongory
         matchers.each(&:check_validity!)
       end
 
-      # Overrides base explain_tree to recursively append all submatchers.
-      # Each child matcher will be appended under this multi-matcher node.
+      # Returns all submatchers for explain_tree and trace_tree traversal.
       #
-      # @param prefix [String] current line prefix for tree alignment
-      # @param is_last [Boolean] whether this node is the last sibling
-      # @param buffer [String] accumulator string buffer
-      # @return [String] formatted matcher tree
-      def explain_tree(prefix = '', is_last: true, buffer: +'')
-        super
-
-        new_prefix = "#{prefix}#{is_last ? '   ' : '│  '}"
-        last_index = matchers.count - 1
-        matchers.each_with_index do |matcher, index|
-          matcher.explain_tree(new_prefix, is_last: index == last_index, buffer: buffer)
-        end
-        buffer
+      # @return [Array<AbstractMatcher>]
+      def child_matchers
+        matchers
       end
 
       def priority

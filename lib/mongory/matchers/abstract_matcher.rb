@@ -115,14 +115,12 @@ module Mongory
         @debug_proc = Proc.new do |record|
           result = nil
 
-          Debugger.instance.with_indent do
+          Debugger.instance.with_indent(self, record) do
             result = begin
               raw_proc.call(record)
             rescue StandardError => e
               e
             end
-
-            debug_display(record, result)
           end
 
           result.is_a?(Exception) ? false : result
@@ -154,26 +152,37 @@ module Mongory
       # @return [void]
       def check_validity!; end
 
-      # Recursively builds the matcher structure into a formatted tree string.
-      # Supports indentation and branching layout using prefix symbols.
+      # Returns the short class name of this matcher.
       #
-      # @param prefix [String] tree prefix (indentation + lines)
-      # @param is_last [Boolean] whether this node is the last among siblings
-      # @param buffer [String] accumulator string buffer
-      # @return [String] formatted matcher tree
-      def explain_tree(prefix = '', is_last: true, buffer: +'')
-        buffer << "#{prefix}#{is_last ? '└─ ' : '├─ '}#{tree_title}\n"
-        buffer
+      # @return [String]
+      def matcher_name
+        self.class.name.split('::').last
+      end
+
+      # Returns active child matchers for tree inspection and trace skipping.
+      #
+      # @return [Array<AbstractMatcher>]
+      def child_matchers
+        []
+      end
+
+      # Builds and returns the structured explain tree Hash for this matcher.
+      #
+      # @return [Hash] structured explain tree node
+      def explain_tree
+        {
+          name: matcher_name,
+          condition: @condition,
+          priority: priority,
+          children: child_matchers.map(&:explain_tree)
+        }
       end
 
       # Prints the formatted matcher tree to STDOUT.
       #
-      # @param prefix [String] tree prefix (indentation + lines)
-      # @param is_last [Boolean] whether this node is the last among siblings
       # @return [void]
-      def render_tree(prefix = '', is_last: true)
-        print explain_tree(prefix, is_last: is_last)
-        nil
+      def render_tree
+        Utils::TreeRenderer.print_explain(explain_tree)
       end
 
       def priority

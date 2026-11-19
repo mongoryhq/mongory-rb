@@ -35,6 +35,8 @@ module Mongory
 
       INTEGER_INDEX_REGEX = /\A(?:0|-?[1-9]\d*)\z/.freeze
 
+      attr_reader :field
+
       # Initializes a new field matcher.
       #
       # @param field [String, Symbol] the field to match against
@@ -43,6 +45,13 @@ module Mongory
       def initialize(field, condition, context: Context.new)
         @field = field
         super(condition, context: context)
+      end
+
+      # Builds the structured explain tree node including the field key.
+      #
+      # @return [Hash]
+      def explain_tree
+        super.merge(field: @field)
       end
 
       # Creates a raw Proc that performs the field matching operation.

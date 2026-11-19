@@ -248,11 +248,113 @@ static VALUE rb_mongory_matcher_match(VALUE self, VALUE data) {
   return result;
 }
 
+static VALUE rb_mongory_value_to_rb(mongory_value *val);
+
+static bool rb_mongory_table_entry_to_rb_hash(char *key, mongory_value *val, void *acc) {
+  VALUE hash = (VALUE)acc;
+  VALUE rb_key = rb_utf8_str_new_cstr(key ? key : "");
+  VALUE rb_val = rb_mongory_value_to_rb(val);
+  rb_hash_aset(hash, rb_key, rb_val);
+  return true;
+}
+
+static VALUE rb_mongory_value_to_rb(mongory_value *val) {
+  if (!val) {
+    return Qnil;
+  }
+  if (val->origin != NULL) {
+    return (VALUE)val->origin;
+  }
+  switch (val->type) {
+    case MONGORY_TYPE_NULL:
+      return Qnil;
+    case MONGORY_TYPE_BOOL:
+      return val->data.b ? Qtrue : Qfalse;
+    case MONGORY_TYPE_INT:
+      return LL2NUM(val->data.i);
+    case MONGORY_TYPE_DOUBLE:
+      return DBL2NUM(val->data.d);
+    case MONGORY_TYPE_STRING:
+      return rb_utf8_str_new_cstr(val->data.s ? val->data.s : "");
+    case MONGORY_TYPE_ARRAY: {
+      mongory_array *arr = val->data.a;
+      size_t count = arr ? arr->count : 0;
+      VALUE rb_arr = rb_ary_new_capa((long)count);
+      for (size_t i = 0; i < count; i++) {
+        rb_ary_push(rb_arr, rb_mongory_value_to_rb(arr->get(arr, i)));
+      }
+      return rb_arr;
+    }
+    case MONGORY_TYPE_TABLE: {
+      VALUE rb_hash = rb_hash_new();
+      if (val->data.t && val->data.t->each) {
+        val->data.t->each(val->data.t, (void *)rb_hash, rb_mongory_table_entry_to_rb_hash);
+      }
+      return rb_hash;
+    }
+    default:
+      return Qnil;
+  }
+}
+
+static VALUE rb_mongory_tree_node_to_rb(mongory_value *node_val) {
+  if (!node_val || node_val->type != MONGORY_TYPE_TABLE || !node_val->data.t) {
+    return Qnil;
+  }
+  mongory_table *node = node_val->data.t;
+  VALUE hash = rb_hash_new();
+
+  mongory_value *name_val = node->get(node, "name");
+  if (name_val && name_val->type == MONGORY_TYPE_STRING) {
+    rb_hash_aset(hash, ID2SYM(rb_intern("name")), rb_utf8_str_new_cstr(name_val->data.s ? name_val->data.s : ""));
+  }
+
+  mongory_value *cond_val = node->get(node, "condition");
+  rb_hash_aset(hash, ID2SYM(rb_intern("condition")), rb_mongory_value_to_rb(cond_val));
+
+  mongory_value *priority_val = node->get(node, "priority");
+  if (priority_val && priority_val->type == MONGORY_TYPE_DOUBLE) {
+    rb_hash_aset(hash, ID2SYM(rb_intern("priority")), DBL2NUM(priority_val->data.d));
+  }
+
+  mongory_value *field_val = node->get(node, "field");
+  if (field_val && field_val->type == MONGORY_TYPE_STRING && field_val->data.s) {
+    rb_hash_aset(hash, ID2SYM(rb_intern("field")), rb_utf8_str_new_cstr(field_val->data.s));
+  }
+
+  mongory_value *record_val = node->get(node, "record");
+  if (record_val) {
+    rb_hash_aset(hash, ID2SYM(rb_intern("record")), rb_mongory_value_to_rb(record_val));
+  }
+
+  mongory_value *result_val = node->get(node, "result");
+  if (result_val && result_val->type == MONGORY_TYPE_STRING && result_val->data.s) {
+    rb_hash_aset(hash, ID2SYM(rb_intern("result")), ID2SYM(rb_intern(result_val->data.s)));
+  }
+
+  mongory_value *children_val = node->get(node, "children");
+  VALUE rb_children = rb_ary_new();
+  if (children_val && children_val->type == MONGORY_TYPE_ARRAY && children_val->data.a) {
+    mongory_array *arr = children_val->data.a;
+    for (size_t i = 0; i < arr->count; i++) {
+      rb_ary_push(rb_children, rb_mongory_tree_node_to_rb(arr->get(arr, i)));
+    }
+  }
+  rb_hash_aset(hash, ID2SYM(rb_intern("children")), rb_children);
+
+  return hash;
+}
+
+static VALUE rb_mongory_tree_renderer_module(void) {
+  VALUE m_utils = rb_const_get(rb_mongory_m_mongory, rb_intern("Utils"));
+  return rb_const_get(m_utils, rb_intern("TreeRenderer"));
+}
+
 static VALUE rb_mongory_matcher_explain_tree_body(VALUE arg) {
   rb_mongory_explain_call_t *call = (rb_mongory_explain_call_t *)arg;
-  char *tree = mongory_matcher_explain_tree(call->wrapper->matcher, call->scratch_pool);
+  mongory_value *tree = mongory_matcher_explain_tree(call->wrapper->matcher, call->scratch_pool);
   rb_mongory_error_handling(call->scratch_pool, "Explain failed");
-  return rb_utf8_str_new_cstr(tree ? tree : "");
+  return rb_mongory_tree_node_to_rb(tree);
 }
 
 // Mongory::CMatcher#explain_tree
@@ -271,8 +373,8 @@ static VALUE rb_mongory_matcher_explain_tree(VALUE self) {
 // Mongory::CMatcher#explain
 static VALUE rb_mongory_matcher_explain(VALUE self) {
   VALUE tree = rb_mongory_matcher_explain_tree(self);
-  if (RSTRING_LEN(tree) > 0) {
-    rb_io_write(rb_stdout, tree);
+  if (!NIL_P(tree)) {
+    rb_funcall(rb_mongory_tree_renderer_module(), rb_intern("print_explain"), 1, tree);
   }
   RB_GC_GUARD(tree);
   return Qnil;
@@ -294,7 +396,7 @@ static VALUE rb_mongory_matcher_trace_tree(VALUE self, VALUE data) {
     rb_raise(rb_mongory_e_type_error, "Trace failed: %s", err_msg);
   }
 
-  char *tree = mongory_matcher_trace_tree(wrapper->matcher, data_value);
+  mongory_value *tree = mongory_matcher_trace_tree(wrapper->matcher, data_value);
   if (trace_pool_base->error) {
     char err_msg[256];
     snprintf(err_msg, sizeof(err_msg), "%s",
@@ -302,7 +404,7 @@ static VALUE rb_mongory_matcher_trace_tree(VALUE self, VALUE data) {
     trace_pool_base->free(trace_pool_base);
     rb_raise(rb_mongory_e_type_error, "Trace failed: %s", err_msg);
   }
-  VALUE result = rb_utf8_str_new_cstr(tree ? tree : "");
+  VALUE result = rb_mongory_tree_node_to_rb(tree);
   trace_pool_base->free(trace_pool_base);
 
   return result;
@@ -310,33 +412,14 @@ static VALUE rb_mongory_matcher_trace_tree(VALUE self, VALUE data) {
 
 // Mongory::CMatcher#trace(data)
 static VALUE rb_mongory_matcher_trace(VALUE self, VALUE data) {
-  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
-  rb_mongory_memory_pool_t *trace_pool = rb_mongory_memory_pool_new();
-  trace_pool->owner = wrapper;
-  mongory_memory_pool *trace_pool_base = &trace_pool->base;
-  mongory_value *data_value = rb_to_mongory_value_shallow(trace_pool_base, data);
-
-  if (trace_pool_base->error) {
-    char err_msg[256];
-    snprintf(err_msg, sizeof(err_msg), "%s",
-             trace_pool_base->error->message ? trace_pool_base->error->message : "Unknown error");
-    trace_pool_base->free(trace_pool_base);
-    rb_raise(rb_mongory_e_type_error, "Trace failed: %s", err_msg);
+  VALUE tree = rb_mongory_matcher_trace_tree(self, data);
+  if (NIL_P(tree)) {
+    return Qfalse;
   }
-
-  mongory_matcher_enable_trace(wrapper->matcher, trace_pool_base);
-  bool matched = mongory_matcher_match(wrapper->matcher, data_value);
-  char *tree = mongory_matcher_format_trace(wrapper->matcher);
-  mongory_matcher_disable_trace(wrapper->matcher);
-  VALUE tree_str = rb_utf8_str_new_cstr(tree ? tree : "");
-  trace_pool_base->free(trace_pool_base);
-
-  if (RSTRING_LEN(tree_str) > 0) {
-    rb_io_write(rb_stdout, tree_str);
-  }
-  RB_GC_GUARD(tree_str);
-
-  return matched ? Qtrue : Qfalse;
+  rb_funcall(rb_mongory_tree_renderer_module(), rb_intern("print_trace"), 1, tree);
+  VALUE res = rb_hash_aref(tree, ID2SYM(rb_intern("result")));
+  RB_GC_GUARD(tree);
+  return res == ID2SYM(rb_intern("pass")) ? Qtrue : Qfalse;
 }
 
 // Mongory::CMatcher#enable_trace
@@ -383,24 +466,15 @@ static VALUE rb_mongory_matcher_disable_trace(VALUE self) {
   return Qnil;
 }
 
-// Mongory::CMatcher#format_trace
-static VALUE rb_mongory_matcher_format_trace(VALUE self) {
-  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
-  if (!wrapper->trace_pool) {
-    return rb_utf8_str_new_cstr("");
-  }
-  char *tree = mongory_matcher_format_trace(wrapper->matcher);
-  rb_mongory_error_handling(wrapper->trace_pool, "Format trace failed");
-  return rb_utf8_str_new_cstr(tree ? tree : "");
-}
-
 // Mongory::CMatcher#print_trace
 static VALUE rb_mongory_matcher_print_trace(VALUE self) {
-  VALUE tree = rb_mongory_matcher_format_trace(self);
-  if (RSTRING_LEN(tree) > 0) {
-    rb_io_write(rb_stdout, tree);
+  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
+  if (!wrapper->trace_pool) {
+    return Qnil;
   }
-  RB_GC_GUARD(tree);
+  mongory_matcher_print_trace(wrapper->matcher);
+  rb_mongory_error_handling(wrapper->trace_pool, "Print trace failed");
+
   return Qnil;
 }
 
@@ -440,7 +514,6 @@ void rb_mongory_init_cmatcher(void) {
   rb_define_method(rb_mongory_c_matcher, "context", rb_mongory_matcher_context, 0);
   rb_define_method(rb_mongory_c_matcher, "trace_tree", rb_mongory_matcher_trace_tree, 1);
   rb_define_method(rb_mongory_c_matcher, "trace", rb_mongory_matcher_trace, 1);
-  rb_define_method(rb_mongory_c_matcher, "format_trace", rb_mongory_matcher_format_trace, 0);
   rb_define_method(rb_mongory_c_matcher, "enable_trace", rb_mongory_matcher_enable_trace, 0);
   rb_define_method(rb_mongory_c_matcher, "disable_trace", rb_mongory_matcher_disable_trace, 0);
   rb_define_method(rb_mongory_c_matcher, "print_trace", rb_mongory_matcher_print_trace, 0);

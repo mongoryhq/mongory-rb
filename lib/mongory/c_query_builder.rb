@@ -23,18 +23,18 @@ module Mongory
     end
 
     def explain
-      print explain_tree
-      nil
+      Utils::TreeRenderer.print_explain(explain_tree)
     end
 
     def trace_tree
-      buffer = +''
+      trees = []
       @records.each do |record|
         @context.current_record = record
-        buffer << @matcher.trace_tree(record)
-        yield record if block_given? && @matcher.match?(record)
+        tree = @matcher.trace_tree(record)
+        trees << tree if tree
+        yield record if block_given? && tree && tree[:result] == :pass
       end
-      buffer
+      trees
     end
 
     def trace
@@ -42,9 +42,9 @@ module Mongory
 
       @records.each do |record|
         @context.current_record = record
-        output = @matcher.trace_tree(record)
-        print output unless output.empty?
-        yield record if @matcher.match?(record)
+        tree = @matcher.trace_tree(record)
+        Utils::TreeRenderer.print_trace(tree) if tree
+        yield record if tree && tree[:result] == :pass
       end
     end
 

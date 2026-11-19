@@ -46,65 +46,40 @@ module Mongory
         Matchers::AbstractMatcher.alias_method :to_proc, :cached_proc
       end
 
-      # Wraps a matcher evaluation block with indentation control.
+      # Wraps a matcher evaluation block with indentation control and records a structured trace entry.
       #
-      # It increments the internal indent level before the block,
-      # and decrements it after. The yielded block's return value
-      # is used as trace content and pushed onto the trace_entries.
-      #
-      # @yieldreturn [String] the trace content to log
+      # @param matcher [Matchers::AbstractMatcher] the matcher being evaluated
+      # @param record [Object] the record value evaluated by this matcher
+      # @yieldreturn [Boolean, Exception] the evaluation result
       # @return [Object] the result of the block
-      def with_indent
+      def with_indent(matcher, record)
         @indent_level += 1
-        display_string = yield
-        @trace_entries << TraceEntry.new(display_string, @indent_level)
+        result = yield
+        @trace_entries << TraceEntry.new(matcher, record, result, @indent_level)
+        result
       ensure
         @indent_level -= 1
       end
 
-      # Formats the visualized trace tree into a String and clears buffered entries.
+      # Builds structured trace tree Hashes from recorded trace entries and clears the buffer.
       #
-      # This processes the internal trace_entries (post-order) into
-      # a structured pre-order string that represents nested matcher evaluation.
-      # @return [String]
-      def format_trace
-        lines = reorder_traces_for_display(@trace_entries).map(&:formatted)
+      # Unexecuted child branches are recursively expanded from `explain_tree` with `result: :skip`.
+      #
+      # @return [Array<Hash>] structured trace tree root nodes
+      def build_trace_trees
+        trees = build_trace_nodes(@trace_entries, 0).first
         @trace_entries.clear
-        lines.empty? ? +'' : "#{lines.join("\n")}\n"
+        trees
       end
 
-      # Prints the visualized trace tree to STDOUT.
+      # Prints the visualized trace tree(s) to STDOUT.
       #
       # @return [void]
       def display
-        output = format_trace
-        print output unless output.empty?
-        nil
-      end
-
-      # Recursively reorders trace lines by indentation level to produce a
-      # display-friendly structure where parents precede children.
-      #
-      # The original trace is built in post-order (leaf first), and this method
-      # transforms it into a pre-order structure suitable for tree display.
-      #
-      # @param traces [Array<TraceEntry>] the raw trace lines (leaf-first)
-      # @param level [Integer] current processing level
-      # @return [Array<TraceEntry>] reordered trace lines for display
-      def reorder_traces_for_display(traces, level = 0)
-        result = []
-        group = []
-        traces.each do |trace|
-          if trace.level == level
-            result << trace
-            result.concat reorder_traces_for_display(group, level + 1)
-            group = []
-          else
-            group << trace
-          end
+        build_trace_trees.each do |tree|
+          TreeRenderer.print_trace(tree)
         end
-
-        result
+        nil
       end
 
       def clear
@@ -114,18 +89,53 @@ module Mongory
         @trace_entries.clear
       end
 
-      # @private
-      # A trace entry representing a single matcher output at a given indentation level.
-      #
-      # @!attribute text
-      #   @return [String] the string to be printed
-      # @!attribute level
-      #   @return [Integer] the indentation level of this entry
-      TraceEntry = Struct.new(:text, :level) do
-        def formatted
-          "#{'  ' * level}#{text}"
+      private
+
+      def build_trace_nodes(traces, level)
+        nodes = []
+        executed_matchers = []
+        group = []
+
+        traces.each do |entry|
+          if entry.level == level
+            executed_matchers << entry.matcher
+            children, executed_children = build_trace_nodes(group, level + 1)
+            append_skipped_children(entry.matcher, children, executed_children)
+            nodes << build_trace_node(entry, children)
+            group = []
+          else
+            group << entry
+          end
+        end
+
+        [nodes, executed_matchers]
+      end
+
+      def append_skipped_children(matcher, children, executed_children)
+        matcher.child_matchers.each do |child|
+          next if executed_children.any? { |executed| executed.equal?(child) }
+
+          children << TreeRenderer.mark_skipped(child.explain_tree)
         end
       end
+
+      def build_trace_node(entry, children)
+        matcher = entry.matcher
+        matched = !entry.result.is_a?(Exception) && entry.result ? true : false
+        node = {
+          name: matcher.matcher_name,
+          condition: matcher.condition,
+          priority: matcher.priority,
+          result: matched ? :pass : :fail,
+          children: children
+        }
+        node[:field] = matcher.field if matcher.respond_to?(:field)
+        node[:record] = entry.record unless entry.record.equal?(Matchers::AbstractMatcher::KEY_NOT_FOUND)
+        node
+      end
+
+      # @private
+      TraceEntry = Struct.new(:matcher, :record, :result, :level)
     end
   end
 end
