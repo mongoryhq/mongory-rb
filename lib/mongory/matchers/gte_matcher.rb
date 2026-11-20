@@ -29,6 +29,8 @@ module Mongory
         condition = @condition
 
         Proc.new do |record|
+          next false if record.is_a?(Hash) || condition.is_a?(Hash)
+
           record >= condition
         rescue StandardError
           false

@@ -50,13 +50,31 @@ module Mongory
         private
 
         def _deep_merge!(left, right)
-          left.merge!(right) do |_, a, b|
-            if a.is_a?(::Hash) && b.is_a?(::Hash)
-              _deep_merge!(a.dup, b)
+          and_clauses = nil
+          right.each_pair do |key, b|
+            if !left.key?(key)
+              left[key] = b
+            elsif left[key].is_a?(::Hash) && b.is_a?(::Hash)
+              left[key] = _deep_merge!(left[key].dup, b)
             else
-              b
+              and_clauses ||= []
+              and_clauses << Converted::Hash.new(key => left.delete(key))
+              and_clauses << Converted::Hash.new(key => b)
             end
           end
+
+          if and_clauses
+            if left['$and'].is_a?(::Array)
+              left['$and'] = Converted::Array.new(left['$and'] + and_clauses)
+            elsif left.key?('$and')
+              existing = Converted::Hash.new('$and' => left.delete('$and'))
+              left['$and'] = Converted::Array.new([existing] + and_clauses)
+            else
+              left['$and'] = Converted::Array.new(and_clauses)
+            end
+          end
+
+          left
         end
       end
 

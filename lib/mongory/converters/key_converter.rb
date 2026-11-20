@@ -64,6 +64,8 @@ module Mongory
       # @param value [Object] the value to assign at the deepest level
       # @return [Hash] nested hash structure
       def convert_string_key(key, value)
+        return { '' => value } if key.empty?
+
         ret = {}
         *sub_keys, last_key = key.split(/(?<!\\)\./)
         last_hash = sub_keys.reduce(ret) do |res, sub_key|
