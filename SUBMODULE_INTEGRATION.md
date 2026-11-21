@@ -177,10 +177,10 @@ Debug mode will:
 require 'mongory'
 
 condition = { "age" => { "$gt" => 18 } }
-matcher   = Mongory::CMatcher.new(condition)
+matcher   = Mongory::Matcher.new(condition)
 
 data   = { "name" => "John", "age" => 25 }
-result = matcher.match(data)  # => true/false
+result = matcher.match?(data)  # => true/false
 
 # Optional: get explanation (runs explain on the C side, currently returns nil)
 matcher.explain

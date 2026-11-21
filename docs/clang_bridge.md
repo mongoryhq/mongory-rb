@@ -1,54 +1,28 @@
-### C Extension (Optional but Recommended)
+# Clang Bridge (Native C99 Engine)
 
-Mongory-rb includes an optional high-performance C extension powered by [mongory-core](https://github.com/mongoryhq/mongory-core):
+As of `mongory-rb v2.0.0`, Mongory uses the C99 [`mongory-core`](https://github.com/mongoryhq/mongory-core) native extension as its sole matching engine.
 
-**System Dependencies:**
-- C99-compatible compiler (gcc/clang)
+**System Dependencies (only when compiling from source):**
+- C99-compatible compiler (`gcc` / `clang`)
 - CMake >= 3.12 (optional; only needed if you want to build `mongory-core` standalone or run its native tests)
 
-**Installation:**
-```bash
-# macOS
-brew install cmake
+> Note: Precompiled native gems are distributed for Linux, macOS (`arm64` & `x86_64`), and Windows (Ruby 2.6–4.0). When compiling from source, Ruby's `mkmf` (`ext/mongory_ext/extconf.rb`) compiles `mongory-core` sources directly — CMake is not required for gem installation.
 
-# Ubuntu/Debian
-sudo apt install cmake build-essential
+## Architecture
 
-# CentOS/RHEL
-sudo yum install cmake gcc make
-```
+The Clang bridge connects the Ruby DSL to `mongory-core` via a compact C layer exposing two key entry points:
 
-The C extension provides significant performance improvements for large datasets. If not available, Mongory-rb automatically falls back to pure Ruby implementation.
+- `Mongory::Matcher`: the compiled matcher class backed by `mongory-core`.
+- `Mongory::QueryBuilder`: the chainable Ruby DSL (`records.mongory.where(...)`) backed by `Mongory::Matcher`.
 
-Note: The Ruby C extension is built via Ruby's `mkmf` (see `ext/mongory_ext/extconf.rb`) and compiles `mongory-core` sources directly. You do not need CMake for normal gem installation.
-
-# Clang Bridge (C Extension)
-
-The Clang bridge connects the Ruby DSL to the `mongory-core` engine via a compact C layer. It exposes two key entry points:
-
-- `Mongory::CMatcher`: a low-level matcher API backed by C.
-- `QueryBuilder#c`: an ergonomic switch that reuses your current Ruby condition and executes it through `CMatcher`.
-
-## Build/Install
+## Build / Install
 
 ```bash
 bundle install
 bundle exec rake compile
-# or, when installing the gem, the extension will compile automatically if toolchain is present
 ```
 
-## Quick check
-
-```ruby
-require 'mongory'
-if defined?(Mongory::CMatcher)
-  puts 'C extension available'
-else
-  puts 'C extension not available, using pure Ruby'
-end
-```
-
-## Basic usage
+## Basic Usage
 
 ```ruby
 records = [
@@ -57,38 +31,30 @@ records = [
   { 'name' => 'Bob',  'age' => 21 }
 ]
 
-# Switch existing Ruby query to C path
-query = records.mongory.c # => returns Mongory::CQueryBuilder
-  .where(:age.gte => 18)
+# Chainable query builder (uses Mongory::Matcher internally)
+query = records.mongory.where(:age.gte => 18)
 
-query.each.to_a        # enumerate matches via C
-query.fast.to_a        # alias of each
+query.each.to_a        # enumerate matches via mongory-core
 query.explain_tree     # return structured matcher tree Hash
-query.explain          # print core-level matcher tree
+query.explain          # print matcher tree to STDOUT
 query.trace_tree       # return Array<Hash> of structured per-record trace trees (with recursive :skip)
-query.trace.to_a       # print value compare progression
+query.trace.to_a       # print trace trees to STDOUT and yield matches
 
-# Or use CMatcher directly
-matcher = Mongory::CMatcher.new(:age.gte => 18)
+# Or use Mongory::Matcher directly
+matcher = Mongory::Matcher.new(:age.gte => 18)
 records.select { |r| matcher.match?(r) }
-
-# Or enable the C extension globally by default in Mongory.configure:
-Mongory.configure do |mc|
-  mc.enable_c_extension_by_default!
-end
-records.mongory.where(:age.gte => 18).to_a # automatically uses CQueryBuilder
 ```
 
-## Tracing and debugging
+## Tracing and Debugging
 
 ```ruby
-matcher = Mongory::CMatcher.new(:$or => [ { :name.regex => /^J/ }, { :age.gt => 20 } ])
+matcher = Mongory::Matcher.new(:$or => [{ :name.regex => /^J/ }, { :age.gt => 20 }])
 matcher.enable_trace
 records.each { |r| matcher.match?(r) }
 matcher.print_trace    # prints detailed trace
 matcher.disable_trace
 
-# Structured explain/trace trees on a single CMatcher
+# Structured explain/trace trees on a single Matcher
 plan = matcher.explain_tree               # => Hash ({ name:, condition:, priority:, children:, ... })
 tree = matcher.trace_tree(records.first)  # => Hash ({ ..., record:, result: :pass | :fail | :skip })
 
@@ -99,7 +65,4 @@ matcher.trace(records.first)
 ## Notes
 
 - Regexes use Ruby's `Regexp` internally; string patterns are compiled once and cached.
-- Context (`Mongory::Utils::Context`) is shared between Ruby and C during matching, enabling custom converters.
-- If the extension fails to load, `Mongory::CQueryBuilder` is unavailable and `.c` will not be used; the Ruby path continues to work.
-
-
+- Context (`Mongory::Utils::Context`) is shared between Ruby and C during matching, enabling custom converters and custom Ruby matchers (`Mongory::Matchers::AbstractMatcher`).

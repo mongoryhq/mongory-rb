@@ -81,7 +81,7 @@ static VALUE rb_mongory_matcher_alloc(VALUE klass) {
   return obj;
 }
 
-// Mongory::CMatcher#initialize(condition, context: ...)
+// Mongory::Matcher#initialize(condition, context: ...)
 static VALUE rb_mongory_matcher_initialize(int argc, VALUE *argv, VALUE self) {
   rb_mongory_matcher_t *wrapper;
   TypedData_Get_Struct(self, rb_mongory_matcher_t, &rb_mongory_matcher_type, wrapper);
@@ -128,7 +128,7 @@ static VALUE rb_mongory_matcher_initialize_copy(VALUE self, VALUE orig) {
 static void rb_mongory_matcher_parse_argv(rb_mongory_matcher_t *self, int argc, VALUE *argv) {
   VALUE condition, kw_hash;
   if (argc == 1) {
-    // In Ruby 3.0+, a single bare hash like `CMatcher.new(name: 'John')` is marked
+    // In Ruby 3.0+, a single bare hash like `Matcher.new(name: 'John')` is marked
     // as keywords, which would fail `rb_scan_args(..., "1:", ...)` with 0 positional args.
     rb_scan_args(argc, argv, "1", &condition);
     kw_hash = Qnil;
@@ -234,7 +234,7 @@ static VALUE rb_mongory_matcher_match_body(VALUE arg) {
   return result ? Qtrue : Qfalse;
 }
 
-// Mongory::CMatcher#match?(data)
+// Mongory::Matcher#match?(data)
 static VALUE rb_mongory_matcher_match(VALUE self, VALUE data) {
   rb_mongory_matcher_t *self_wrapper = get_initialized_matcher(self);
   rb_mongory_scratch_lease_t lease = rb_mongory_scratch_acquire(self_wrapper);
@@ -357,7 +357,7 @@ static VALUE rb_mongory_matcher_explain_tree_body(VALUE arg) {
   return rb_mongory_tree_node_to_rb(tree);
 }
 
-// Mongory::CMatcher#explain_tree
+// Mongory::Matcher#explain_tree
 static VALUE rb_mongory_matcher_explain_tree(VALUE self) {
   rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   rb_mongory_scratch_lease_t lease = rb_mongory_scratch_acquire(wrapper);
@@ -370,7 +370,7 @@ static VALUE rb_mongory_matcher_explain_tree(VALUE self) {
   return result;
 }
 
-// Mongory::CMatcher#explain
+// Mongory::Matcher#explain
 static VALUE rb_mongory_matcher_explain(VALUE self) {
   VALUE tree = rb_mongory_matcher_explain_tree(self);
   if (!NIL_P(tree)) {
@@ -380,7 +380,7 @@ static VALUE rb_mongory_matcher_explain(VALUE self) {
   return Qnil;
 }
 
-// Mongory::CMatcher#trace_tree(data)
+// Mongory::Matcher#trace_tree(data)
 static VALUE rb_mongory_matcher_trace_tree(VALUE self, VALUE data) {
   rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   rb_mongory_memory_pool_t *trace_pool = rb_mongory_memory_pool_new();
@@ -410,7 +410,7 @@ static VALUE rb_mongory_matcher_trace_tree(VALUE self, VALUE data) {
   return result;
 }
 
-// Mongory::CMatcher#trace(data)
+// Mongory::Matcher#trace(data)
 static VALUE rb_mongory_matcher_trace(VALUE self, VALUE data) {
   VALUE tree = rb_mongory_matcher_trace_tree(self, data);
   if (NIL_P(tree)) {
@@ -422,7 +422,7 @@ static VALUE rb_mongory_matcher_trace(VALUE self, VALUE data) {
   return res == ID2SYM(rb_intern("pass")) ? Qtrue : Qfalse;
 }
 
-// Mongory::CMatcher#enable_trace
+// Mongory::Matcher#enable_trace
 static VALUE rb_mongory_matcher_enable_trace(VALUE self) {
   rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   if (wrapper->trace_pool) {
@@ -446,7 +446,7 @@ static VALUE rb_mongory_matcher_enable_trace(VALUE self) {
   return Qnil;
 }
 
-// Mongory::CMatcher#disable_trace
+// Mongory::Matcher#disable_trace
 static VALUE rb_mongory_matcher_disable_trace(VALUE self) {
   rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   mongory_memory_pool *trace_pool = wrapper->trace_pool;
@@ -466,7 +466,7 @@ static VALUE rb_mongory_matcher_disable_trace(VALUE self) {
   return Qnil;
 }
 
-// Mongory::CMatcher#print_trace
+// Mongory::Matcher#print_trace
 static VALUE rb_mongory_matcher_print_trace(VALUE self) {
   rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
   if (!wrapper->trace_pool) {
@@ -478,21 +478,21 @@ static VALUE rb_mongory_matcher_print_trace(VALUE self) {
   return Qnil;
 }
 
-// Mongory::CMatcher#condition
+// Mongory::Matcher#condition
 static VALUE rb_mongory_matcher_condition(VALUE self) {
   rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
 
   return (VALUE)wrapper->condition->origin;
 }
 
-// Mongory::CMatcher#context
+// Mongory::Matcher#context
 static VALUE rb_mongory_matcher_context(VALUE self) {
   rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
 
   return wrapper->ctx ? wrapper->ctx : Qnil;
 }
 
-// Mongory::CMatcher.trace_result_colorful=(colorful)
+// Mongory::Matcher.trace_result_colorful=(colorful)
 static VALUE rb_mongory_matcher_trace_result_colorful(VALUE self, VALUE colorful) {
   (void)self;
   mongory_matcher_trace_result_colorful_set(RTEST(colorful));
