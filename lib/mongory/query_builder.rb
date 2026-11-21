@@ -25,7 +25,6 @@ module Mongory
   #     .pluck(:name, :email)
   class QueryBuilder
     include ::Enumerable
-    include Utils
 
     # Initializes a new query builder with the given record set.
     #
