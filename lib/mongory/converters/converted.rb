@@ -50,31 +50,35 @@ module Mongory
         private
 
         def _deep_merge!(left, right)
-          and_clauses = nil
-          right.each_pair do |key, b|
-            if !left.key?(key)
-              left[key] = b
-            elsif left[key].is_a?(::Hash) && b.is_a?(::Hash)
-              left[key] = _deep_merge!(left[key].dup, b)
-            else
-              and_clauses ||= []
-              and_clauses << Converted::Hash.new(key => left.delete(key))
-              and_clauses << Converted::Hash.new(key => b)
-            end
+          and_clauses = []
+          right.each_pair do |key, val|
+            _merge_entry!(left, key, val, and_clauses)
           end
-
-          if and_clauses
-            if left['$and'].is_a?(::Array)
-              left['$and'] = Converted::Array.new(left['$and'] + and_clauses)
-            elsif left.key?('$and')
-              existing = Converted::Hash.new('$and' => left.delete('$and'))
-              left['$and'] = Converted::Array.new([existing] + and_clauses)
-            else
-              left['$and'] = Converted::Array.new(and_clauses)
-            end
-          end
-
+          _append_and_clauses!(left, and_clauses) unless and_clauses.empty?
           left
+        end
+
+        def _merge_entry!(left, key, val, and_clauses)
+          if !left.key?(key)
+            left[key] = val
+          elsif left[key].is_a?(::Hash) && val.is_a?(::Hash)
+            left[key] = _deep_merge!(left[key].dup, val)
+          else
+            and_clauses << Converted::Hash.new(key => left.delete(key))
+            and_clauses << Converted::Hash.new(key => val)
+          end
+        end
+
+        def _append_and_clauses!(left, and_clauses)
+          existing = left['$and']
+          merged = if existing.is_a?(::Array)
+                     existing + and_clauses
+                   elsif left.key?('$and')
+                     [Converted::Hash.new('$and' => left.delete('$and')), *and_clauses]
+                   else
+                     and_clauses
+                   end
+          left['$and'] = Converted::Array.new(merged)
         end
       end
 
