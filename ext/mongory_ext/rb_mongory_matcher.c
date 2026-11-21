@@ -1,6 +1,6 @@
 /**
- * @file rb_mongory_cmatcher.c
- * @brief Mongory::CMatcher Ruby class lifecycle, matching, and trace methods.
+ * @file rb_mongory_matcher.c
+ * @brief Mongory::Matcher Ruby class lifecycle, matching, and trace methods.
  */
 #include "mongory_ext_internal.h"
 #include <stdio.h>
@@ -500,8 +500,8 @@ static VALUE rb_mongory_matcher_trace_result_colorful(VALUE self, VALUE colorful
   return Qnil;
 }
 
-void rb_mongory_init_cmatcher(void) {
-  rb_mongory_c_matcher = rb_define_class_under(rb_mongory_m_mongory, "CMatcher", rb_cObject);
+void rb_mongory_init_matcher(void) {
+  rb_mongory_c_matcher = rb_define_class_under(rb_mongory_m_mongory, "Matcher", rb_cObject);
   rb_define_alloc_func(rb_mongory_c_matcher, rb_mongory_matcher_alloc);
 
   rb_define_method(rb_mongory_c_matcher, "initialize", rb_mongory_matcher_initialize, -1);

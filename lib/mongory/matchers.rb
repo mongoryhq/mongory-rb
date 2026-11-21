@@ -1,30 +1,66 @@
 # frozen_string_literal: true
 
 module Mongory
-  # Provides matcher registration and operator-to-class lookup for query evaluation.
+  # Provides custom matcher registration and Symbol operator snippet management.
   #
-  # This module is responsible for:
-  # - Mapping Mongo-style operators like "$gt" to matcher classes
-  # - Dynamically extending Symbol with query operator snippets (e.g., :age.gt)
-  # - Safely isolating symbol extension behind an explicit opt-in flag
+  # Built-in operators are evaluated natively by `mongory-core` and registered in
+  # `BUILTIN_OPERATORS` so `enable_symbol_snippets!` can expose Symbol methods
+  # (e.g., `:age.gt`, `:tags.in`).
   #
-  # Matchers are registered using `Matchers.registry(method_sym, operator, klass)`
-  # and can be looked up via `Matchers.lookup(operator)`.
-  #
-  # Symbol snippets are only enabled if `Matchers.enable_symbol_snippets!` is called,
-  # preventing namespace pollution unless explicitly requested.
+  # Custom Ruby matchers subclassing `Mongory::Matchers::AbstractMatcher` are registered
+  # via `Matchers.register(method_sym, operator, klass)` and bridged into `mongory-core`
+  # through `Matchers.lookup(operator)`.
   module Matchers
+    # Built-in operators implemented natively in `mongory-core`.
+    BUILTIN_OPERATORS = {
+      eq: '$eq',
+      ne: '$ne',
+      gt: '$gt',
+      gte: '$gte',
+      lt: '$lt',
+      lte: '$lte',
+      in: '$in',
+      nin: '$nin',
+      exists: '$exists',
+      present: '$present',
+      regex: '$regex',
+      and: '$and',
+      or: '$or',
+      not: '$not',
+      elem_match: '$elemMatch',
+      every: '$every',
+      size: '$size'
+    }.freeze
+
+    # @private
+    #
+    # Internal helper representing a registration of an operator and its associated symbol snippet method.
+    # Used to delay method definition on Symbol until explicitly enabled.
+    Registry = Struct.new(:method_sym, :operator) do
+      # Defines a method on Symbol to support operator snippet expansion.
+      #
+      # @return [void]
+      def apply!
+        return if Symbol.method_defined?(method_sym)
+
+        operator = operator()
+        Symbol.define_method(method_sym) do
+          Mongory::QueryOperator.new(to_s, operator)
+        end
+      end
+    end
+
     @operator_mapping = {}
-    @registries = []
+    @registries = BUILTIN_OPERATORS.map { |method_sym, operator| Registry.new(method_sym, operator).freeze }
     @enable_symbol_snippets = false
 
-    # Registers a matcher class for a given operator and method symbol.
+    # Registers a custom matcher class for a given operator and method symbol.
     #
-    # @param method_sym [Symbol] the method name to be added to Symbol (e.g., :gt)
-    # @param operator [String] the Mongo-style operator (e.g., "$gt")
+    # @param method_sym [Symbol] the method name to be added to Symbol (e.g., :class_in)
+    # @param operator [String] the Mongo-style operator (e.g., "$classIn")
     # @param klass [Class] the matcher class to associate with the operator
     # @return [void]
-    # @raise [ArgumentError] if validations fail
+    # @raise [Mongory::TypeError] if validations fail
     def self.register(method_sym, operator, klass)
       Validator.validate_method(method_sym)
       Validator.validate_operator(operator, klass)
@@ -38,7 +74,7 @@ module Mongory
       registry.apply!
     end
 
-    # Enables dynamic symbol snippet generation for registered operators.
+    # Enables dynamic symbol snippet generation for built-in and registered operators.
     # This defines methods like `:age.gt => QueryOperator.new(...)`.
     #
     # @return [void]
@@ -47,19 +83,28 @@ module Mongory
       @registries.each(&:apply!)
     end
 
-    # Retrieves the matcher class associated with a Mongo-style operator.
+    # Retrieves the custom matcher class associated with a Mongo-style operator.
+    # Built-in operators are handled natively by `mongory-core` and return `nil`.
     #
     # @param operator [String]
-    # @return [Class, nil] the registered matcher class or nil if not found
+    # @return [Class, nil] the registered custom matcher class or nil if not found
     def self.lookup(operator)
       @operator_mapping[operator]
     end
 
-    # Returns all registered operator keys.
+    # Returns whether the operator is a built-in `mongory-core` operator.
+    #
+    # @param operator [String]
+    # @return [Boolean]
+    def self.builtin?(operator)
+      BUILTIN_OPERATORS.value?(operator)
+    end
+
+    # Returns all built-in and custom registered operator keys.
     #
     # @return [Array<String>]
     def self.operators
-      @operator_mapping.keys
+      (BUILTIN_OPERATORS.values + @operator_mapping.keys).uniq
     end
 
     def self.freeze
@@ -71,16 +116,7 @@ module Mongory
 
     # @private
     #
-    # Internal helper module used by `Matchers.registry` to validate matcher registration parameters.
-    #
-    # This includes:
-    # - Ensuring operators are valid Mongo-style strings (e.g., "$gt")
-    # - Verifying matcher class inheritance
-    # - Enforcing naming rules for symbol snippets (e.g., :gt, :not_match)
-    #
-    # These validations protect against incorrect matcher setup and prevent unsafe symbol definitions.
-    #
-    # @see Matchers.registry
+    # Internal helper module used by `Matchers.register` to validate matcher registration parameters.
     module Validator
       # Validates the given operator string.
       # Ensures it matches the Mongo-style format like "$gt".
@@ -91,9 +127,8 @@ module Mongory
       # @return [void]
       # @raise [Mongory::TypeError] if operator format is invalid
       def self.validate_operator(operator, klass = nil)
-        if Matchers.lookup(operator)
-          warn "Duplicate operator registration: #{operator} (#{Matchers.lookup(operator)} vs #{klass})"
-        end
+        existing = Matchers.lookup(operator) || (Matchers.builtin?(operator) ? 'built-in' : nil)
+        warn "Duplicate operator registration: #{operator} (#{existing} vs #{klass})" if existing
 
         return if operator.is_a?(String) && operator.match?(/^\$[a-z]+([A-Z][a-z]+)*$/)
 
@@ -122,58 +157,7 @@ module Mongory
         raise Mongory::TypeError, "Method symbol must match /^([a-z]+_)*[a-z]+$/, but got #{method_sym.inspect}"
       end
     end
-
-    # @private
-    #
-    # Internal helper representing a registration of an operator and its associated symbol snippet method.
-    # Used to delay method definition on Symbol until explicitly enabled.
-    #
-    # Each instance holds:
-    # - the method symbol (e.g., `:gt`)
-    # - the corresponding Mongo-style operator (e.g., `"$gt"`)
-    #
-    # These instances are collected and replayed upon calling `Matchers.enable_symbol_snippets!`.
-    #
-    # @!attribute method_sym
-    #   @return [Symbol] the symbol method name (e.g., :in, :gt, :exists)
-    # @!attribute operator
-    #   @return [String] the Mongo-style operator this snippet maps to (e.g., "$in")
-    Registry = Struct.new(:method_sym, :operator) do
-      # Defines a method on Symbol to support operator snippet expansion.
-      #
-      # @return [void]
-      def apply!
-        return if Symbol.method_defined?(method_sym)
-
-        operator = operator()
-        Symbol.define_method(method_sym) do
-          Mongory::QueryOperator.new(to_s, operator)
-        end
-      end
-    end
   end
 end
 
 require_relative 'matchers/abstract_matcher'
-require_relative 'matchers/abstract_multi_matcher'
-require_relative 'matchers/value_matcher'
-require_relative 'matchers/condition_matcher'
-require_relative 'matchers/and_matcher'
-require_relative 'matchers/implicit_array_matcher'
-require_relative 'matchers/elem_match_matcher'
-require_relative 'matchers/every_matcher'
-require_relative 'matchers/eq_matcher'
-require_relative 'matchers/exists_matcher'
-require_relative 'matchers/gt_matcher'
-require_relative 'matchers/gte_matcher'
-require_relative 'matchers/in_matcher'
-require_relative 'matchers/field_matcher'
-require_relative 'matchers/lt_matcher'
-require_relative 'matchers/lte_matcher'
-require_relative 'matchers/ne_matcher'
-require_relative 'matchers/nin_matcher'
-require_relative 'matchers/not_matcher'
-require_relative 'matchers/or_matcher'
-require_relative 'matchers/present_matcher'
-require_relative 'matchers/regex_matcher'
-require_relative 'matchers/size_matcher'

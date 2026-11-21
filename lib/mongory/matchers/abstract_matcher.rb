@@ -2,54 +2,42 @@
 
 module Mongory
   module Matchers
-    # AbstractMatcher is the base class for all matchers in Mongory.
+    # AbstractMatcher is the base class for custom Ruby matchers in Mongory.
     #
-    # It defines a common interface (`#match?`) and provides shared behavior
-    # such as condition storage, optional conversion handling, and debugging output.
-    #
-    # Each matcher is responsible for evaluating a specific type of condition against
-    # a record value. The base class provides infrastructure for:
-    # - Condition validation
-    # - Value conversion
-    # - Debug output
-    # - Proc caching
+    # Built-in operators are implemented natively in `mongory-core`. Subclass
+    # `AbstractMatcher` and register it with `Mongory::Matchers.register` to extend
+    # Mongory with custom operators evaluated via the `mongory-core` custom matcher bridge.
     #
     # @abstract Subclasses must implement {#match} to define their matching logic
     #
-    # @example Basic matcher implementation
-    #   class MyMatcher < AbstractMatcher
+    # @example Custom matcher implementation
+    #   class DivisibleByMatcher < Mongory::Matchers::AbstractMatcher
     #     def match(record)
-    #       record == @condition
+    #       record.is_a?(Numeric) && (record % @condition).zero?
+    #     end
+    #
+    #     def check_validity!
+    #       raise Mongory::TypeError, '$divisibleBy needs a non-zero Integer' unless
+    #         @condition.is_a?(Integer) && @condition != 0
     #     end
     #   end
     #
-    # @example Using a matcher
-    #   matcher = MyMatcher.build(42)
-    #   matcher.match?(42)  #=> true
-    #   matcher.match?(43)  #=> false
-    #
-    # @see Mongory::Matchers for the full list of available matchers
+    #   Mongory::Matchers.register(:divisible_by, '$divisibleBy', DivisibleByMatcher)
     class AbstractMatcher
       include Utils
 
       singleton_class.alias_method :build, :new
 
-      # Sentinel value used to represent missing keys when traversing nested hashes.
-      # This is used instead of nil to distinguish between missing keys and nil values.
+      # Sentinel value used to represent missing keys.
       #
       # @api private
       KEY_NOT_FOUND = SingletonBuilder.new('KEY_NOT_FOUND').freeze
 
       # Defines a lazily-evaluated matcher accessor with instance-level caching.
-      # This is used to create cached accessors for submatcher instances.
       #
       # @param name [Symbol] the name of the matcher (e.g., :collection)
       # @yield the block that constructs the matcher instance
       # @return [void]
-      # @example
-      #   define_matcher(:array_matcher) do
-      #     ArrayMatcher.build(@condition)
-      #   end
       def self.define_matcher(name, &block)
         define_instance_cache_method(:"#{name}_matcher", &block)
       end
@@ -60,14 +48,9 @@ module Mongory
       # @return [Context] the query context containing configuration and current record
       attr_reader :context
 
-      # @return [AbstractMatcher, nil] the enclosing matcher notified when priority changes
-      attr_accessor :parent
-
       # Returns a unique key representing this matcher instance.
-      # Used for deduplication in multi-matchers.
       #
       # @return [String] a unique key for this matcher instance
-      # @see AbstractMultiMatcher#matchers
       def uniq_key
         "#{self.class}:condition:#{@condition.class}:#{@condition}"
       end
@@ -84,7 +67,6 @@ module Mongory
       end
 
       # Matches the given record against the condition.
-      # This method handles error cases and uses the cached proc for performance.
       #
       # @param record [Object] the input record
       # @return [Boolean] whether the record matches the condition
@@ -95,7 +77,6 @@ module Mongory
       end
 
       # Converts the matcher into a Proc that can be used for matching.
-      # The Proc is cached for better performance.
       #
       # @return [Proc] a Proc that can be used to match records
       def cached_proc
@@ -104,32 +85,7 @@ module Mongory
 
       alias_method :to_proc, :cached_proc
 
-      # Creates a debug-enabled version of the matcher proc.
-      # This version includes tracing and error handling.
-      #
-      # @return [Proc] a debug-enabled version of the matcher proc
-      def debug_proc
-        return @debug_proc if defined?(@debug_proc)
-
-        raw_proc = raw_proc()
-        @debug_proc = Proc.new do |record|
-          result = nil
-
-          Debugger.instance.with_indent(self, record) do
-            result = begin
-              raw_proc.call(record)
-            rescue StandardError => e
-              e
-            end
-          end
-
-          result.is_a?(Exception) ? false : result
-        end
-      end
-
       # Creates a raw Proc from the match method.
-      # This is used internally by to_proc and can be overridden by subclasses
-      # to provide custom matching behavior.
       #
       # @return [Proc] the raw Proc implementation of the match method
       def raw_proc
@@ -148,7 +104,7 @@ module Mongory
       # Override in subclasses to raise error if invalid.
       #
       # @abstract
-      # @raise [TypeError] if the condition is invalid
+      # @raise [Mongory::TypeError] if the condition is invalid
       # @return [void]
       def check_validity!; end
 
@@ -159,109 +115,18 @@ module Mongory
         self.class.name.split('::').last.sub(/Matcher\z/, '')
       end
 
-      # Returns active child matchers for tree inspection and trace skipping.
-      #
-      # @return [Array<AbstractMatcher>]
-      def child_matchers
-        []
-      end
-
-      # Builds and returns the structured explain tree Hash for this matcher.
-      #
-      # @return [Hash] structured explain tree node
-      def explain_tree
-        {
-          name: matcher_name,
-          condition: @condition,
-          priority: priority,
-          children: child_matchers.map(&:explain_tree)
-        }
-      end
-
-      # Prints the formatted matcher tree to STDOUT.
-      #
-      # @return [void]
-      def render_tree
-        Utils::TreeRenderer.print_explain(explain_tree)
-      end
-
       def priority
         20
       end
 
-      # Clears memoized match procs after a descendant changes priority or order.
-      #
-      # @return [void]
-      def invalidate_proc_cache!
-        @cached_proc = nil
-        remove_instance_variable(:@debug_proc) if instance_variable_defined?(:@debug_proc)
-      end
-
-      # Called by a child matcher after its priority increases dynamically.
-      #
-      # @return [void]
-      def on_child_priority_changed
-        notify_priority_changed
-      end
-
       private
-
-      def notify_priority_changed
-        invalidate_proc_cache!
-        @parent&.on_child_priority_changed
-      end
-
-      def attach_child(child)
-        child.parent = self if child.respond_to?(:parent=)
-        child
-      end
-
-      # Returns a single-line string representing this matcher in the tree output.
-      # Format: `<MatcherType>: <condition.inspect>`
-      #
-      # @return [String] a formatted title for tree display
-      def tree_title
-        matcher_name = self.class.name.split('::').last.sub(/Matcher\z/, '').sub('Matcher', '')
-        "#{matcher_name}: #{@condition.inspect}"
-      end
 
       # Normalizes the record before matching.
       #
-      # If the record is the KEY_NOT_FOUND sentinel (representing a missing field),
-      # it is converted to `nil` so matchers can interpret it consistently.
-      # Other values are returned as-is.
-      #
       # @param record [Object] the record value to normalize
       # @return [Object, nil] the normalized record
-      # @see Mongory::KEY_NOT_FOUND
       def normalize(record)
         record == KEY_NOT_FOUND ? nil : record
-      end
-
-      # Formats a debug string for match output.
-      # Uses ANSI escape codes to highlight matched vs. mismatched records.
-      #
-      # @param record [Object] the record being tested
-      # @param result [Boolean, Exception] whether the match succeeded or an error occurred
-      # @return [String] the formatted output string
-      def debug_display(record, result)
-        "#{self.class.name.split('::').last.sub(/Matcher\z/, '')} #{colored_result(result)}, " \
-          "condition: #{@condition.inspect}, " \
-          "record: #{record.inspect}"
-      end
-
-      # Formats the match result with ANSI color codes for terminal output.
-      #
-      # @param result [Boolean, Exception] the match result or error
-      # @return [String] the colored result string
-      def colored_result(result)
-        if result.is_a?(Exception)
-          "\e[45;97m#{result}\e[0m"
-        elsif result
-          "\e[30;42mMatched\e[0m"
-        else
-          "\e[30;41mDismatch\e[0m"
-        end
       end
     end
   end

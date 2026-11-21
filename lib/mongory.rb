@@ -7,8 +7,6 @@ require 'singleton'
 require_relative 'mongory/version'
 require_relative 'mongory/utils'
 require_relative 'mongory/matchers'
-require_relative 'mongory/query_matcher'
-require_relative 'mongory/query_builder'
 require_relative 'mongory/query_operator'
 require_relative 'mongory/converters'
 require_relative 'mongory/rails' if defined?(Rails::Railtie)
@@ -28,8 +26,6 @@ require_relative 'mongory/mongoid' if defined?(Mongoid)
 module Mongory
   class Error < StandardError; end
   class TypeError < Error; end
-
-  @c_extension_by_default = false
 
   # Yields Mongory for configuration and freezes key components.
   #
@@ -61,7 +57,6 @@ module Mongory
   def self.freeze
     data_converter.freeze
     condition_converter.freeze
-    @debugger = Utils::Debugger.instance
     Matchers.freeze
     super
   end
@@ -80,33 +75,20 @@ module Mongory
     @condition_converter ||= Converters::ConditionConverter.instance
   end
 
-  # Returns the debugger instance.
-  #
-  # @return [Utils::Debugger]
-  def self.debugger
-    @debugger ||= Utils::Debugger.instance
-  end
-
   # Builds a new query over the given record set.
-  # Uses `CQueryBuilder` when `enable_c_extension_by_default!` is enabled and the C extension is available;
-  # otherwise uses `QueryBuilder`.
   #
   # @param records [Enumerable] any enumerable object (Array, AR::Relation, etc.)
-  # @return [QueryBuilder, CQueryBuilder] a new query builder
+  # @return [QueryBuilder] a new query builder
   def self.build_query(records)
-    builder_class = c_extension_by_default? ? CQueryBuilder : QueryBuilder
-    builder_class.new(records)
+    QueryBuilder.new(records)
   end
 
   # Builds a new matcher for the given condition.
-  # Uses `CMatcher` when `enable_c_extension_by_default!` is enabled and the C extension is available;
-  # otherwise uses `QueryMatcher`.
   #
   # @param condition [Hash] the query condition
-  # @return [QueryMatcher, CMatcher] a new matcher
+  # @return [Matcher] a new matcher
   def self.build_matcher(condition)
-    matcher_class = c_extension_by_default? ? CMatcher : QueryMatcher
-    matcher_class.new(condition)
+    Matcher.new(condition)
   end
 
   # Registers a class to support `.mongory` query DSL.
@@ -128,51 +110,20 @@ module Mongory
     Matchers.enable_symbol_snippets!
   end
 
-  # Enables using the C extension (`CQueryBuilder`) by default when building queries
-  # via `Mongory.build_query` or `.mongory`.
-  #
-  # Automatically falls back to the pure Ruby `QueryBuilder` if the C extension is unavailable.
-  #
-  # @return [Boolean] true if C extension is available and enabled by default
-  def self.enable_c_extension_by_default!
-    @c_extension_by_default = !defined?(Mongory::CMatcher).nil?
-  end
-
-  singleton_class.alias_method :use_c_extension_by_default!, :enable_c_extension_by_default!
-
-  # Disables using the C extension by default, reverting `.mongory` and `Mongory.build_query`
-  # to the pure Ruby `QueryBuilder`.
-  #
-  # @return [void]
-  def self.disable_c_extension_by_default!
-    @c_extension_by_default = false
-  end
-
-  # Returns whether the C extension is used by default for queries.
-  #
-  # @return [Boolean]
-  def self.c_extension_by_default?
-    @c_extension_by_default == true && !defined?(Mongory::CMatcher).nil?
-  end
-
   # Adds a `#mongory` method to the target class via inclusion.
   #
   # Typically used internally by `Mongory.register(...)`.
   module ClassExtention
     # Returns a query builder scoped to `self`.
     #
-    # @return [QueryBuilder, CQueryBuilder]
+    # @return [QueryBuilder]
     def mongory
       Mongory.build_query(self)
     end
   end
 end
 
-begin
-  abi = RUBY_VERSION.split('.').first(2).join('.')
-  require_relative "core/#{abi}/mongory_ext"
-  require_relative 'mongory/c_query_builder'
-  require_relative 'mongory/c_matcher'
-rescue LoadError => e
-  warn("Mongory C extension is disabled because mongory_ext is not loaded: #{e.message}")
-end
+abi = RUBY_VERSION.split('.').first(2).join('.')
+require_relative "core/#{abi}/mongory_ext"
+require_relative 'mongory/matcher'
+require_relative 'mongory/query_builder'

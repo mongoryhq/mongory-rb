@@ -17,7 +17,6 @@ records = Array.new(N) do |i|
 end
 
 puts "Ruby: #{RUBY_VERSION} (#{RUBY_PLATFORM}), records=#{N}, rounds=#{ROUNDS}"
-puts "CMatcher available: #{defined?(Mongory::CMatcher) ? 'yes' : 'no'}"
 
 def bench(label)
   # Warmup
@@ -40,28 +39,16 @@ bench('Plain Ruby (simple)') do
   records.count { |r| r['age'].is_a?(Numeric) && r['age'] >= 18 }
 end
 
-simple_qm = Mongory::QueryMatcher.new({ age: { :$gte => 18 } }).tap(&:prepare_query)
-bench('Pure Ruby QueryMatcher (simple)') do
-  records.count { |r| simple_qm.match?(r) }
+simple_m = Mongory::Matcher.new({ age: { :$gte => 18 } })
+bench('Mongory::Matcher (simple)') do
+  records.count { |r| simple_m.match?(r) }
 end
 
 bench('Plain Ruby ($or)') do
   records.count { |r| (r['age'].is_a?(Numeric) && r['age'] >= 18) || r['status'] == 'active' }
 end
 
-or_qm = Mongory::QueryMatcher.new({ :$or => [{ age: { :$gte => 18 } }, { status: 'active' }] }).tap(&:prepare_query)
-bench('Pure Ruby QueryMatcher ($or)') do
-  records.count { |r| or_qm.match?(r) }
-end
-
-if defined?(Mongory::CMatcher)
-  simple_cm = Mongory::CMatcher.new({ age: { :$gte => 18 } })
-  bench('C Extension CMatcher (simple)') do
-    records.count { |r| simple_cm.match?(r) }
-  end
-
-  or_cm = Mongory::CMatcher.new({ :$or => [{ age: { :$gte => 18 } }, { status: 'active' }] })
-  bench('C Extension CMatcher ($or)') do
-    records.count { |r| or_cm.match?(r) }
-  end
+or_m = Mongory::Matcher.new({ :$or => [{ age: { :$gte => 18 } }, { status: 'active' }] })
+bench('Mongory::Matcher ($or)') do
+  records.count { |r| or_m.match?(r) }
 end

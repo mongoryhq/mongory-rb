@@ -8,7 +8,7 @@ module Mongory
   # It supports condition chaining (`where`, `or`, `not`),
   # limiting, and plucking fields.
   #
-  # Internally it compiles all conditions and invokes `QueryMatcher`.
+  # Internally it compiles all conditions and invokes `Matcher` (backed by `mongory-core`).
   #
   # @example Basic query
   #   records.mongory
@@ -37,7 +37,6 @@ module Mongory
     end
 
     # Iterates through all records that match the current matcher.
-    # Uses the standard matcher implementation.
     #
     # @yieldparam record [Object] each matching record
     # @return [Enumerator] if no block given
@@ -45,58 +44,44 @@ module Mongory
     def each
       return to_enum(:each) unless block_given?
 
-      @matcher.prepare_query
       @records.each do |record|
         @context.current_record = record
         yield record if @matcher.match?(record)
       end
     end
 
-    # Iterates through all records that match the current matcher.
-    # Uses a compiled Proc for faster matching.
-    #
-    # @deprecated
-    # Since C extension has implemented, the fast mode is no longer needed. Use C extension instead.
-    #
-    # This method is deprecated and will be removed in future versions.
-    #
-    # @yieldparam record [Object] each matching record
-    # @return [Enumerator] if no block given
-    # @return [void] if block given
-    def fast
-      warn('Deprecated: Since C extension has implemented, the fast mode is no longer needed. Use C extension instead.')
-      return to_enum(:fast) unless block_given?
-
-      @context.need_convert = false
-      @matcher.prepare_query
-      matcher_block = @matcher.to_proc
-      @records.each do |record|
-        @context.current_record = record
-        yield record if matcher_block.call(record)
-      end
-    end
+    alias_method :fast, :each
 
     # Traces matcher evaluation for all records and returns an Array of structured trace tree Hashes.
     # If a block is given, matched records are also yielded.
     #
     # @yieldparam record [Object] each matching record
     # @return [Array<Hash>] structured trace tree per evaluated record
-    def trace_tree(&block)
-      Mongory.debugger.enable
-      @matcher.prepare_query
-      @records.each_with_object([]) do |record, trees|
-        tree = trace_record(record, &block)
+    def trace_tree
+      trees = []
+      @records.each do |record|
+        @context.current_record = record
+        tree = @matcher.trace_tree(record)
         trees << tree if tree
+        yield record if block_given? && tree && tree[:result] == :pass
       end
-    ensure
-      Mongory.debugger.disable
+      trees
     end
 
-    def trace(&block)
-      return to_enum(:trace) unless block
+    # Prints each record's trace tree to STDOUT and yields matching records.
+    #
+    # @yieldparam record [Object] each matching record
+    # @return [Enumerator] if no block given
+    # @return [void] if block given
+    def trace
+      return to_enum(:trace) unless block_given?
 
-      trees = trace_tree(&block)
-      trees.each { |tree| Utils::TreeRenderer.print_trace(tree) }
+      @records.each do |record|
+        @context.current_record = record
+        tree = @matcher.trace_tree(record)
+        Utils::TreeRenderer.print_trace(tree) if tree
+        yield record if tree && tree[:result] == :pass
+      end
     end
 
     # Adds a condition to filter records using the given condition.
@@ -235,25 +220,7 @@ module Mongory
       Utils::TreeRenderer.print_explain(explain_tree)
     end
 
-    def c
-      return self unless defined?(Mongory::CMatcher)
-
-      c_builder = CQueryBuilder.new(@records, context: @context)
-      c_builder.send(:set_matcher, @matcher.condition)
-      c_builder
-    end
-
     private
-
-    # @private
-    def trace_record(record)
-      @context.current_record = record
-      matched = @matcher.match?(record)
-      tree = Mongory.debugger.build_trace_trees.first
-      yield record if matched && block_given?
-      Mongory.debugger.clear
-      tree
-    end
 
     # @private
     # Duplicates the query and executes the block in context.
@@ -272,7 +239,7 @@ module Mongory
     # @param condition [Hash] the condition to build the matcher from
     # @return [void]
     def set_matcher(condition = {})
-      @matcher = QueryMatcher.new(condition, context: @context)
+      @matcher = Matcher.new(condition, context: @context)
     end
 
     # @private

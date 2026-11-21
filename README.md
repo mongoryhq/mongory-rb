@@ -1,6 +1,6 @@
 # Mongory (Ruby)
 
-**Cross-language, in-memory Mongo-style rule engine & query matcher with built-in Explain & Trace debugging** — optional C99 acceleration ([`mongory-core`](https://github.com/mongoryhq/mongory-core)), pure Ruby fallback, and cross-language parity via [`mongory-spec`](https://github.com/mongoryhq/mongory-spec).
+**Cross-language, in-memory Mongo-style rule engine & query matcher with built-in Explain & Trace debugging** — powered by the C99 [`mongory-core`](https://github.com/mongoryhq/mongory-core) native extension with cross-language parity via [`mongory-spec`](https://github.com/mongoryhq/mongory-spec).
 
 **[Try the Interactive Playground & Visual Explain/Trace Debugger ↗](https://mongoryhq.github.io/mongory-central/)**
 
@@ -14,7 +14,7 @@
 - **Chainable Ruby DSL & Raw JSON Support**: Compose queries with `.where`, `.any_of`, `.or`, `.not`, and optional Symbol snippets (`:age.gte => 18`), or pass parsed JSON conditions directly from front-end rules.
 - **All 17 Mongory Operators**: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`, `$present`, `$and`, `$or`, `$not`, `$elemMatch`, `$every`, `$size`, `$regex` (with `$options`: `i`, `m`, `s`).
 - **Priority-Ordered Execution & Visual Debugging**: Automatically sorts sibling conditions so cheaper checks short-circuit before expensive regex or array scans; inspect compiled trees with `.explain` and per-record evaluation with `.trace`.
-- **Optional C99 Native Extension (`CMatcher`)**: Switch any query to the C fast path via `.c` or enable globally with `Mongory.enable_c_extension_by_default!`.
+- **Native C99 Engine (`Mongory::Matcher`)**: Powered directly by `mongory-core` with zero Pure-Ruby engine overhead, while still supporting custom Ruby matchers via `Mongory::Matchers::AbstractMatcher`.
 - **Precompiled Native Gems (Ruby 2.6–4.0)**: Ships prebuilt binaries for Linux (`x86_64`/`aarch64`, glibc & musl), macOS (`x86_64`/`arm64`), and Windows (`x64-mingw32`/`ucrt`).
 
 ## Installation
@@ -59,9 +59,6 @@ matched = records.mongory
 rule = JSON.parse('{"age": {"$gte": 18}, "$or": [{"name": {"$regex": "^J"}}, {"name": "Bob"}]}')
 records.mongory.where(rule).pluck('name')
 # => ["Jack", "Bob"]
-
-# 3. C extension fast path (.c per query, or enable globally)
-records.mongory.c.where(:age.gte => 18).to_a
 ```
 
 ### Query Builder Methods
@@ -77,7 +74,6 @@ records.mongory.c.where(:age.gte => 18).to_a
 | `limit` | Limits processed records (executes at its position in the chain) | `limit(10)` |
 | `pluck` | Extracts one or more fields from matching records | `pluck(:name)` |
 | `with_context` | Passes shared context/options to matchers | `with_context(tenant: current_tenant)` |
-| `c` | Evaluates the query with the C extension (`CQueryBuilder`) | `records.mongory.c.where(...)` |
 
 ## Debugging: `explain`, `trace`, `explain_tree` & `trace_tree`
 
@@ -127,7 +123,7 @@ trees = query.trace_tree
 query.trace { |record| puts record['name'] }
 ```
 
-Single-record structured tracing is also available on matchers directly via `matcher.explain_tree` and `matcher.trace_tree(record)` (supported on both `QueryMatcher` and `CMatcher`).
+Single-record structured tracing is also available on matchers directly via `matcher.explain_tree` and `matcher.trace_tree(record)` on `Mongory::Matcher`.
 
 ## Supported Operators
 
@@ -144,12 +140,11 @@ Single-record structured tracing is also available on matchers directly via `mat
 
 ## Custom Matchers & Configuration
 
-Configure registered collection classes, converters, or enable the C extension globally in `Mongory.configure`:
+Configure registered collection classes and converters in `Mongory.configure`:
 
 ```ruby
 Mongory.configure do |mc|
   mc.enable_symbol_snippets!
-  mc.enable_c_extension_by_default! # Optional: use CQueryBuilder / CMatcher by default
   mc.register(Array)
   mc.register(ActiveRecord::Relation)
 end

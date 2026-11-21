@@ -3,7 +3,6 @@
 require 'date'
 require_relative 'utils/singleton_builder'
 require_relative 'utils/tree_renderer'
-require_relative 'utils/debugger'
 require_relative 'utils/context'
 
 module Mongory

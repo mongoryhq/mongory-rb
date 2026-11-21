@@ -21,35 +21,22 @@ RSpec.describe 'mongory-spec conformance' do
     end
   end
 
-  engines = { 'QueryMatcher' => Mongory::QueryMatcher }
-  engines['CMatcher'] = Mongory::CMatcher if defined?(Mongory::CMatcher)
-
-  build_matcher = lambda do |klass, condition|
-    klass.new(condition).tap do |matcher|
-      matcher.prepare_query if matcher.respond_to?(:prepare_query)
-    end
-  end
-
   fixture_files.each do |file|
     relative_path = file.delete_prefix("#{fixtures_dir}/")
 
     describe relative_path do
       JSON.parse(File.read(file)).each do |suite|
         describe suite['description'] do
-          engines.each do |engine_name, klass|
-            context "with #{engine_name}" do
-              if suite['error']
-                it 'rejects the condition' do
-                  expect { build_matcher.call(klass, suite['condition']) }.to raise_error(Mongory::TypeError)
-                end
-              else
-                let(:matcher) { build_matcher.call(klass, suite['condition']) }
+          if suite['error']
+            it 'rejects the condition' do
+              expect { Mongory::Matcher.new(suite['condition']) }.to raise_error(Mongory::TypeError)
+            end
+          else
+            let(:matcher) { Mongory::Matcher.new(suite['condition']) }
 
-                suite['records'].each_with_index do |record, index|
-                  it "record ##{index} #{record['data'].to_json} => #{record['expected']}" do
-                    expect(matcher.match?(record['data'])).to be(record['expected'])
-                  end
-                end
+            suite['records'].each_with_index do |record, index|
+              it "record ##{index} #{record['data'].to_json} => #{record['expected']}" do
+                expect(matcher.match?(record['data'])).to be(record['expected'])
               end
             end
           end

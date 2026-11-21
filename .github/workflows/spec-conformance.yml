@@ -54,7 +54,7 @@ jobs:
     - name: Build native extension (mongory-core)
       run: bundle exec rake build_all
 
-    - name: Run conformance tests (QueryMatcher + CMatcher)
+    - name: Run conformance tests (Mongory::Matcher)
       env:
         MONGORY_SPEC_DIR: ${{ github.workspace }}/mongory-spec
       run: bundle exec rspec spec/conformance_spec.rb

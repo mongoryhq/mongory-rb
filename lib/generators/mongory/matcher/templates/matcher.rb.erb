@@ -55,24 +55,15 @@
 # 1. Public Interface (match?):
 #    - Provides error handling
 #    - Ensures safe matching process
-#    - Suitable for external calls
-#    - Can be tracked by Mongory.debugger
-#    - Used for internal calls and debugging
+#    - Invoked by the mongory-core custom matcher bridge
 #
 # 2. Internal Interface (match):
 #    - Implements the actual matching logic
-#
-# Debugging Support:
-# The match method can be tracked by Mongory.debugger to:
-# - Visualize the matching process
-# - Diagnose matching issues
-# - Provide detailed debugging information
 #
 # @see Mongory::Matchers::AbstractMatcher
 class <%= @matcher_name %> < Mongory::Matchers::AbstractMatcher
   # Matches the subject against the condition.
   # This is the internal interface that implements the actual matching logic.
-  # It can be tracked by Mongory.debugger for debugging purposes.
   #
   # @param subject [Object] the value to be tested
   # @return [Boolean] whether the value matches

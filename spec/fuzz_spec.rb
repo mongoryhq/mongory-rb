@@ -2,7 +2,7 @@
 
 require 'spec_helper'
 
-RSpec.describe 'Mongory differential fuzzing' do
+RSpec.describe 'Mongory fuzzing' do
   let(:iterations) { Integer(ENV.fetch('FUZZ_ITERATIONS', '1000')) }
   let(:seed) { Integer(ENV.fetch('FUZZ_SEED', '1367130551')) }
 
@@ -75,47 +75,34 @@ RSpec.describe 'Mongory differential fuzzing' do
     end
   end
 
-  it 'keeps QueryMatcher and CMatcher in differential parity across randomized valid queries' do
-    skip 'CMatcher not available' unless defined?(Mongory::CMatcher)
-
+  it 'keeps match? and trace_tree consistent across randomized valid queries' do
     rng = Random.new(seed)
     iterations.times do |i|
       cond = random_valid_condition(rng, 2)
-      rb_matcher = Mongory::QueryMatcher.new(cond)
-      rb_matcher.prepare_query
-      c_matcher = Mongory::CMatcher.new(cond)
+      matcher = Mongory::Matcher.new(cond)
 
-      expect(rb_matcher.explain_tree).to be_a(Hash)
-      expect(c_matcher.explain_tree).to be_a(Hash)
+      expect(matcher.explain_tree).to be_a(Hash)
 
       2.times do
         rec = random_record(rng)
-        rb_res = rb_matcher.match?(rec)
-        c_res = c_matcher.match?(rec)
-        expect(c_res).to eq(rb_res), "iter=#{i} cond=#{cond.inspect} rec=#{rec.inspect} rb=#{rb_res} c=#{c_res}"
-
-        rb_trace = rb_matcher.trace_tree(rec)
-        c_trace = c_matcher.trace_tree(rec)
-        expected = rb_res ? :pass : :fail
-        expect(rb_trace[:result]).to eq(expected), "iter=#{i} rb trace mismatch"
-        expect(c_trace[:result]).to eq(expected), "iter=#{i} c trace mismatch"
+        res = matcher.match?(rec)
+        trace = matcher.trace_tree(rec)
+        expected = res ? :pass : :fail
+        expect(trace[:result]).to eq(expected), "iter=#{i} cond=#{cond.inspect} rec=#{rec.inspect}"
       end
 
       GC.start if (i % 250).zero?
     end
   end
 
-  it 'never crashes on hostile randomized conditions in QueryMatcher or CMatcher' do
-    skip 'CMatcher not available' unless defined?(Mongory::CMatcher)
-
+  it 'never crashes on hostile randomized conditions in Matcher' do
     rng = Random.new(seed + 1)
     (iterations / 2).times do
       cond = random_hostile_condition(rng, 2)
       rec = random_record(rng)
 
-      [Mongory::QueryMatcher, Mongory::CMatcher].each do |klass|
-        matcher = klass.new(cond)
-        matcher.prepare_query if matcher.respond_to?(:prepare_query)
+      begin
+        matcher = Mongory::Matcher.new(cond)
         matcher.match?(rec)
         matcher.explain_tree
         matcher.trace_tree(rec)

@@ -3,7 +3,7 @@
 require 'spec_helper'
 require_relative 'shared_matcher_spec'
 
-RSpec.describe Mongory::CMatcher, type: :model do
+RSpec.describe Mongory::Matcher, type: :model do
   describe '#match?' do
     subject { described_class.new(condition) }
 
@@ -60,34 +60,31 @@ RSpec.describe Mongory::CMatcher, type: :model do
       expect { expect(matcher.trace(name: 'John')).to be true }.to output(/Matched/).to_stdout
     end
 
-    it 'recursively marks short-circuited branches as :skip in both Ruby and C trace_tree' do
+    it 'recursively marks short-circuited branches as :skip in trace_tree' do
       records = [{ 'status' => 'inactive', 'age' => 20 }, { 'status' => 'active', 'age' => 25 }]
-      rb_builder = records.mongory.where('status' => 'active', 'age' => { '$gte' => 18 })
-      c_builder = rb_builder.c
+      builder = records.mongory.where('status' => 'active', 'age' => { '$gte' => 18 })
 
-      [rb_builder, c_builder].each do |builder|
-        explain = builder.explain_tree
-        expect(explain).to be_a(Hash)
-        expect(explain[:children]).to be_an(Array)
-        expect { builder.explain }.to output(/status/).to_stdout
+      explain = builder.explain_tree
+      expect(explain).to be_a(Hash)
+      expect(explain[:children]).to be_an(Array)
+      expect { builder.explain }.to output(/status/).to_stdout
 
-        trees = builder.trace_tree
-        expect(trees).to be_an(Array)
-        expect(trees.length).to eq(2)
-        expect(trees[0][:result]).to eq(:fail)
-        expect(trees[1][:result]).to eq(:pass)
+      trees = builder.trace_tree
+      expect(trees).to be_an(Array)
+      expect(trees.length).to eq(2)
+      expect(trees[0][:result]).to eq(:fail)
+      expect(trees[1][:result]).to eq(:pass)
 
-        skipped_nodes = []
-        collect_skips = lambda do |node|
-          skipped_nodes << node if node[:result] == :skip
-          (node[:children] || []).each { |child| collect_skips.call(child) }
-        end
-        collect_skips.call(trees[0])
-        expect(skipped_nodes.length).to be >= 2
-        expect(skipped_nodes.all? { |n| n[:result] == :skip }).to be true
-
-        expect { builder.trace { |_r| nil } }.to output(/Skipped/).to_stdout
+      skipped_nodes = []
+      collect_skips = lambda do |node|
+        skipped_nodes << node if node[:result] == :skip
+        (node[:children] || []).each { |child| collect_skips.call(child) }
       end
+      collect_skips.call(trees[0])
+      expect(skipped_nodes.length).to be >= 2
+      expect(skipped_nodes.all? { |n| n[:result] == :skip }).to be true
+
+      expect { builder.trace { |_r| nil } }.to output(/Skipped/).to_stdout
     end
   end
 
@@ -148,7 +145,7 @@ RSpec.describe Mongory::CMatcher, type: :model do
   end
 
   describe 'thread safety' do
-    it 'safely shares a CMatcher across threads with lazy array and regex matching' do
+    it 'safely shares a Matcher across threads with lazy array and regex matching' do
       matcher = described_class.new(
         tags: 'ruby',
         scores: { '$gt' => 5, '$lt' => 8 },
@@ -217,6 +214,34 @@ RSpec.describe Mongory::CMatcher, type: :model do
       expect { matcher.match?(score: boom_record, tag: 'ok') }.to raise_error(RuntimeError, 'boom')
       expect(matcher.match?(score: 8, tag: 'ok')).to be true
       expect(matcher.match?(score: 2, tag: 'ok')).to be false
+    end
+  end
+
+  describe 'custom Ruby matchers via AbstractMatcher' do
+    before(:all) do
+      @divisible_matcher = Class.new(Mongory::Matchers::AbstractMatcher) do
+        def match(record)
+          record.is_a?(Numeric) && (record % @condition).zero?
+        end
+
+        def check_validity!
+          raise Mongory::TypeError, '$divisibleBy requires a non-zero Integer' unless
+            @condition.is_a?(Integer) && !@condition.zero?
+        end
+      end
+      Object.const_set(:SpecDivisibleByMatcher, @divisible_matcher)
+      Mongory::Matchers.register(:divisible_by, '$divisibleBy', SpecDivisibleByMatcher)
+    end
+
+    after(:all) do
+      Object.send(:remove_const, :SpecDivisibleByMatcher)
+    end
+
+    it 'evaluates custom matchers through mongory-core and supports symbol snippets' do
+      matcher = described_class.new(:count.divisible_by => 3)
+      expect(matcher.match?(count: 9)).to be true
+      expect(matcher.match?(count: 10)).to be false
+      expect { described_class.new(count: { '$divisibleBy' => 0 }) }.to raise_error(Mongory::TypeError)
     end
   end
 end

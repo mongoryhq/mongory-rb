@@ -60,7 +60,7 @@ void Init_mongory_ext(void) {
   rb_mongory_e_error = rb_define_class_under(rb_mongory_m_mongory, "Error", rb_eStandardError);
   rb_mongory_e_type_error = rb_define_class_under(rb_mongory_m_mongory, "TypeError", rb_mongory_e_error);
 
-  // Register CMatcher class, methods, and core bridges
-  rb_mongory_init_cmatcher();
+  // Register Matcher class, methods, and core bridges
+  rb_mongory_init_matcher();
   rb_mongory_register_adapters();
 }

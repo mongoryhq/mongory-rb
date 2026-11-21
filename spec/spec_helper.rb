@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'mongory'
-require_relative 'matchers/shared_spec'
 
 DummyModel = Struct.new(:as_json)
 FakeBsonId = Struct.new(:to_s)

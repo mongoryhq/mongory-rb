@@ -57,8 +57,8 @@ typedef struct rb_mongory_array_t {
 rb_mongory_memory_pool_t *rb_mongory_memory_pool_new(void);
 bool rb_mongory_error_handling(mongory_memory_pool *pool, const char *error_message);
 
-// CMatcher registration (rb_mongory_cmatcher.c)
-void rb_mongory_init_cmatcher(void);
+// Matcher registration (rb_mongory_matcher.c)
+void rb_mongory_init_matcher(void);
 
 // Value conversion, lazy wrappers, and key caches (rb_mongory_value.c)
 mongory_value *rb_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_value);

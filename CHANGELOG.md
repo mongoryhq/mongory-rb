@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.0] - 2026-11-22
+
+Unifies `mongory-rb` on the `mongory-core` C99 native extension as the sole matching engine, eliminating Pure-Ruby dual-engine maintenance.
+
+### Breaking Changes
+- **C Extension Only (No Pure-Ruby Fallback)**: Removed the 22 built-in Pure-Ruby matchers, `Mongory::QueryMatcher`, `Mongory::CQueryBuilder`, and `Mongory::Utils::Debugger` (`Mongory.debugger`). Loading `mongory` now requires the compiled `mongory_ext` native extension directly.
+- **Renamed `Mongory::CMatcher` → `Mongory::Matcher`**: `Mongory.build_matcher(condition)` now always returns `Mongory::Matcher`, and `Mongory.build_query(records)` / `.mongory` always return `Mongory::QueryBuilder` backed by `Mongory::Matcher`.
+- **Removed C-Extension Toggle APIs**: Removed `Mongory.enable_c_extension_by_default!`, `Mongory.use_c_extension_by_default!`, `Mongory.disable_c_extension_by_default!`, `Mongory.c_extension_by_default?`, and `QueryBuilder#c`.
+- **Custom Matchers Preserved**: `Mongory::Matchers::AbstractMatcher`, `Mongory::Matchers.register`, `Mongory.enable_symbol_snippets!`, and all `Converters` remain supported and bridge directly into `mongory-core`.
+
+### Core & Maintenance
+- Updated `ext/mongory_ext/mongory-core` submodule to latest `main` (`ac678b3`: OOM hardening, `MaxDepth`/`MaxNodes` safety limits, sanitizer/fuzzing CI, and macOS Universal Binary CI).
+
 ## [0.9.1] - 2026-11-18
 
 Aligns with `mongory-core` `v0.2.1`.
