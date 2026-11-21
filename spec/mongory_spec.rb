@@ -20,7 +20,6 @@ RSpec.describe Mongory do
   describe '.configure and internal constants' do
     it 'freezes internal sentinel constants' do
       expect(Mongory::Converters::AbstractConverter::NOTHING).to be_frozen
-      expect(Mongory::Matchers::AbstractMatcher::KEY_NOT_FOUND).to be_frozen
     end
 
     it 'yields self and calls freeze at the end of .configure' do

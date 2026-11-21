@@ -24,42 +24,19 @@ module Mongory
     #
     #   Mongory::Matchers.register(:divisible_by, '$divisibleBy', DivisibleByMatcher)
     class AbstractMatcher
-      include Utils
-
       singleton_class.alias_method :build, :new
-
-      # Sentinel value used to represent missing keys.
-      #
-      # @api private
-      KEY_NOT_FOUND = SingletonBuilder.new('KEY_NOT_FOUND').freeze
-
-      # Defines a lazily-evaluated matcher accessor with instance-level caching.
-      #
-      # @param name [Symbol] the name of the matcher (e.g., :collection)
-      # @yield the block that constructs the matcher instance
-      # @return [void]
-      def self.define_matcher(name, &block)
-        define_instance_cache_method(:"#{name}_matcher", &block)
-      end
 
       # @return [Object] the raw condition this matcher was initialized with
       attr_reader :condition
 
-      # @return [Context] the query context containing configuration and current record
+      # @return [Utils::Context] the query context containing configuration and current record
       attr_reader :context
-
-      # Returns a unique key representing this matcher instance.
-      #
-      # @return [String] a unique key for this matcher instance
-      def uniq_key
-        "#{self.class}:condition:#{@condition.class}:#{@condition}"
-      end
 
       # Initializes the matcher with a raw condition.
       #
       # @param condition [Object] the condition to match against
-      # @param context [Context] the query context containing configuration
-      def initialize(condition, context: Context.new)
+      # @param context [Utils::Context] the query context containing configuration
+      def initialize(condition, context: Utils::Context.new)
         @condition = condition
         @context = context
 
@@ -71,25 +48,9 @@ module Mongory
       # @param record [Object] the input record
       # @return [Boolean] whether the record matches the condition
       def match?(record)
-        to_proc.call(record)
+        match(record)
       rescue StandardError
         false
-      end
-
-      # Converts the matcher into a Proc that can be used for matching.
-      #
-      # @return [Proc] a Proc that can be used to match records
-      def cached_proc
-        @cached_proc ||= raw_proc
-      end
-
-      alias_method :to_proc, :cached_proc
-
-      # Creates a raw Proc from the match method.
-      #
-      # @return [Proc] the raw Proc implementation of the match method
-      def raw_proc
-        method(:match).to_proc
       end
 
       # Performs the actual match logic.
@@ -107,27 +68,6 @@ module Mongory
       # @raise [Mongory::TypeError] if the condition is invalid
       # @return [void]
       def check_validity!; end
-
-      # Returns the short class name of this matcher.
-      #
-      # @return [String]
-      def matcher_name
-        self.class.name.split('::').last.sub(/Matcher\z/, '')
-      end
-
-      def priority
-        20
-      end
-
-      private
-
-      # Normalizes the record before matching.
-      #
-      # @param record [Object] the record value to normalize
-      # @return [Object, nil] the normalized record
-      def normalize(record)
-        record == KEY_NOT_FOUND ? nil : record
-      end
     end
   end
 end

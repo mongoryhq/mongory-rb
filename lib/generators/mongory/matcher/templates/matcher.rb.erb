@@ -20,8 +20,7 @@
 # When this matcher is created as part of a matcher tree:
 # 1. It receives its @condition during initialization
 # 2. The @condition is validated via check_validity!
-# 3. The match method is called with normalized values
-# 4. The matcher can use normalize(record) to handle KEY_NOT_FOUND values
+# 3. The match method is called with the record value from mongory-core
 #
 # This matcher typically serves as a leaf node in the matcher tree,
 # responsible for evaluating a single condition against a value.
@@ -45,9 +44,8 @@
 #
 # Implementation Notes:
 # 1. The match method should implement the specific operator logic
-# 2. Use normalize(subject) to handle KEY_NOT_FOUND values consistently
-# 3. The condition is available via @condition
-# 4. check_validity! should validate the format of @condition
+# 2. The condition is available via @condition
+# 3. check_validity! should validate the format of @condition
 #
 # Interface Design:
 # This matcher provides two levels of matching interface:
