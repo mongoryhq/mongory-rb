@@ -74,13 +74,18 @@ module Mongory
     @condition_converter ||= Converters::ConditionConverter.instance
   end
 
-  # Builds a new query over the given record set.
+  # Builds a new query builder over the given record set.
+  #
+  # @example
+  #   Mongory.query(records).where(:age.gte => 18).pluck(:name)
   #
   # @param records [Enumerable] any enumerable object (Array, AR::Relation, etc.)
   # @return [QueryBuilder] a new query builder
-  def self.build_query(records)
+  def self.query(records)
     QueryBuilder.new(records)
   end
+
+  singleton_class.alias_method :build_query, :query
 
   # Compiles a reusable matcher for the given condition.
   #
