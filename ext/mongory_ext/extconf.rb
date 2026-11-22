@@ -17,7 +17,7 @@ unless Dir.exist?(core_dir)
   exit 1
 end
 
-# mongory-rb does not require cJSON; only mongory-core's tests use it, so we don't check cJSON here
+# mongory-core itself has zero third-party C library dependencies; extconf.rb compiles it directly
 
 # Normalize compiler flags across GCC/Clang on CI (Ruby 2.6 on Ubuntu may inject clang-only warn flags)
 def scrub_flags_from_config!(keys, patterns)

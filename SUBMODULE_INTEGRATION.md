@@ -52,7 +52,7 @@ sudo yum groupinstall "Development Tools" || sudo dnf groupinstall "Development 
 sudo yum install ruby-devel          || sudo dnf install ruby-devel
 ```
 
-> Optional: CMake and cJSON are only needed if you want to run the core tests/benchmarks inside the `mongory-core` submodule (e.g., via CMake/ctest).
+> Optional: CMake is only needed if you want to run the core C tests/benchmarks inside the `mongory-core` submodule (e.g., via CMake/ctest).
 
 ### 3. Build the project
 
@@ -97,7 +97,6 @@ If you prefer to control the build manually:
 git submodule update --init --recursive
 
 # 2. (Optional) Only needed if you run core tests/benchmarks inside the submodule
-#    Note: This step requires cJSON; typical mongory-rb usage does not.
 # cd ext/mongory_ext/mongory-core
 # ./build.sh --test
 # cd ../../..
@@ -196,26 +195,14 @@ matcher.explain
 git submodule update --init --recursive
 ```
 
-**2. cJSON library not found (only required if you run mongory-core CMake tests)**
-```bash
-# macOS
-brew install cjson
-
-# Ubuntu/Debian
-sudo apt install libcjson-dev
-
-# Verify installation
-pkg-config --exists libcjson && echo "Found" || echo "Not found"
-```
-
-**3. Build errors**
+**2. Build errors**
 ```bash
 # Clean and rebuild
 ./scripts/build_with_core.sh --clean
 ./scripts/build_with_core.sh --debug
 ```
 
-**4. C extension fails to load**
+**3. C extension fails to load**
 - Check Ruby version compatibility (>= 2.6.0)
 - Ensure all system deps are installed
 - Inspect error messages and compiler warnings
@@ -281,8 +268,8 @@ jobs:
       run: bundle exec rspec
 
     # Only needed if you also run mongory-core C tests/benchmarks (optional):
-    # - name: Install CMake & cJSON (only if running core tests)
-    #   run: sudo apt install -y cmake libcjson-dev
+    # - name: Install CMake (only if running core tests)
+    #   run: sudo apt install -y cmake
     # - name: Build mongory-core tests (optional)
     #   run: |
     #     cd ext/mongory_ext/mongory-core

@@ -99,7 +99,6 @@ init_submodules() {
 # Function to build mongory-core if needed
 build_core() {
     # mongory-rb 直接由 extconf.rb 編譯 mongory-core 的源碼，不需要獨立建置靜態庫
-    # 同時避免觸發 mongory-core 的 CMake（其需要 cJSON 僅用於測試）
     log $YELLOW "Skipping mongory-core standalone build (not required for mongory-rb)"
 }
 
