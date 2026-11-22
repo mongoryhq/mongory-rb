@@ -49,12 +49,8 @@ records.select { |r| matcher.match?(r) }
 
 ```ruby
 matcher = Mongory::Matcher.new(:$or => [{ :name.regex => /^J/ }, { :age.gt => 20 }])
-matcher.enable_trace
-records.each { |r| matcher.match?(r) }
-matcher.print_trace    # prints detailed trace
-matcher.disable_trace
 
-# Structured explain/trace trees on a single Matcher
+# Structured explain/trace trees on a single Matcher (stateless & thread-safe)
 plan = matcher.explain_tree               # => Hash ({ name:, condition:, priority:, children:, ... })
 tree = matcher.trace_tree(records.first)  # => Hash ({ ..., record:, result: :pass | :fail | :skip })
 

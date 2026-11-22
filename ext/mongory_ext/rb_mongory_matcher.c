@@ -31,10 +31,6 @@ static void rb_mongory_matcher_release_pools(rb_mongory_matcher_t *wrapper) {
     scratch->next_scratch = NULL;
     scratch->base.free(&scratch->base);
   }
-  if (wrapper->trace_pool) {
-    wrapper->trace_pool->free(wrapper->trace_pool);
-    wrapper->trace_pool = NULL;
-  }
   wrapper->matcher = NULL;
   wrapper->condition = NULL;
   wrapper->string_map = NULL;
@@ -216,7 +212,6 @@ static VALUE rb_mongory_matcher_match_body(VALUE arg) {
   rb_mongory_matcher_t *self_wrapper = call->wrapper;
   mongory_matcher *matcher = self_wrapper->matcher;
   mongory_memory_pool *scratch_pool = call->scratch_pool;
-  mongory_memory_pool *trace_pool = self_wrapper->trace_pool;
   mongory_value *data_value = rb_to_mongory_value_shallow(scratch_pool, call->data);
 
   if (rb_mongory_error_handling(scratch_pool, "Match failed")) {
@@ -224,13 +219,6 @@ static VALUE rb_mongory_matcher_match_body(VALUE arg) {
   }
 
   bool result = mongory_matcher_match(matcher, data_value);
-
-  if (trace_pool) {
-    mongory_matcher_print_trace(matcher);
-    trace_pool->reset(trace_pool);
-    mongory_matcher_enable_trace(matcher, trace_pool);
-  }
-
   return result ? Qtrue : Qfalse;
 }
 
@@ -422,62 +410,6 @@ static VALUE rb_mongory_matcher_trace(VALUE self, VALUE data) {
   return res == ID2SYM(rb_intern("pass")) ? Qtrue : Qfalse;
 }
 
-// Mongory::Matcher#enable_trace
-static VALUE rb_mongory_matcher_enable_trace(VALUE self) {
-  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
-  if (wrapper->trace_pool) {
-    wrapper->trace_pool->free(wrapper->trace_pool);
-    wrapper->trace_pool = NULL;
-  }
-  rb_mongory_memory_pool_t *trace_pool = rb_mongory_memory_pool_new();
-  trace_pool->owner = wrapper;
-  mongory_memory_pool *trace_pool_base = &trace_pool->base;
-  mongory_matcher_enable_trace(wrapper->matcher, trace_pool_base);
-
-  if (trace_pool_base->error) {
-    char err_msg[256];
-    snprintf(err_msg, sizeof(err_msg), "%s",
-             trace_pool_base->error->message ? trace_pool_base->error->message : "Unknown error");
-    trace_pool_base->free(trace_pool_base);
-    rb_raise(rb_mongory_e_type_error, "Enable trace failed: %s", err_msg);
-  }
-  wrapper->trace_pool = trace_pool_base;
-
-  return Qnil;
-}
-
-// Mongory::Matcher#disable_trace
-static VALUE rb_mongory_matcher_disable_trace(VALUE self) {
-  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
-  mongory_memory_pool *trace_pool = wrapper->trace_pool;
-  mongory_matcher_disable_trace(wrapper->matcher);
-  if (trace_pool) {
-    wrapper->trace_pool = NULL;
-    if (trace_pool->error) {
-      char err_msg[256];
-      snprintf(err_msg, sizeof(err_msg), "%s",
-               trace_pool->error->message ? trace_pool->error->message : "Unknown error");
-      trace_pool->free(trace_pool);
-      rb_raise(rb_mongory_e_type_error, "Disable trace failed: %s", err_msg);
-    }
-    trace_pool->free(trace_pool);
-  }
-
-  return Qnil;
-}
-
-// Mongory::Matcher#print_trace
-static VALUE rb_mongory_matcher_print_trace(VALUE self) {
-  rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
-  if (!wrapper->trace_pool) {
-    return Qnil;
-  }
-  mongory_matcher_print_trace(wrapper->matcher);
-  rb_mongory_error_handling(wrapper->trace_pool, "Print trace failed");
-
-  return Qnil;
-}
-
 // Mongory::Matcher#condition
 static VALUE rb_mongory_matcher_condition(VALUE self) {
   rb_mongory_matcher_t *wrapper = get_initialized_matcher(self);
@@ -514,7 +446,4 @@ void rb_mongory_init_matcher(void) {
   rb_define_method(rb_mongory_c_matcher, "context", rb_mongory_matcher_context, 0);
   rb_define_method(rb_mongory_c_matcher, "trace_tree", rb_mongory_matcher_trace_tree, 1);
   rb_define_method(rb_mongory_c_matcher, "trace", rb_mongory_matcher_trace, 1);
-  rb_define_method(rb_mongory_c_matcher, "enable_trace", rb_mongory_matcher_enable_trace, 0);
-  rb_define_method(rb_mongory_c_matcher, "disable_trace", rb_mongory_matcher_disable_trace, 0);
-  rb_define_method(rb_mongory_c_matcher, "print_trace", rb_mongory_matcher_print_trace, 0);
 }

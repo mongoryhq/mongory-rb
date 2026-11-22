@@ -28,7 +28,6 @@ typedef struct rb_mongory_matcher_t {
   mongory_value *condition;
   mongory_memory_pool *pool;
   rb_mongory_memory_pool_t *scratch_free_list;
-  mongory_memory_pool *trace_pool;
   mongory_table *string_map;
   mongory_table *symbol_map;
   mongory_array *mark_list;

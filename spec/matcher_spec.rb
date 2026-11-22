@@ -17,14 +17,6 @@ RSpec.describe Mongory::Matcher, type: :model do
     let(:raw_hash) { { 0 => 'admin' } }
     let(:custom_condition) { { user: DummyModel.new(raw_hash) } }
 
-    it 'allows calling disable_trace without prior enable_trace' do
-      expect { matcher.disable_trace }.not_to raise_error
-    end
-
-    it 'allows calling print_trace without prior enable_trace' do
-      expect { matcher.print_trace }.not_to raise_error
-    end
-
     it 'traces matching without corrupting pool owner' do
       expect(matcher.trace(name: 'John')).to be true
       expect(matcher.trace(name: 'Mary')).to be false
@@ -35,13 +27,6 @@ RSpec.describe Mongory::Matcher, type: :model do
       expect(custom_matcher.match?(user: %w(admin guest))).to be true
       expect(custom_matcher.match?(user: { '0' => 'admin' })).to be true
       expect(custom_matcher.match?(user: %w(guest admin))).to be false
-    end
-
-    it 'supports enable_trace, match?, print_trace, and disable_trace lifecycle' do
-      matcher.enable_trace
-      expect(matcher.match?(name: 'John')).to be true
-      expect { matcher.print_trace }.not_to raise_error
-      expect { matcher.disable_trace }.not_to raise_error
     end
 
     it 'returns structured Hashes from explain_tree and trace_tree and prints them in explain and trace' do
@@ -114,9 +99,6 @@ RSpec.describe Mongory::Matcher, type: :model do
       expect { uninitialized.explain }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.trace_tree(name: 'John') }.to raise_error(Mongory::Error, /uninitialized/)
       expect { uninitialized.trace(name: 'John') }.to raise_error(Mongory::Error, /uninitialized/)
-      expect { uninitialized.enable_trace }.to raise_error(Mongory::Error, /uninitialized/)
-      expect { uninitialized.disable_trace }.to raise_error(Mongory::Error, /uninitialized/)
-      expect { uninitialized.print_trace }.to raise_error(Mongory::Error, /uninitialized/)
       GC.start
     end
 

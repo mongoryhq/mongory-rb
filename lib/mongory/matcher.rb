@@ -39,15 +39,6 @@ module Mongory
     #   @return [Boolean] true if the record matches the condition, false otherwise
     #   @note Prints the matching process to STDOUT
     #   @note This method is implemented in the C extension
-    # @!method enable_trace
-    #   @return [void]
-    #   @note This method is implemented in the C extension
-    # @!method disable_trace
-    #   @return [void]
-    #   @note This method is implemented in the C extension
-    # @!method print_trace
-    #   @return [void]
-    #   @note This method is implemented in the C extension
     # @!method condition
     #   @return [Hash] the normalized condition
     #   @note This method is implemented in the C extension
