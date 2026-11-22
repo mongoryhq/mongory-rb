@@ -181,15 +181,61 @@ static mongory_value *rb_mongory_table_get(mongory_table *self, char *key) {
   return rb_to_mongory_value_shallow(table->base.pool, rb_value);
 }
 
+typedef struct {
+  mongory_memory_pool *pool;
+  void *acc;
+  mongory_table_each_pair_callback_func callback;
+  bool completed;
+} rb_table_each_ctx_t;
+
+static int rb_mongory_table_each_cb(VALUE key, VALUE val, VALUE arg) {
+  rb_table_each_ctx_t *ctx = (rb_table_each_ctx_t *)arg;
+  const char *key_cstr;
+  if (RB_TYPE_P(key, T_SYMBOL)) {
+    key_cstr = rb_id2name(rb_sym2id(key));
+  } else if (RB_TYPE_P(key, T_STRING)) {
+    key_cstr = StringValueCStr(key);
+  } else {
+    VALUE key_str = rb_funcall(key, rb_intern("to_s"), 0);
+    key_cstr = StringValueCStr(key_str);
+  }
+  mongory_value *mg_val = rb_to_mongory_value_shallow(ctx->pool, val);
+  if (!ctx->callback((char *)key_cstr, mg_val, ctx->acc)) {
+    ctx->completed = false;
+    return ST_STOP;
+  }
+  return ST_CONTINUE;
+}
+
+static bool rb_mongory_table_each(mongory_table *self, void *acc, mongory_table_each_pair_callback_func callback) {
+  rb_mongory_table_t *table = (rb_mongory_table_t *)self;
+  rb_table_each_ctx_t ctx = {
+    .pool = self->pool,
+    .acc = acc,
+    .callback = callback,
+    .completed = true,
+  };
+  rb_hash_foreach(table->rb_hash, rb_mongory_table_each_cb, (VALUE)&ctx);
+  return ctx.completed;
+}
+
 mongory_value *rb_mongory_table_wrap(mongory_memory_pool *pool, VALUE rb_hash) {
   rb_mongory_table_t *table = MG_ALLOC_PTR(pool, rb_mongory_table_t);
+  if (!table) {
+    return NULL;
+  }
+  memset(table, 0, sizeof(rb_mongory_table_t));
   rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
   table->base.pool = pool;
   table->base.get = rb_mongory_table_get;
+  table->base.each = rb_mongory_table_each;
   table->rb_hash = rb_hash;
   table->base.count = RHASH_SIZE(rb_hash);
   table->owner = rb_pool->owner;
   mongory_value *mg_value = mongory_value_wrap_t(pool, &table->base);
+  if (!mg_value) {
+    return NULL;
+  }
   mg_value->origin = (void *)rb_hash;
   mg_value->to_str = rb_mongory_value_to_cstr;
   return mg_value;
@@ -205,15 +251,36 @@ static mongory_value *rb_mongory_array_get(mongory_array *self, size_t index) {
   return rb_to_mongory_value_shallow(self->pool, rb_value);
 }
 
+static bool rb_mongory_array_each(mongory_array *self, void *acc, mongory_array_callback_func callback) {
+  rb_mongory_array_t *array = (rb_mongory_array_t *)self;
+  VALUE rb_array = array->rb_array;
+  long len = RARRAY_LEN(rb_array);
+  for (long i = 0; i < len; i++) {
+    mongory_value *mg_val = rb_to_mongory_value_shallow(self->pool, rb_ary_entry(rb_array, i));
+    if (!callback(mg_val, acc)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 mongory_value *rb_mongory_array_wrap(mongory_memory_pool *pool, VALUE rb_array) {
   rb_mongory_array_t *array = MG_ALLOC_PTR(pool, rb_mongory_array_t);
+  if (!array) {
+    return NULL;
+  }
+  memset(array, 0, sizeof(rb_mongory_array_t));
   rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
   array->base.pool = pool;
   array->base.get = rb_mongory_array_get;
+  array->base.each = rb_mongory_array_each;
   array->rb_array = rb_array;
   array->base.count = RARRAY_LEN(rb_array);
   array->owner = rb_pool->owner;
   mongory_value *mg_value = mongory_value_wrap_a(pool, &array->base);
+  if (!mg_value) {
+    return NULL;
+  }
   mg_value->origin = (void *)rb_array;
   mg_value->to_str = rb_mongory_value_to_cstr;
   return mg_value;
