@@ -18,16 +18,6 @@ module Mongory
 
       module_function
 
-      # Recursively marks an explain_tree node and all descendants with `result: :skip`.
-      #
-      # @param node [Hash] structured explain_tree node
-      # @return [Hash] structured trace_tree node with `result: :skip`
-      def mark_skipped(node)
-        skipped = node.merge(result: :skip)
-        skipped[:children] = (node[:children] || []).map { |child| mark_skipped(child) }
-        skipped
-      end
-
       # Prints a structured explain_tree Hash to STDOUT.
       #
       # @param node [Hash] root explain_tree node

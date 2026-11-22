@@ -120,22 +120,6 @@ end
     raise "count mismatch" if builder.count != count_of_complex_query
   end
 
-  # Complex query (Mongory) test
-  puts "\nComplex query (Mongory) fast mode (#{size} records):"
-  gc_handler do
-    builder = records.mongory.or(
-      { :age.gte => 18 },
-      { status: 'active' }
-    ).fast
-    5.times do
-      result = Benchmark.measure do
-        builder.to_a
-      end
-      puts result
-    end
-    raise "count mismatch" if builder.count != count_of_complex_query
-  end
-
   puts "\nComplex query (Mongory) use Matcher (#{size} records):"
   gc_handler do
     matcher = Mongory::Matcher.new({

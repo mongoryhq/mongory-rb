@@ -5,7 +5,7 @@ module Mongory
     # ConditionConverter transforms a flat condition hash into nested hash form.
     # This is used internally by ValueConverter to normalize condition structures
     # like { "foo.bar" => 1, "foo.baz" => 2 } into nested Mongo-style conditions.
-    # Used by QueryMatcher to normalize condition input for internal matching.
+    # Used by Matcher to normalize condition input for internal matching.
     #
     # Combines key transformation (via KeyConverter) and
     # value normalization (via ValueConverter), and merges overlapping keys.

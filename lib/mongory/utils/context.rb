@@ -2,35 +2,31 @@
 
 module Mongory
   module Utils
-    # Context is a utility class that provides a stable but mutatable
-    # shared context for the Mongory query builder. It holds the configuration
-    # and the current record being matcher tree processed.
+    # Context is a utility class that provides a stable, mutable shared context
+    # for the Mongory query builder and custom matchers. It holds user-defined
+    # configuration and the current record being processed.
     #
     # @example
-    #   context = Mongory::Utils::Context.new(config)
+    #   context = Mongory::Utils::Context.new(tenant: current_tenant)
     #   context.current_record = record
-    #   context.config = new_config
     #
-    # @attr [Config] config The configuration object for the context
-    # @attr [Record] current_record The current record being processed in the matcher tree
-    # @attr [Boolean] need_convert Whether the record needs to be converted before matching
+    # @attr [Hash] config The configuration hash for the context
+    # @attr [Object] current_record The current record being processed
     class Context
-      attr_accessor :config, :current_record, :need_convert
+      attr_accessor :config, :current_record
 
       # Initializes a new Context instance with the given configuration.
       #
-      # @param config [Config] The configuration object for the context.
+      # @param config [Hash] The configuration hash for the context.
       # @return [Context] A new Context instance.
       def initialize(config = {})
         @config = config
         @current_record = nil
-        @need_convert = true
       end
 
-      # Creates a duplicate of the context with its own configuration.
+      # Creates a duplicate of the context with its own configuration hash.
       #
       # @return [Context] A new context instance with duplicated configuration
-      # @note The new context shares the same configuration object but has its own state
       def dup
         new_context = super
         new_context.config = @config.dup
@@ -39,8 +35,7 @@ module Mongory
 
       def to_hash
         {
-          config: @config,
-          need_convert: @need_convert
+          config: @config
         }
       end
     end

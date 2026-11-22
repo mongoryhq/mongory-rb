@@ -424,21 +424,12 @@ static VALUE rb_mongory_matcher_context(VALUE self) {
   return wrapper->ctx ? wrapper->ctx : Qnil;
 }
 
-// Mongory::Matcher.trace_result_colorful=(colorful)
-static VALUE rb_mongory_matcher_trace_result_colorful(VALUE self, VALUE colorful) {
-  (void)self;
-  mongory_matcher_trace_result_colorful_set(RTEST(colorful));
-
-  return Qnil;
-}
-
 void rb_mongory_init_matcher(void) {
   rb_mongory_c_matcher = rb_define_class_under(rb_mongory_m_mongory, "Matcher", rb_cObject);
   rb_define_alloc_func(rb_mongory_c_matcher, rb_mongory_matcher_alloc);
 
   rb_define_method(rb_mongory_c_matcher, "initialize", rb_mongory_matcher_initialize, -1);
   rb_define_method(rb_mongory_c_matcher, "initialize_copy", rb_mongory_matcher_initialize_copy, 1);
-  rb_define_singleton_method(rb_mongory_c_matcher, "trace_result_colorful=", rb_mongory_matcher_trace_result_colorful, 1);
   rb_define_method(rb_mongory_c_matcher, "match?", rb_mongory_matcher_match, 1);
   rb_define_method(rb_mongory_c_matcher, "explain_tree", rb_mongory_matcher_explain_tree, 0);
   rb_define_method(rb_mongory_c_matcher, "explain", rb_mongory_matcher_explain, 0);

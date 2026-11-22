@@ -49,8 +49,6 @@ module Mongory
       end
     end
 
-    alias_method :fast, :each
-
     # Traces matcher evaluation for all records and returns an Array of structured trace tree Hashes.
     # If a block is given, matched records are also yielded.
     #
@@ -193,7 +191,7 @@ module Mongory
     # @return [QueryBuilder] A new query builder instance with merged context
     # @note Creates a new query builder with the current matcher's condition and merged context
     # @example
-    #   query.with_context(need_convert: false) #=> Returns a new query builder with conversion disabled
+    #   query.with_context(tenant: current_tenant) #=> Returns a new query builder with merged context
     def with_context(addon_context = {})
       dup_instance_exec do
         @context = @context.dup

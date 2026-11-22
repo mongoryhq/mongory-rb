@@ -14,10 +14,6 @@ module Mongory
     #   @param context [Utils::Context] optional query context
     #   @return [Mongory::Matcher] a new matcher
     #   @note This method is implemented in the C extension
-    # @!method self.trace_result_colorful=(colorful)
-    #   @param colorful [Boolean] whether to enable colorful trace result
-    #   @return [void]
-    #   @note This method is implemented in the C extension
     #
     # @!method match?(record)
     #   @param record [Object] the record to match against
