@@ -59,6 +59,11 @@ matched = records.mongory
 rule = JSON.parse('{"age": {"$gte": 18}, "$or": [{"name": {"$regex": "^J"}}, {"name": "Bob"}]}')
 records.mongory.where(rule).pluck('name')
 # => ["Jack", "Bob"]
+
+# 3. Compile once as a reusable, thread-safe Matcher (ideal for constants)
+ADULT_RULE = Mongory.compile(:age.gte => 18, :active => true)
+ADULT_RULE.match?(records.first)
+# => true
 ```
 
 ### Query Builder Methods

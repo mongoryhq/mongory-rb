@@ -82,13 +82,19 @@ module Mongory
     QueryBuilder.new(records)
   end
 
-  # Builds a new matcher for the given condition.
+  # Compiles a reusable matcher for the given condition.
+  #
+  # @example
+  #   ADULT = Mongory.compile(:age.gte => 18)
+  #   ADULT.match?(age: 20) #=> true
   #
   # @param condition [Hash] the query condition
-  # @return [Matcher] a new matcher
-  def self.build_matcher(condition)
+  # @return [Matcher] a new compiled matcher
+  def self.compile(condition)
     Matcher.new(condition)
   end
+
+  singleton_class.alias_method :build_matcher, :compile
 
   # Registers a class to support `.mongory` query DSL.
   # This injects a `#mongory` method into the given class.

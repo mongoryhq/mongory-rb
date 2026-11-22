@@ -7,11 +7,13 @@ RSpec.describe Mongory do
     expect(Mongory::VERSION).not_to be nil
   end
 
-  describe '.build_query / .build_matcher' do
+  describe '.build_query / .compile / .build_matcher' do
     let(:records) { [{ 'name' => 'Alice', 'age' => 30 }] }
 
     it 'builds QueryBuilder and Matcher backed by mongory-core' do
       expect(described_class.build_query(records)).to be_an_instance_of(Mongory::QueryBuilder)
+      expect(described_class.compile(name: 'Alice')).to be_an_instance_of(Mongory::Matcher)
+      expect(described_class.compile(name: 'Alice').match?(name: 'Alice')).to be true
       expect(described_class.build_matcher(name: 'Alice')).to be_an_instance_of(Mongory::Matcher)
       expect(records.mongory).to be_an_instance_of(Mongory::QueryBuilder)
     end
