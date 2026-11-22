@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.0.1] - 2026-11-22
+
+Aligns with `mongory-core` `v0.3.0` and finishes v2.0.0 cleanup.
+
+### Fixes
+- **C Extension (`rb_mongory_value.c`)**: Zero-initialize `rb_mongory_table_t` and `rb_mongory_array_t` lazy wrappers with OOM `NULL` guards and implement `.each` vtable methods (`rb_hash_foreach` / `RARRAY`) so every `mongory-core` container traversal contract is satisfied.
+
+### Cleanup
+- Removed stateful `Matcher#enable_trace`, `#disable_trace`, `#print_trace`, and no-op `Matcher.trace_result_colorful=` (all tracing uses stateless, thread-safe `#trace` / `#trace_tree`).
+- Removed remaining legacy Pure-Ruby dead code (`TreeRenderer.mark_skipped`, `Utils::Context#need_convert`, `QueryBuilder#fast`, and stale `cJSON` comments).
+- Synced `ext/mongory_ext/mongory-core` submodule to `v0.3.0`.
+
 ## [2.0.0] - 2026-11-22
 
 Unifies `mongory-rb` on the `mongory-core` C99 native extension as the sole matching engine, eliminating Pure-Ruby dual-engine maintenance.
