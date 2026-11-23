@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.0] - 2026-11-23
+
+### Added
+- **`Mongory.compile` & `Mongory.query`**: Added `Mongory.compile(condition)` (alias `build_matcher`) and `Mongory.query(records)` (alias `build_query`) as primary entry points aligned across the Mongory ecosystem.
+
+### Fixes
+- **C Extension Load Verification & Source-Gem Fallback (`lib/mongory.rb`)**: Fall back to `require 'mongory_ext'` when precompiled `core/<abi>/mongory_ext` is absent (supporting source-gem installs), and verify that `Mongory::Matcher#match?` is defined before reopening `Mongory::Matcher` so stale or incompatible C extensions fail fast with a clear `LoadError`.
+
 ## [2.0.1] - 2026-11-22
 
 Aligns with `mongory-core` `v0.3.0` and finishes v2.0.0 cleanup.
