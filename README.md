@@ -180,6 +180,11 @@ Mongory::Matchers.register(:class_in, '$classIn', ClassInMatcher)
 - [Performance & Benchmarks](docs/performance.md)
 - [Migration Guide](docs/migration.md)
 
+## Security & Untrusted Input
+
+- **Engine protections**: Pure in-memory C99 evaluation (no SQL, no `$where`/`eval`), arena memory pool chunk limits, and compile-time depth/node budgets (`MaxDepth = 64`, `MaxNodes = 4096`).
+- **Application responsibility**: When accepting query conditions from untrusted users, validate expected scalar types (to prevent operator injection such as `{"$ne" => nil}`), allowlist queryable fields, and configure `Regexp.timeout` (Ruby 3.2+) or restrict untrusted `$regex` patterns.
+
 ## Contributing & License
 
 Bug reports and pull requests are welcome on [GitHub](https://github.com/mongoryhq/mongory-rb). Everyone interacting in the project is expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
