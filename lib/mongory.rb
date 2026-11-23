@@ -134,6 +134,17 @@ module Mongory
 end
 
 abi = RUBY_VERSION.split('.').first(2).join('.')
-require_relative "core/#{abi}/mongory_ext"
+begin
+  require_relative "core/#{abi}/mongory_ext"
+rescue LoadError
+  require 'mongory_ext'
+end
+
+unless defined?(Mongory::Matcher) && Mongory::Matcher.method_defined?(:match?)
+  raise LoadError,
+        "Incompatible or outdated mongory_ext loaded for Ruby #{abi} (Mongory::Matcher not defined). " \
+        'Please recompile the C extension (e.g. `bundle exec rake compile`).'
+end
+
 require_relative 'mongory/matcher'
 require_relative 'mongory/query_builder'

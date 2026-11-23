@@ -40,4 +40,31 @@ RSpec.describe Mongory do
       end.to output(/Duplicate operator registration: \$eq/).to_stderr
     end
   end
+
+  describe 'C extension load verification' do
+    it 'raises LoadError if mongory_ext loads without defining Mongory::Matcher' do
+      require 'open3'
+      require 'rbconfig'
+      require 'tmpdir'
+
+      lib_dir = File.expand_path('../lib', __dir__)
+      Dir.mktmpdir do |dir|
+        File.write(File.join(dir, 'mongory_ext.rb'), "# stale extension stub\n")
+        script = <<~RUBY
+          module Kernel
+            def require_relative(path)
+              raise LoadError, 'simulated missing core ext' if path.start_with?('core/')
+
+              base = File.dirname(caller_locations(1, 1).first.absolute_path)
+              require File.expand_path(path, base)
+            end
+          end
+          require 'mongory'
+        RUBY
+        _stdout, stderr, status = Open3.capture3(RbConfig.ruby, '-I', lib_dir, '-I', dir, '-e', script)
+        expect(status.success?).to be false
+        expect(stderr).to include('Incompatible or outdated mongory_ext')
+      end
+    end
+  end
 end
