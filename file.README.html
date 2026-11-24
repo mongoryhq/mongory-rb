@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  File: README
+  
+    &mdash; Documentation by YARD 0.9.45
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css">
+
+  <link rel="stylesheet" href="css/common.css" type="text/css">
+
+<script type="text/javascript">
+  pathId = "README";
+  relpath = '';
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="main_progress" aria-hidden="true"></div>
+
+    <div class="nav_wrap">
+      <iframe id="nav" src="file_list.html?1"></iframe>
+      <div id="resizer"></div>
+    </div>
+
+    <div id="main" tabindex="-1">
+      <div id="header">
+        <div id="menu">
+  
+    <a href="_index.html">Index</a> &raquo; 
+    <span class="title">File: README</span>
+  
+</div>
+
+        <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+
+        <svg width="24" height="24">
+          <rect x="0" y="4" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="12" width="24" height="4" rx="1" ry="1"></rect>
+          <rect x="0" y="20" width="24" height="4" rx="1" ry="1"></rect>
+        </svg>
+    </a>
+  
+</div>
+        <div class="clear"></div>
+      </div>
+
+      <div id="content"><div id='filecontents'><h1 id="mongory-ruby">Mongory (Ruby)</h1>
+
+<p><a href="https://rubygems.org/gems/mongory"><img src="https://img.shields.io/gem/v/mongory" alt="Gem Version"></a>
+<a href="https://github.com/mongoryhq/mongory-rb/actions/workflows/main.yml"><img src="https://github.com/mongoryhq/mongory-rb/actions/workflows/main.yml/badge.svg" alt="CI"></a>
+<a href="https://github.com/mongoryhq/mongory-rb/actions/workflows/spec-conformance.yml"><img src="https://github.com/mongoryhq/mongory-rb/actions/workflows/spec-conformance.yml/badge.svg" alt="mongory-spec"></a>
+<img src="https://img.shields.io/badge/Ruby-2.6%2B-CC342D" alt="Ruby">
+<a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a></p>
+
+<p><strong>Cross-language, in-memory Mongo-style rule engine &amp; query matcher with built-in Explain &amp; Trace debugging</strong> — powered by the C99 <a href="https://github.com/mongoryhq/mongory-core"><code>mongory-core</code></a> native extension with cross-language parity via <a href="https://github.com/mongoryhq/mongory-spec"><code>mongory-spec</code></a>.</p>
+
+<p><strong><a href="https://mongoryhq.github.io/mongory-central/">Try the Interactive Playground &amp; Visual Explain/Trace Debugger ↗</a></strong></p>
+
+<p><a href="https://mongoryhq.github.io/mongory-central/"><img src="https://mongoryhq.github.io/mongory-central/playground-trace.png" alt="Mongory Playground &amp; Visual Trace"></a></p>
+
+<blockquote>
+<p><strong>Zero database required:</strong> Evaluate MongoDB-style conditions (<code>$gte</code>, <code>$elemMatch</code>, <code>$every</code>, <code>$present</code>, <code>$regex</code>, etc.) directly against in-memory Ruby Arrays, Hashes, custom objects, and ActiveRecord/Mongoid relations.<br>
+<strong>Ecosystem:</strong> <a href="https://mongoryhq.github.io/mongory-central/">Interactive Playground</a> · <a href="https://github.com/mongoryhq/mongory-go"><code>mongory-go</code> (Go)</a> · <a href="https://github.com/mongoryhq/mongory-js"><code>mongory-js</code> (TypeScript/JS)</a> · <a href="https://github.com/mongoryhq/mongory-core"><code>mongory-core</code> (C99)</a> · <a href="https://github.com/mongoryhq/mongory-spec"><code>mongory-spec</code></a></p>
+</blockquote>
+
+<h2 id="features">Features</h2>
+
+<ul>
+<li><strong>Chainable Ruby DSL &amp; Raw JSON Support</strong>: Compose queries with <code>.where</code>, <code>.any_of</code>, <code>.or</code>, <code>.not</code>, and optional Symbol snippets (<code>:age.gte =&gt; 18</code>), or pass parsed JSON conditions directly from front-end rules.</li>
+<li><strong>All 17 Mongory Operators</strong>: <code>$eq</code>, <code>$ne</code>, <code>$gt</code>, <code>$gte</code>, <code>$lt</code>, <code>$lte</code>, <code>$in</code>, <code>$nin</code>, <code>$exists</code>, <code>$present</code>, <code>$and</code>, <code>$or</code>, <code>$not</code>, <code>$elemMatch</code>, <code>$every</code>, <code>$size</code>, <code>$regex</code> (with <code>$options</code>: <code>i</code>, <code>m</code>, <code>s</code>).</li>
+<li><strong>Priority-Ordered Execution &amp; Visual Debugging</strong>: Automatically sorts sibling conditions so cheaper checks short-circuit before expensive regex or array scans; inspect compiled trees with <code>.explain</code> and per-record evaluation with <code>.trace</code>.</li>
+<li><strong>Native C99 Engine (<code>Mongory::Matcher</code>)</strong>: Powered directly by <code>mongory-core</code> with zero Pure-Ruby engine overhead, while still supporting custom Ruby matchers via <code>Mongory::Matchers::AbstractMatcher</code>.</li>
+<li><strong>Precompiled Native Gems (Ruby 2.6–4.0)</strong>: Ships prebuilt binaries for Linux (<code>x86_64</code>/<code>aarch64</code>, glibc &amp; musl), macOS (<code>x86_64</code>/<code>arm64</code>), and Windows (<code>x64-mingw32</code>/<code>ucrt</code>).</li>
+</ul>
+
+<h2 id="installation">Installation</h2>
+
+<pre class="code bash"><code class="bash">gem install mongory
+# or in Gemfile:
+gem &#39;mongory&#39;
+</code></pre>
+
+<p>In a Rails project, generate the initializer (<code>config/initializers/mongory.rb</code>):</p>
+
+<pre class="code bash"><code class="bash">rails g mongory:install
+</code></pre>
+
+<blockquote>
+<p><strong>Note:</strong> Precompiled native gems are installed automatically on supported Linux, macOS, and Windows platforms (Ruby 2.6–4.0). On older Apple Silicon macOS system Ruby (<code>universal-darwin</code>), run <code>gem install mongory --platform arm64-darwin</code> or <code>bundle lock --add-platform arm64-darwin</code>. When compiling from source on other platforms, ensure <code>gcc</code>/<code>clang</code> and <code>make</code> are installed.</p>
+</blockquote>
+
+<h2 id="quick-start">Quick Start</h2>
+
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_require'>require</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>mongory</span><span class='tstring_end'>&#39;</span></span>
+<span class='id identifier rubyid_require'>require</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>json</span><span class='tstring_end'>&#39;</span></span>
+
+<span class='const'><span class='object_link'><a href="Mongory.html" title="Mongory (module)">Mongory</a></span></span><span class='period'>.</span><span class='id identifier rubyid_register'><span class='object_link'><a href="Mongory.html#register-class_method" title="Mongory.register (method)">register</a></span></span><span class='lparen'>(</span><span class='const'>Array</span><span class='rparen'>)</span>
+<span class='const'><span class='object_link'><a href="Mongory.html" title="Mongory (module)">Mongory</a></span></span><span class='period'>.</span><span class='id identifier rubyid_enable_symbol_snippets!'><span class='object_link'><a href="Mongory.html#enable_symbol_snippets!-class_method" title="Mongory.enable_symbol_snippets! (method)">enable_symbol_snippets!</a></span></span>
+
+<span class='id identifier rubyid_records'>records</span> <span class='op'>=</span> <span class='lbracket'>[</span>
+  <span class='lbrace'>{</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>name</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>Jack</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>age</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='int'>18</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>tags</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='qwords_beg'>%w[</span><span class='tstring_content'>ruby</span><span class='words_sep'> </span><span class='tstring_content'>go</span><span class='tstring_end'>]</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>active</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='kw'>true</span> <span class='rbrace'>}</span><span class='comma'>,</span>
+  <span class='lbrace'>{</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>name</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>Jill</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>age</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='int'>15</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>tags</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='qwords_beg'>%w[</span><span class='tstring_content'>js</span><span class='tstring_end'>]</span></span><span class='comma'>,</span>      <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>active</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='kw'>true</span> <span class='rbrace'>}</span><span class='comma'>,</span>
+  <span class='lbrace'>{</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>name</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>Bob</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span>  <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>age</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='int'>21</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>tags</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='qwords_beg'>%w[</span><span class='tstring_content'>ruby</span><span class='tstring_end'>]</span></span><span class='comma'>,</span>    <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>active</span><span class='tstring_end'>&#39;</span></span> <span class='op'>=&gt;</span> <span class='kw'>false</span> <span class='rbrace'>}</span>
+<span class='rbracket'>]</span>
+
+<span class='comment'># 1. Chainable DSL with symbol operator snippets
+</span><span class='id identifier rubyid_matched'>matched</span> <span class='op'>=</span> <span class='id identifier rubyid_records'>records</span><span class='period'>.</span><span class='id identifier rubyid_mongory'>mongory</span>
+  <span class='period'>.</span><span class='id identifier rubyid_where'>where</span><span class='lparen'>(</span><span class='symbol'>:age</span><span class='period'>.</span><span class='id identifier rubyid_gte'>gte</span> <span class='op'>=&gt;</span> <span class='int'>18</span><span class='comma'>,</span> <span class='symbol'>:active</span> <span class='op'>=&gt;</span> <span class='kw'>true</span><span class='rparen'>)</span>
+  <span class='period'>.</span><span class='id identifier rubyid_any_of'>any_of</span><span class='lparen'>(</span><span class='lbrace'>{</span> <span class='symbol'>:tags</span> <span class='op'>=&gt;</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>ruby</span><span class='tstring_end'>&#39;</span></span> <span class='rbrace'>}</span><span class='comma'>,</span> <span class='lbrace'>{</span> <span class='symbol'>:name</span> <span class='op'>=&gt;</span> <span class='tstring'><span class='regexp_beg'>/</span><span class='tstring_content'>^J</span><span class='regexp_end'>/</span></span> <span class='rbrace'>}</span><span class='rparen'>)</span>
+  <span class='period'>.</span><span class='id identifier rubyid_to_a'>to_a</span>
+<span class='comment'># =&gt; [{ &quot;name&quot; =&gt; &quot;Jack&quot;, ... }]
+</span>
+<span class='comment'># 2. Direct JSON condition (e.g. rule payload from API / front-end)
+</span><span class='id identifier rubyid_rule'>rule</span> <span class='op'>=</span> <span class='const'>JSON</span><span class='period'>.</span><span class='id identifier rubyid_parse'>parse</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>{&quot;age&quot;: {&quot;$gte&quot;: 18}, &quot;$or&quot;: [{&quot;name&quot;: {&quot;$regex&quot;: &quot;^J&quot;}}, {&quot;name&quot;: &quot;Bob&quot;}]}</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
+<span class='id identifier rubyid_records'>records</span><span class='period'>.</span><span class='id identifier rubyid_mongory'>mongory</span><span class='period'>.</span><span class='id identifier rubyid_where'>where</span><span class='lparen'>(</span><span class='id identifier rubyid_rule'>rule</span><span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_pluck'>pluck</span><span class='lparen'>(</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>name</span><span class='tstring_end'>&#39;</span></span><span class='rparen'>)</span>
+<span class='comment'># =&gt; [&quot;Jack&quot;, &quot;Bob&quot;]
+</span>
+<span class='comment'># 3. Compile once as a reusable, thread-safe Matcher (ideal for constants)
+</span><span class='const'>ADULT_RULE</span> <span class='op'>=</span> <span class='const'><span class='object_link'><a href="Mongory.html" title="Mongory (module)">Mongory</a></span></span><span class='period'>.</span><span class='id identifier rubyid_compile'><span class='object_link'><a href="Mongory.html#compile-class_method" title="Mongory.compile (method)">compile</a></span></span><span class='lparen'>(</span><span class='symbol'>:age</span><span class='period'>.</span><span class='id identifier rubyid_gte'>gte</span> <span class='op'>=&gt;</span> <span class='int'>18</span><span class='comma'>,</span> <span class='symbol'>:active</span> <span class='op'>=&gt;</span> <span class='kw'>true</span><span class='rparen'>)</span>
+<span class='const'>ADULT_RULE</span><span class='period'>.</span><span class='id identifier rubyid_match?'>match?</span><span class='lparen'>(</span><span class='id identifier rubyid_records'>records</span><span class='period'>.</span><span class='id identifier rubyid_first'>first</span><span class='rparen'>)</span>
+<span class='comment'># =&gt; true
+</span></code></pre>
+
+<h3 id="query-builder-methods">Query Builder Methods</h3>
+
+<table><thead>
+<tr>
+<th>Method</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead><tbody>
+<tr>
+<td><code>where</code></td>
+<td>Adds an <code>$and</code> filter condition</td>
+<td><code>where(:age.gte =&gt; 18, status: &#39;active&#39;)</code></td>
+</tr>
+<tr>
+<td><code>any_of</code></td>
+<td>Adds an <code>$or</code> branch inside the current <code>$and</code></td>
+<td><code>any_of({ role: &#39;admin&#39; }, { :score.gte =&gt; 90 })</code></td>
+</tr>
+<tr>
+<td><code>or</code></td>
+<td>Combines the current query with <code>$or</code> conditions</td>
+<td><code>or({ age: 18 }, { name: &#39;Bob&#39; })</code></td>
+</tr>
+<tr>
+<td><code>and</code></td>
+<td>Combines conditions with <code>$and</code></td>
+<td><code>and({ :age.gte =&gt; 18 }, { active: true })</code></td>
+</tr>
+<tr>
+<td><code>not</code></td>
+<td>Negates a condition (<code>$not</code>)</td>
+<td><code>not(:status =&gt; &#39;banned&#39;)</code></td>
+</tr>
+<tr>
+<td><code>in</code> / <code>nin</code></td>
+<td>Matches values in / not in a list</td>
+<td><code>in(role: %w[admin editor])</code></td>
+</tr>
+<tr>
+<td><code>limit</code></td>
+<td>Limits processed records (executes at its position in the chain)</td>
+<td><code>limit(10)</code></td>
+</tr>
+<tr>
+<td><code>pluck</code></td>
+<td>Extracts one or more fields from matching records</td>
+<td><code>pluck(:name)</code></td>
+</tr>
+<tr>
+<td><code>with_context</code></td>
+<td>Passes shared context/options to matchers</td>
+<td><code>with_context(tenant: current_tenant)</code></td>
+</tr>
+</tbody></table>
+
+<h2 id="debugging-explain-trace-explain_tree-trace_tree">Debugging: <code>explain</code>, <code>trace</code>, <code>explain_tree</code> &amp; <code>trace_tree</code></h2>
+
+<p>Use <code>explain_tree</code> and <code>trace_tree</code> to inspect structured Ruby Hashes (for logging, JSON APIs, or UIs), or <code>explain</code> and <code>trace</code> to print those trees directly to STDOUT:</p>
+
+<pre class="code ruby"><code class="ruby"><span class='id identifier rubyid_query'>query</span> <span class='op'>=</span> <span class='id identifier rubyid_records'>records</span><span class='period'>.</span><span class='id identifier rubyid_mongory'>mongory</span>
+  <span class='period'>.</span><span class='id identifier rubyid_where'>where</span><span class='lparen'>(</span><span class='symbol'>:age</span><span class='period'>.</span><span class='id identifier rubyid_gte'>gte</span> <span class='op'>=&gt;</span> <span class='int'>18</span><span class='rparen'>)</span>
+  <span class='period'>.</span><span class='id identifier rubyid_any_of'>any_of</span><span class='lparen'>(</span><span class='lbrace'>{</span> <span class='label'>status:</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>active</span><span class='tstring_end'>&#39;</span></span> <span class='rbrace'>}</span><span class='comma'>,</span> <span class='lbrace'>{</span> <span class='symbol'>:name</span><span class='period'>.</span><span class='id identifier rubyid_regex'>regex</span> <span class='op'>=&gt;</span> <span class='tstring'><span class='regexp_beg'>/</span><span class='tstring_content'>^J</span><span class='regexp_end'>/</span></span> <span class='rbrace'>}</span><span class='rparen'>)</span>
+
+<span class='comment'># Structured explain tree (Hash)
+</span><span class='id identifier rubyid_plan'>plan</span> <span class='op'>=</span> <span class='id identifier rubyid_query'>query</span><span class='period'>.</span><span class='id identifier rubyid_explain_tree'>explain_tree</span>
+<span class='comment'># =&gt; { name: &quot;Query&quot;, condition: ..., priority: ..., children: [...] }
+</span>
+<span class='comment'># Prints the explain tree to STDOUT
+</span><span class='id identifier rubyid_query'>query</span><span class='period'>.</span><span class='id identifier rubyid_explain'>explain</span>
+</code></pre>
+
+<pre class="code text"><code class="text">And: {&quot;age&quot;=&gt;{&quot;$gte&quot;=&gt;18}, &quot;$or&quot;=&gt;[{&quot;status&quot;=&gt;&quot;active&quot;}, {&quot;name&quot;=&gt;{&quot;$regex&quot;=&gt;/^J/}}]}
+├─ Field: &quot;age&quot; to match: {&quot;$gte&quot;=&gt;18}
+│  └─ Gte: 18
+└─ Or: [{&quot;status&quot;=&gt;&quot;active&quot;}, {&quot;name&quot;=&gt;{&quot;$regex&quot;=&gt;/^J/}}]
+   ├─ Field: &quot;status&quot; to match: &quot;active&quot;
+   │  └─ Eq: &quot;active&quot;
+   └─ Field: &quot;name&quot; to match: {&quot;$regex&quot;=&gt;/^J/}
+      └─ Regex: /^J/
+</code></pre>
+
+<pre class="code ruby"><code class="ruby"><span class='comment'># Structured trace trees across all records (Array&lt;Hash&gt;);
+</span><span class='comment'># short-circuited branches are recursively expanded with result: :skip.
+</span><span class='id identifier rubyid_trees'>trees</span> <span class='op'>=</span> <span class='id identifier rubyid_query'>query</span><span class='period'>.</span><span class='id identifier rubyid_trace_tree'>trace_tree</span>
+<span class='comment'># =&gt; [
+</span><span class='comment'>#   {
+</span><span class='comment'>#     name: &quot;Query&quot;,
+</span><span class='comment'>#     condition: ...,
+</span><span class='comment'>#     record: { &quot;name&quot; =&gt; &quot;Bob&quot;, &quot;age&quot; =&gt; 15, &quot;status&quot; =&gt; &quot;inactive&quot; },
+</span><span class='comment'>#     result: :fail, # :pass | :fail | :skip
+</span><span class='comment'>#     priority: ...,
+</span><span class='comment'>#     children: [...]
+</span><span class='comment'>#   },
+</span><span class='comment'>#   ...
+</span><span class='comment'># ]
+</span>
+<span class='comment'># Prints each record&#39;s trace tree to STDOUT and yields matching records
+</span><span class='id identifier rubyid_query'>query</span><span class='period'>.</span><span class='id identifier rubyid_trace'>trace</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_record'>record</span><span class='op'>|</span> <span class='id identifier rubyid_puts'>puts</span> <span class='id identifier rubyid_record'>record</span><span class='lbracket'>[</span><span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>name</span><span class='tstring_end'>&#39;</span></span><span class='rbracket'>]</span> <span class='rbrace'>}</span>
+</code></pre>
+
+<p>Single-record structured tracing is also available on matchers directly via <code>matcher.explain_tree</code> and <code>matcher.trace_tree(record)</code> on <code>Mongory::Matcher</code>.</p>
+
+<h2 id="supported-operators">Supported Operators</h2>
+
+<table><thead>
+<tr>
+<th>Category</th>
+<th>Operators</th>
+<th>Notes</th>
+</tr>
+</thead><tbody>
+<tr>
+<td>Comparison</td>
+<td><code>$eq</code>, <code>$ne</code>, <code>$gt</code>, <code>$gte</code>, <code>$lt</code>, <code>$lte</code></td>
+<td>Cross-type <code>Integer</code>/<code>Float</code> equality; implicit <code>$elemMatch</code> on arrays</td>
+</tr>
+<tr>
+<td>Inclusion</td>
+<td><code>$in</code>, <code>$nin</code></td>
+<td>Scalar membership or array intersection</td>
+</tr>
+<tr>
+<td>Logical</td>
+<td><code>$and</code>, <code>$or</code>, <code>$not</code></td>
+<td>Priority-sorted sibling evaluation with dynamic re-sorting</td>
+</tr>
+<tr>
+<td>Array</td>
+<td><code>$elemMatch</code>, <code>$every</code>, <code>$size</code></td>
+<td><code>$every</code> requires a non-empty array where all elements match; <code>$size</code> accepts an integer or range object</td>
+</tr>
+<tr>
+<td>Existence</td>
+<td><code>$exists</code>, <code>$present</code></td>
+<td><code>$present</code> checks non-nil and non-empty (<code>String</code>, <code>Array</code>, <code>Hash</code>)</td>
+</tr>
+<tr>
+<td>Regex</td>
+<td><code>$regex</code> (<code>$options</code>: <code>i</code>, <code>m</code>, <code>s</code>)</td>
+<td>Accepts <code>Regexp</code> or pattern string with optional <code>$options</code></td>
+</tr>
+</tbody></table>
+
+<blockquote>
+<p><strong>Differences from MongoDB:</strong> <code>$every</code> (returns <code>false</code> on <code>[]</code>) and <code>$present</code> are Mongory extensions; <code>$options</code> only permits <code>i</code>/<code>m</code>/<code>s</code>; unknown <code>$</code> operators raise <code>Mongory::TypeError</code>. See <a href="https://github.com/mongoryhq/mongory-spec#37-differences-from-mongodb-query-syntax"><code>mongory-spec</code></a>.</p>
+</blockquote>
+
+<h2 id="custom-matchers-configuration">Custom Matchers &amp; Configuration</h2>
+
+<p>Configure registered collection classes and converters in <code>Mongory.configure</code>:</p>
+
+<pre class="code ruby"><code class="ruby"><span class='const'><span class='object_link'><a href="Mongory.html" title="Mongory (module)">Mongory</a></span></span><span class='period'>.</span><span class='id identifier rubyid_configure'><span class='object_link'><a href="Mongory.html#configure-class_method" title="Mongory.configure (method)">configure</a></span></span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_mc'>mc</span><span class='op'>|</span>
+  <span class='id identifier rubyid_mc'>mc</span><span class='period'>.</span><span class='id identifier rubyid_enable_symbol_snippets!'>enable_symbol_snippets!</span>
+  <span class='id identifier rubyid_mc'>mc</span><span class='period'>.</span><span class='id identifier rubyid_register'>register</span><span class='lparen'>(</span><span class='const'>Array</span><span class='rparen'>)</span>
+  <span class='id identifier rubyid_mc'>mc</span><span class='period'>.</span><span class='id identifier rubyid_register'>register</span><span class='lparen'>(</span><span class='const'>ActiveRecord</span><span class='op'>::</span><span class='const'>Relation</span><span class='rparen'>)</span>
+<span class='kw'>end</span>
+</code></pre>
+
+<p>Define a custom operator with <code>Mongory::Matchers::AbstractMatcher</code> (or run <code>rails g mongory:matcher class_in</code>):</p>
+
+<pre class="code ruby"><code class="ruby"><span class='kw'>class</span> <span class='const'>ClassInMatcher</span> <span class='op'>&lt;</span> <span class='const'><span class='object_link'><a href="Mongory.html" title="Mongory (module)">Mongory</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="Mongory/Matchers.html" title="Mongory::Matchers (module)">Matchers</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="Mongory/Matchers/AbstractMatcher.html" title="Mongory::Matchers::AbstractMatcher (class)">AbstractMatcher</a></span></span>
+  <span class='kw'>def</span> <span class='id identifier rubyid_match'>match</span><span class='lparen'>(</span><span class='id identifier rubyid_subject'>subject</span><span class='rparen'>)</span>
+    <span class='ivar'>@condition</span><span class='period'>.</span><span class='id identifier rubyid_any?'>any?</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_klass'>klass</span><span class='op'>|</span> <span class='id identifier rubyid_subject'>subject</span><span class='period'>.</span><span class='id identifier rubyid_is_a?'>is_a?</span><span class='lparen'>(</span><span class='id identifier rubyid_klass'>klass</span><span class='rparen'>)</span> <span class='rbrace'>}</span>
+  <span class='kw'>end</span>
+
+  <span class='kw'>def</span> <span class='id identifier rubyid_check_validity!'>check_validity!</span>
+    <span class='id identifier rubyid_raise'>raise</span> <span class='const'><span class='object_link'><a href="Mongory.html" title="Mongory (module)">Mongory</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="Mongory/TypeError.html" title="Mongory::TypeError (class)">TypeError</a></span></span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>$classIn needs an Array of Classes</span><span class='tstring_end'>&#39;</span></span> <span class='kw'>unless</span>
+      <span class='ivar'>@condition</span><span class='period'>.</span><span class='id identifier rubyid_is_a?'>is_a?</span><span class='lparen'>(</span><span class='const'>Array</span><span class='rparen'>)</span> <span class='op'>&amp;&amp;</span> <span class='ivar'>@condition</span><span class='period'>.</span><span class='id identifier rubyid_all?'>all?</span> <span class='lbrace'>{</span> <span class='op'>|</span><span class='id identifier rubyid_k'>k</span><span class='op'>|</span> <span class='id identifier rubyid_k'>k</span><span class='period'>.</span><span class='id identifier rubyid_is_a?'>is_a?</span><span class='lparen'>(</span><span class='const'>Class</span><span class='rparen'>)</span> <span class='rbrace'>}</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span>
+
+<span class='const'><span class='object_link'><a href="Mongory.html" title="Mongory (module)">Mongory</a></span></span><span class='op'>::</span><span class='const'><span class='object_link'><a href="Mongory/Matchers.html" title="Mongory::Matchers (module)">Matchers</a></span></span><span class='period'>.</span><span class='id identifier rubyid_register'><span class='object_link'><a href="Mongory/Matchers.html#register-class_method" title="Mongory::Matchers.register (method)">register</a></span></span><span class='lparen'>(</span><span class='symbol'>:class_in</span><span class='comma'>,</span> <span class='tstring'><span class='tstring_beg'>&#39;</span><span class='tstring_content'>$classIn</span><span class='tstring_end'>&#39;</span></span><span class='comma'>,</span> <span class='const'>ClassInMatcher</span><span class='rparen'>)</span>
+</code></pre>
+
+<h2 id="guides-further-reading">Guides &amp; Further Reading</h2>
+
+<ul>
+<li><a href="docs/field_names.md">Handling Dots in Field Names</a></li>
+<li><a href="docs/advanced_usage.md">Advanced Usage &amp; Converters</a></li>
+<li><a href="docs/clang_bridge.md">Clang Bridge (C Extension Internals)</a></li>
+<li><a href="docs/performance.md">Performance &amp; Benchmarks</a></li>
+<li><a href="docs/migration.md">Migration Guide</a></li>
+</ul>
+
+<h2 id="security-untrusted-input">Security &amp; Untrusted Input</h2>
+
+<ul>
+<li><strong>Engine protections</strong>: Pure in-memory C99 evaluation (no SQL, no <code>$where</code>/<code>eval</code>), arena memory pool chunk limits, and compile-time depth/node budgets (<code>MaxDepth = 64</code>, <code>MaxNodes = 4096</code>).</li>
+<li><strong>Application responsibility</strong>: When accepting query conditions from untrusted users, validate expected scalar types (to prevent operator injection such as <code>{&quot;$ne&quot; =&gt; nil}</code>), allowlist queryable fields, and configure <code>Regexp.timeout</code> (Ruby 3.2+) or restrict untrusted <code>$regex</code> patterns.</li>
+</ul>
+
+<h2 id="contributing-license">Contributing &amp; License</h2>
+
+<p>Bug reports and pull requests are welcome on <a href="https://github.com/mongoryhq/mongory-rb">GitHub</a>. Everyone interacting in the project is expected to follow the <a href="CODE_OF_CONDUCT.md">Code of Conduct</a>.</p>
+
+<p>Released under the <a href="LICENSE">MIT License</a>.</p>
+</div></div>
+
+      <div id="footer">
+  Generated on Tue Nov 24 18:26:44 2026 by
+  <a href="https://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.9.45 (ruby-3.2.11).
+</div>
+
+    </div>
+  </body>
+</html>
