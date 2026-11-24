@@ -20,7 +20,7 @@ records = Array.new(N) do |i|
     'age' => 10 + (i % 50),
     'status' => (i % 3).zero? ? 'active' : 'inactive',
     'name' => (i % 5).zero? ? "user#{'abcdef'[i % 6]}" : "other_#{i}",
-    'tags' => (i % 4).zero? ? %w[ruby go] : %w[js c]
+    'tags' => (i % 4).zero? ? %w(ruby go) : %w(js c)
   }
 end
 
@@ -96,13 +96,13 @@ bench('Plain Ruby (in_array_field)') do
   records.count { |r| r['tags'].include?('ruby') || r['tags'].include?('rust') }
 end
 
-in_arr_m = Mongory::Matcher.new({ tags: { :$in => %w[ruby rust] } })
+in_arr_m = Mongory::Matcher.new({ tags: { :$in => %w(ruby rust) } })
 bench('Mongory::Matcher (in_array_field)') do
   records.count { |r| in_arr_m.match?(r) }
 end
 
 if HAS_MONGOID
-  in_arr_expr = { 'tags' => { '$in' => %w[ruby rust] } }
+  in_arr_expr = { 'tags' => { '$in' => %w(ruby rust) } }
   bench('Mongoid::Matcher (in_array_field)') do
     mongoid_docs.count { |d| d._matches?(in_arr_expr) }
   end
