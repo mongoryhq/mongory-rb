@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.1.1] - 2026-11-25
+
+### Performance
+- **O(1) `$in` / `$nin` Hash Lookup (`mongory-core v0.3.1`)**: Bumped `mongory-core` submodule to `v0.3.1`, adding an immutable, arena-allocated, type-bucketed O(1) hash set for `$in` / `$nin` arrays with 16+ items (~15x speedup on 500-item `$in`, ~840x faster than `Mongoid::Matcher` in local benchmarks).
+
+### Docs & Benchmarks
+- Added optional `Mongoid::Matcher` comparison to `script/bench.rb` and updated `docs/performance.md`.
+
 ## [2.1.0] - 2026-11-23
 
 ### Added
