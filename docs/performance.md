@@ -19,10 +19,10 @@ GEM_PATH=/tmp/rb-bench-gems ruby script/bench.rb
 
 | Case | Plain Ruby `Array#count` | `Mongory::Matcher` (`mongory-core` C99) | `Mongoid::Matcher` (`mongoid 9.1.2`) | `Mongory` vs `Mongoid` |
 |---|---:|---:|---:|---:|
-| `simple` (`age >= 18`) | `6.33 ms` (`63.3 ns/rec`) | `7.63 ms` (`76.3 ns/rec`) | `355.19 ms` (`3,551.9 ns/rec`) | **46.6x faster** |
-| `$or` (`age >= 18` or `status == "active"`) | `7.67 ms` (`76.7 ns/rec`) | `13.31 ms` (`133.1 ns/rec`) | `472.67 ms` (`4,726.7 ns/rec`) | **35.5x faster** |
-| `in_array_field` (`tags $in ["ruby", "rust"]`) | `8.21 ms` (`82.1 ns/rec`) | `15.79 ms` (`157.9 ns/rec`) | `440.34 ms` (`4,403.4 ns/rec`) | **27.9x faster** |
-| `large_in_500` (`name $in [500 items]`) | `7.61 ms` (`76.1 ns/rec`) | `174.36 ms` (`1,743.6 ns/rec`) | `10,581.36 ms` (`105,813.6 ns/rec`) | **60.7x faster** |
+| `simple` (`age >= 18`) | `6.31 ms` (`63.1 ns/rec`) | `7.79 ms` (`77.9 ns/rec`) | `322.45 ms` (`3,224.5 ns/rec`) | **41.4x faster** |
+| `$or` (`age >= 18` or `status == "active"`) | `7.18 ms` (`71.8 ns/rec`) | `12.74 ms` (`127.4 ns/rec`) | `396.79 ms` (`3,967.9 ns/rec`) | **31.1x faster** |
+| `in_array_field` (`tags $in ["ruby", "rust"]`) | `8.53 ms` (`85.3 ns/rec`) | `13.64 ms` (`136.4 ns/rec`) | `430.21 ms` (`4,302.1 ns/rec`) | **31.5x faster** |
+| `large_in_500` (`name $in [500 items]`, O(1) hash) | `6.29 ms` (`62.9 ns/rec`) | `11.58 ms` (`115.8 ns/rec`) | `9,735.19 ms` (`97,351.9 ns/rec`) | **840.7x faster** |
 
 > For cross-language benchmarks (`mongory-go`, `mongory-js`, `mongory-py`), see [Mongory Central](https://mongoryhq.github.io/mongory-central/#benchmarks).
 
