@@ -1,5 +1,11 @@
 # Mongory (Ruby)
 
+[![Gem Version](https://img.shields.io/gem/v/mongory)](https://rubygems.org/gems/mongory)
+[![CI](https://github.com/mongoryhq/mongory-rb/actions/workflows/main.yml/badge.svg)](https://github.com/mongoryhq/mongory-rb/actions/workflows/main.yml)
+[![mongory-spec](https://github.com/mongoryhq/mongory-rb/actions/workflows/spec-conformance.yml/badge.svg)](https://github.com/mongoryhq/mongory-rb/actions/workflows/spec-conformance.yml)
+![Ruby](https://img.shields.io/badge/Ruby-2.6%2B-CC342D)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **Cross-language, in-memory Mongo-style rule engine & query matcher with built-in Explain & Trace debugging** — powered by the C99 [`mongory-core`](https://github.com/mongoryhq/mongory-core) native extension with cross-language parity via [`mongory-spec`](https://github.com/mongoryhq/mongory-spec).
 
 **[Try the Interactive Playground & Visual Explain/Trace Debugger ↗](https://mongoryhq.github.io/mongory-central/)**
