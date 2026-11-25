@@ -1,6 +1,7 @@
 # Mongory (Ruby)
 
 [![Gem Version](https://img.shields.io/gem/v/mongory)](https://rubygems.org/gems/mongory)
+[![API Docs](https://img.shields.io/badge/API%20Docs-YARD-CC342D)](https://mongoryhq.github.io/mongory-rb/)
 [![CI](https://github.com/mongoryhq/mongory-rb/actions/workflows/main.yml/badge.svg)](https://github.com/mongoryhq/mongory-rb/actions/workflows/main.yml)
 [![mongory-spec](https://github.com/mongoryhq/mongory-rb/actions/workflows/spec-conformance.yml/badge.svg)](https://github.com/mongoryhq/mongory-rb/actions/workflows/spec-conformance.yml)
 ![Ruby](https://img.shields.io/badge/Ruby-2.6%2B-CC342D)
