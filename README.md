@@ -7,7 +7,7 @@
 ![Ruby](https://img.shields.io/badge/Ruby-2.6%2B-CC342D)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Zero-dependency, C99-backed in-memory MongoDB-style query & rule engine for Ruby** — with built-in `explain` / `trace` debugging and cross-language parity via [`mongory-spec`](https://github.com/mongoryhq/mongory-spec).
+**Zero-dependency, C99-backed in-memory MongoDB-style query and rule engine for Ruby**, with built-in `explain` / `trace` debugging and cross-language parity via [`mongory-spec`](https://github.com/mongoryhq/mongory-spec).
 
 **[Try the Interactive Playground & Visual Explain/Trace Debugger ↗](https://mongoryhq.github.io/mongory-central/)**
 
@@ -23,7 +23,7 @@ gem install mongory
 gem 'mongory'
 ```
 
-Ships precompiled native gems (Ruby `2.6–4.0`) for Linux (`x86_64`/`aarch64`, glibc & musl), macOS (`x86_64`/`arm64`), and Windows (`x64-mingw32`/`ucrt`). In a Rails project, generate the initializer with `rails g mongory:install`.
+The gem ships precompiled native binaries (Ruby `2.6-4.0`) for Linux (`x86_64`/`aarch64`, glibc and musl), macOS (`x86_64`/`arm64`), and Windows (`x64-mingw32`/`ucrt`). In a Rails project, generate the initializer with `rails g mongory:install`.
 
 <details>
 <summary>Platform note (Apple Silicon system Ruby / source builds)</summary>

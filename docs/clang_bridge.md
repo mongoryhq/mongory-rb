@@ -6,11 +6,11 @@ As of `mongory-rb v2.0.0`, Mongory uses the C99 [`mongory-core`](https://github.
 - C99-compatible compiler (`gcc` / `clang`)
 - CMake >= 3.12 (optional; only needed if you want to build `mongory-core` standalone or run its native tests)
 
-> Note: Precompiled native gems are distributed for Linux, macOS (`arm64` & `x86_64`), and Windows (Ruby 2.6–4.0). When compiling from source, Ruby's `mkmf` (`ext/mongory_ext/extconf.rb`) compiles `mongory-core` sources directly — CMake is not required for gem installation.
+> Note: Precompiled native gems are distributed for Linux, macOS (`arm64` and `x86_64`), and Windows (Ruby 2.6-4.0). When compiling from source, Ruby's `mkmf` (`ext/mongory_ext/extconf.rb`) compiles `mongory-core` sources directly; CMake is not required for gem installation.
 
 ## Architecture
 
-The Clang bridge connects the Ruby DSL to `mongory-core` via a compact C layer exposing two key entry points:
+The Clang bridge connects the Ruby DSL to `mongory-core` via a compact C layer exposing two entry points:
 
 - `Mongory::Matcher`: the compiled matcher class backed by `mongory-core`.
 - `Mongory::QueryBuilder`: the chainable Ruby DSL (`records.mongory.where(...)`) backed by `Mongory::Matcher`.
