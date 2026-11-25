@@ -6,22 +6,13 @@
 ![Ruby](https://img.shields.io/badge/Ruby-2.6%2B-CC342D)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**Cross-language, in-memory Mongo-style rule engine & query matcher with built-in Explain & Trace debugging** — powered by the C99 [`mongory-core`](https://github.com/mongoryhq/mongory-core) native extension with cross-language parity via [`mongory-spec`](https://github.com/mongoryhq/mongory-spec).
+**Zero-dependency, C99-backed in-memory MongoDB-style query & rule engine for Ruby** — with built-in `explain` / `trace` debugging and cross-language parity via [`mongory-spec`](https://github.com/mongoryhq/mongory-spec).
 
 **[Try the Interactive Playground & Visual Explain/Trace Debugger ↗](https://mongoryhq.github.io/mongory-central/)**
 
 [![Mongory Playground & Visual Trace](https://mongoryhq.github.io/mongory-central/playground-trace.png)](https://mongoryhq.github.io/mongory-central/)
 
-> **Zero database required:** Evaluate MongoDB-style conditions (`$gte`, `$elemMatch`, `$every`, `$present`, `$regex`, etc.) directly against in-memory Ruby Arrays, Hashes, custom objects, and ActiveRecord/Mongoid relations.  
-> **Ecosystem:** [Interactive Playground](https://mongoryhq.github.io/mongory-central/) · [`mongory-go` (Go)](https://github.com/mongoryhq/mongory-go) · [`mongory-js` (TypeScript/JS)](https://github.com/mongoryhq/mongory-js) · [`mongory-core` (C99)](https://github.com/mongoryhq/mongory-core) · [`mongory-spec`](https://github.com/mongoryhq/mongory-spec)
-
-## Features
-
-- **Chainable Ruby DSL & Raw JSON Support**: Compose queries with `.where`, `.any_of`, `.or`, `.not`, and optional Symbol snippets (`:age.gte => 18`), or pass parsed JSON conditions directly from front-end rules.
-- **All 17 Mongory Operators**: `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte`, `$in`, `$nin`, `$exists`, `$present`, `$and`, `$or`, `$not`, `$elemMatch`, `$every`, `$size`, `$regex` (with `$options`: `i`, `m`, `s`).
-- **Priority-Ordered Execution & Visual Debugging**: Automatically sorts sibling conditions so cheaper checks short-circuit before expensive regex or array scans; inspect compiled trees with `.explain` and per-record evaluation with `.trace`.
-- **Native C99 Engine (`Mongory::Matcher`)**: Powered directly by `mongory-core` with zero Pure-Ruby engine overhead, while still supporting custom Ruby matchers via `Mongory::Matchers::AbstractMatcher`.
-- **Precompiled Native Gems (Ruby 2.6–4.0)**: Ships prebuilt binaries for Linux (`x86_64`/`aarch64`, glibc & musl), macOS (`x86_64`/`arm64`), and Windows (`x64-mingw32`/`ucrt`).
+> **Ecosystem:** [Playground](https://mongoryhq.github.io/mongory-central/) · [`mongory-go` (Go)](https://github.com/mongoryhq/mongory-go) · [`mongory-js` (TypeScript/JS)](https://github.com/mongoryhq/mongory-js) · [`mongory-py` (Python)](https://github.com/mongoryhq/mongory-py) · [`mongory-core` (C99)](https://github.com/mongoryhq/mongory-core) · [`mongory-spec`](https://github.com/mongoryhq/mongory-spec)
 
 ## Installation
 
@@ -31,13 +22,14 @@ gem install mongory
 gem 'mongory'
 ```
 
-In a Rails project, generate the initializer (`config/initializers/mongory.rb`):
+Ships precompiled native gems (Ruby `2.6–4.0`) for Linux (`x86_64`/`aarch64`, glibc & musl), macOS (`x86_64`/`arm64`), and Windows (`x64-mingw32`/`ucrt`). In a Rails project, generate the initializer with `rails g mongory:install`.
 
-```bash
-rails g mongory:install
-```
+<details>
+<summary>Platform note (Apple Silicon system Ruby / source builds)</summary>
 
-> **Note:** Precompiled native gems are installed automatically on supported Linux, macOS, and Windows platforms (Ruby 2.6–4.0). On older Apple Silicon macOS system Ruby (`universal-darwin`), run `gem install mongory --platform arm64-darwin` or `bundle lock --add-platform arm64-darwin`. When compiling from source on other platforms, ensure `gcc`/`clang` and `make` are installed.
+On older Apple Silicon macOS system Ruby (`universal-darwin`), run `gem install mongory --platform arm64-darwin` or `bundle lock --add-platform arm64-darwin`. When compiling from source on other platforms, ensure `gcc`/`clang` and `make` are installed.
+
+</details>
 
 ## Quick Start
 
@@ -49,19 +41,19 @@ Mongory.register(Array)
 Mongory.enable_symbol_snippets!
 
 records = [
-  { 'name' => 'Jack', 'age' => 18, 'tags' => %w[ruby go], 'active' => true },
-  { 'name' => 'Jill', 'age' => 15, 'tags' => %w[js],      'active' => true },
-  { 'name' => 'Bob',  'age' => 21, 'tags' => %w[ruby],    'active' => false }
+  { 'name' => 'Jack', 'age' => 18, 'tags' => %w(ruby go), 'active' => true },
+  { 'name' => 'Jill', 'age' => 15, 'tags' => %w(js),      'active' => true },
+  { 'name' => 'Bob',  'age' => 21, 'tags' => %w(ruby),    'active' => false }
 ]
 
 # 1. Chainable DSL with symbol operator snippets
-matched = records.mongory
+records.mongory
   .where(:age.gte => 18, :active => true)
   .any_of({ :tags => 'ruby' }, { :name => /^J/ })
   .to_a
 # => [{ "name" => "Jack", ... }]
 
-# 2. Direct JSON condition (e.g. rule payload from API / front-end)
+# 2. Direct JSON condition (e.g. rule payload from API / database)
 rule = JSON.parse('{"age": {"$gte": 18}, "$or": [{"name": {"$regex": "^J"}}, {"name": "Bob"}]}')
 records.mongory.where(rule).pluck('name')
 # => ["Jack", "Bob"]
@@ -72,35 +64,37 @@ ADULT_RULE.match?(records.first)
 # => true
 ```
 
-### Query Builder Methods
+## Why Mongory? (and When Not to Use It)
 
-| Method | Description | Example |
-|--------|-------------|---------|
-| `where` | Adds an `$and` filter condition | `where(:age.gte => 18, status: 'active')` |
-| `any_of` | Adds an `$or` branch inside the current `$and` | `any_of({ role: 'admin' }, { :score.gte => 90 })` |
-| `or` | Combines the current query with `$or` conditions | `or({ age: 18 }, { name: 'Bob' })` |
-| `and` | Combines conditions with `$and` | `and({ :age.gte => 18 }, { active: true })` |
-| `not` | Negates a condition (`$not`) | `not(:status => 'banned')` |
-| `in` / `nin` | Matches values in / not in a list | `in(role: %w[admin editor])` |
-| `limit` | Limits processed records (executes at its position in the chain) | `limit(10)` |
-| `pluck` | Extracts one or more fields from matching records | `pluck(:name)` |
-| `with_context` | Passes shared context/options to matchers | `with_context(tenant: current_tenant)` |
+- **Use Mongory when**: rules are stored as data (DB/config/API/feature flags), shared between frontend TS and Ruby/Go/Python services, or complex enough that nested `select` blocks become unreadable and hard to debug without `trace`.
+- **Don't use Mongory when**: your filter is a simple static `records.select { |r| r['age'] >= 18 }` hardcoded in Ruby, or when you need full SQL/MongoDB aggregation pipelines (`$group`, `$lookup`, `$project`).
+- **vs `Mongoid::Matcher`**: `mongory` has zero external gem dependencies (no `mongoid`, `mongo`, or `activesupport` required), works on plain `Hash`/PORO/ActiveRecord objects, compiles queries once into C99 (`mongory-core`), and adds `explain`/`trace` trees.
+
+## Benchmark Snapshot
+
+Measured on Apple M3 (macOS arm64, Ruby `4.0.5`, `100,000` records x 5 rounds; full details & script in [docs/performance.md](docs/performance.md)):
+
+| Case | Plain Ruby `Array#count` | `Mongory::Matcher` (C99) | `Mongoid::Matcher` (`9.1.2`) | `Mongory` vs `Mongoid` |
+|---|---:|---:|---:|---:|
+| `simple` (`age >= 18`) | `63.1 ns/rec` | `77.9 ns/rec` | `3,224.5 ns/rec` | **41.4x faster** |
+| `$or` (`age >= 18` or `status == "active"`) | `71.8 ns/rec` | `127.4 ns/rec` | `3,967.9 ns/rec` | **31.1x faster** |
+| `in_array_field` (`tags $in ["ruby", "rust"]`) | `85.3 ns/rec` | `136.4 ns/rec` | `4,302.1 ns/rec` | **31.5x faster** |
+| `large_in_500` (`name $in [500 items]`) | `62.9 ns/rec` | `115.8 ns/rec` | `97,351.9 ns/rec` | **840.7x faster** |
 
 ## Debugging: `explain`, `trace`, `explain_tree` & `trace_tree`
 
-Use `explain_tree` and `trace_tree` to inspect structured Ruby Hashes (for logging, JSON APIs, or UIs), or `explain` and `trace` to print those trees directly to STDOUT:
+Mongory automatically sorts sibling conditions by cost (cheap `$eq`/`$exists` short-circuit before `$regex` or array scans). Inspect compiled plans or per-record `PASS`/`FAIL`/`SKIP` traces in CLI output or structured Ruby Hashes:
 
 ```ruby
 query = records.mongory
   .where(:age.gte => 18)
   .any_of({ status: 'active' }, { :name.regex => /^J/ })
 
-# Structured explain tree (Hash)
-plan = query.explain_tree
-# => { name: "Query", condition: ..., priority: ..., children: [...] }
+query.explain                    # prints priority-sorted plan tree to STDOUT
+plan = query.explain_tree        # structured Hash (for logging / APIs / UIs)
 
-# Prints the explain tree to STDOUT
-query.explain
+query.trace { |r| puts r['name'] } # prints per-record PASS/FAIL/SKIP trace
+trees = query.trace_tree           # Array<Hash> with :pass | :fail | :skip nodes
 ```
 
 ```text
@@ -114,44 +108,24 @@ And: {"age"=>{"$gte"=>18}, "$or"=>[{"status"=>"active"}, {"name"=>{"$regex"=>/^J
       └─ Regex: /^J/
 ```
 
-```ruby
-# Structured trace trees across all records (Array<Hash>);
-# short-circuited branches are recursively expanded with result: :skip.
-trees = query.trace_tree
-# => [
-#   {
-#     name: "Query",
-#     condition: ...,
-#     record: { "name" => "Bob", "age" => 15, "status" => "inactive" },
-#     result: :fail, # :pass | :fail | :skip
-#     priority: ...,
-#     children: [...]
-#   },
-#   ...
-# ]
+Single-record tracing is also available directly on matchers via `matcher.explain_tree` and `matcher.trace_tree(record)`.
 
-# Prints each record's trace tree to STDOUT and yields matching records
-query.trace { |record| puts record['name'] }
-```
-
-Single-record structured tracing is also available on matchers directly via `matcher.explain_tree` and `matcher.trace_tree(record)` on `Mongory::Matcher`.
-
-## Supported Operators
+## Operators & Query Builder
 
 | Category | Operators | Notes |
-|----------|-----------|-------|
+|---|---|---|
 | Comparison | `$eq`, `$ne`, `$gt`, `$gte`, `$lt`, `$lte` | Cross-type `Integer`/`Float` equality; implicit `$elemMatch` on arrays |
-| Inclusion | `$in`, `$nin` | Scalar membership or array intersection |
+| Inclusion | `$in`, `$nin` | Scalar membership or array intersection; O(1) hash lookup for `>= 16` items |
 | Logical | `$and`, `$or`, `$not` | Priority-sorted sibling evaluation with dynamic re-sorting |
-| Array | `$elemMatch`, `$every`, `$size` | `$every` requires a non-empty array where all elements match; `$size` accepts an integer or range object |
+| Array | `$elemMatch`, `$every`, `$size` | `$every` requires non-empty array; `$size` accepts integer or nested matcher |
 | Existence | `$exists`, `$present` | `$present` checks non-nil and non-empty (`String`, `Array`, `Hash`) |
 | Regex | `$regex` (`$options`: `i`, `m`, `s`) | Accepts `Regexp` or pattern string with optional `$options` |
+
+Query builder methods: `where`, `any_of`, `or`, `and`, `not`, `in` / `nin`, `limit`, `pluck`, `with_context`.
 
 > **Differences from MongoDB:** `$every` (returns `false` on `[]`) and `$present` are Mongory extensions; `$options` only permits `i`/`m`/`s`; unknown `$` operators raise `Mongory::TypeError`. See [`mongory-spec`](https://github.com/mongoryhq/mongory-spec#37-differences-from-mongodb-query-syntax).
 
 ## Custom Matchers & Configuration
-
-Configure registered collection classes and converters in `Mongory.configure`:
 
 ```ruby
 Mongory.configure do |mc|
@@ -159,11 +133,7 @@ Mongory.configure do |mc|
   mc.register(Array)
   mc.register(ActiveRecord::Relation)
 end
-```
 
-Define a custom operator with `Mongory::Matchers::AbstractMatcher` (or run `rails g mongory:matcher class_in`):
-
-```ruby
 class ClassInMatcher < Mongory::Matchers::AbstractMatcher
   def match(subject)
     @condition.any? { |klass| subject.is_a?(klass) }
@@ -180,10 +150,10 @@ Mongory::Matchers.register(:class_in, '$classIn', ClassInMatcher)
 
 ## Guides & Further Reading
 
+- [Performance & Benchmarks](docs/performance.md)
 - [Handling Dots in Field Names](docs/field_names.md)
 - [Advanced Usage & Converters](docs/advanced_usage.md)
 - [Clang Bridge (C Extension Internals)](docs/clang_bridge.md)
-- [Performance & Benchmarks](docs/performance.md)
 - [Migration Guide](docs/migration.md)
 
 ## Security & Untrusted Input
