@@ -17,4 +17,5 @@ ext/mongory_ext/Makefile
 *.o
 *.so
 *.bundle
+*.dSYM/
 mkmf.log
