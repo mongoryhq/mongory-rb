@@ -135,6 +135,15 @@ module Mongory
       self.and('$or' => conditions)
     end
 
+    # Adds a `$nor` query combined inside an `$and` block.
+    # None of the given conditions may match for a record to be included.
+    #
+    # @param conditions [Array<Hash>] the conditions to add
+    # @return [QueryBuilder] a new builder instance
+    def nor(*conditions)
+      self.and('$nor' => conditions)
+    end
+
     # Adds an `$in` condition to the query.
     # Matches records where the field value is in the given array.
     #

@@ -53,12 +53,10 @@ RSpec.describe 'Mongory fuzzing' do
   def random_valid_condition(rng, depth)
     return { pick(rng, %w(a age status tags profile.city)) => random_valid_leaf_cond(rng) } if depth <= 0
 
-    case rng.rand(5)
-    when 0
-      { '$and' => Array.new(rng.rand(1..3)) { random_valid_condition(rng, depth - 1) } }
-    when 1
-      { '$or' => Array.new(rng.rand(1..3)) { random_valid_condition(rng, depth - 1) } }
-    when 2
+    case rng.rand(6)
+    when 0, 1, 2
+      { pick(rng, %w($and $or $nor)) => Array.new(rng.rand(1..3)) { random_valid_condition(rng, depth - 1) } }
+    when 3
       { 'tags' => { pick(rng, %w($elemMatch $every)) => random_valid_op_hash(rng) } }
     else
       random_field_map(rng)
@@ -68,7 +66,7 @@ RSpec.describe 'Mongory fuzzing' do
   def random_hostile_condition(rng, depth)
     return random_scalar(rng) if depth <= 0
 
-    ops = %w($eq $ne $gt $in $nin $and $or $not $elemMatch $every $size $exists $present $regex $unknown a age)
+    ops = %w($eq $ne $gt $in $nin $and $or $nor $not $elemMatch $every $size $exists $present $regex $unknown a age)
     rng.rand(0..3).times.each_with_object({}) do |_, h|
       key = pick(rng, ops)
       h[key] = rng.rand(3).zero? ? random_hostile_condition(rng, depth - 1) : random_scalar(rng)

@@ -26,6 +26,7 @@ module Mongory
       regex: '$regex',
       and: '$and',
       or: '$or',
+      nor: '$nor',
       not: '$not',
       elem_match: '$elemMatch',
       every: '$every',
