@@ -131,9 +131,7 @@ void rb_mongory_register_adapters(void) {
   mongory_regex_options_func_set(rb_mongory_regex_options_match_adapter);
   mongory_regex_stringify_func_set(rb_mongory_regex_stringify_adapter);
 
-  mongory_value_converter_deep_convert_set(rb_to_mongory_value_deep);
   mongory_value_converter_shallow_convert_set(rb_to_mongory_value_shallow);
-  mongory_value_converter_recover_set(mongory_value_to_ruby);
 
   mongory_custom_matcher_match_func_set(rb_mongory_custom_matcher_match);
   mongory_custom_matcher_build_func_set(rb_mongory_custom_matcher_build);

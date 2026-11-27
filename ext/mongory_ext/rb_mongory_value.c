@@ -270,13 +270,11 @@ mongory_value *rb_mongory_array_wrap(mongory_memory_pool *pool, VALUE rb_array) 
     return NULL;
   }
   memset(array, 0, sizeof(rb_mongory_array_t));
-  rb_mongory_memory_pool_t *rb_pool = (rb_mongory_memory_pool_t *)pool;
   array->base.pool = pool;
   array->base.get = rb_mongory_array_get;
   array->base.each = rb_mongory_array_each;
   array->rb_array = rb_array;
   array->base.count = RARRAY_LEN(rb_array);
-  array->owner = rb_pool->owner;
   mongory_value *mg_value = mongory_value_wrap_a(pool, &array->base);
   if (!mg_value) {
     return NULL;
@@ -284,13 +282,6 @@ mongory_value *rb_mongory_array_wrap(mongory_memory_pool *pool, VALUE rb_array) 
   mg_value->origin = (void *)rb_array;
   mg_value->to_str = rb_mongory_value_to_cstr;
   return mg_value;
-}
-
-void *mongory_value_to_ruby(mongory_memory_pool *pool, mongory_value *value) {
-  (void)pool;
-  if (!value)
-    return NULL;
-  return value->origin;
 }
 
 VALUE rb_mongory_cache_fetch_string(rb_mongory_matcher_t *owner, const char *key) {

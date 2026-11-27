@@ -2,7 +2,6 @@
 
 require 'time'
 require 'date'
-require 'set'
 require 'singleton'
 require_relative 'mongory/version'
 require_relative 'mongory/utils'

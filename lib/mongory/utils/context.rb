@@ -32,12 +32,6 @@ module Mongory
         new_context.config = @config.dup
         new_context
       end
-
-      def to_hash
-        {
-          config: @config
-        }
-      end
     end
   end
 end

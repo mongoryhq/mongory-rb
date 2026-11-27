@@ -49,7 +49,6 @@ typedef struct rb_mongory_table_t {
 typedef struct rb_mongory_array_t {
   mongory_array base;
   VALUE rb_array;
-  rb_mongory_matcher_t *owner;
 } rb_mongory_array_t;
 
 // Pool & error helpers (mongory_ext.c)
@@ -64,7 +63,6 @@ mongory_value *rb_to_mongory_value_deep(mongory_memory_pool *pool, VALUE rb_valu
 mongory_value *rb_to_mongory_value_shallow(mongory_memory_pool *pool, VALUE rb_value);
 mongory_value *rb_mongory_table_wrap(mongory_memory_pool *pool, VALUE rb_hash);
 mongory_value *rb_mongory_array_wrap(mongory_memory_pool *pool, VALUE rb_array);
-void *mongory_value_to_ruby(mongory_memory_pool *pool, mongory_value *value);
 VALUE rb_mongory_cache_fetch_string(rb_mongory_matcher_t *owner, const char *key);
 VALUE rb_mongory_cache_fetch_symbol(rb_mongory_matcher_t *owner, const char *key);
 

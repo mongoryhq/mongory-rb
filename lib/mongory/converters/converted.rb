@@ -39,10 +39,6 @@ module Mongory
           end
         end
 
-        def deep_merge(other)
-          dup.deep_merge!(Hash.new(other))
-        end
-
         def deep_merge!(other)
           _deep_merge!(self, Hash.new(other))
         end
