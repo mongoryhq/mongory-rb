@@ -100,7 +100,7 @@ static VALUE rb_mongory_matcher_initialize(int argc, VALUE *argv, VALUE self) {
   scratch_pool->owner = wrapper;
   rb_mongory_matcher_parse_argv(wrapper, argc, argv);
 
-  mongory_matcher *matcher = mongory_matcher_new(matcher_pool_base, wrapper->condition, wrapper->ctx);
+  mongory_matcher *matcher = mongory_matcher_new(matcher_pool_base, wrapper->condition, (void *)wrapper->ctx);
   if (matcher_pool_base->error || !matcher) {
     char err_msg[256];
     snprintf(err_msg, sizeof(err_msg), "%s",
@@ -144,9 +144,6 @@ static void rb_mongory_matcher_parse_argv(rb_mongory_matcher_t *self, int argc, 
   VALUE converted_condition = rb_funcall(rb_mongory_condition_converter, rb_intern("convert"), 1, condition);
   self->condition = rb_to_mongory_value_deep(self->pool, converted_condition);
   self->mark_list->push(self->mark_list, self->condition);
-  mongory_value *store_ctx = mongory_value_wrap_u(self->pool, (void *)self->ctx);
-  store_ctx->origin = (void *)self->ctx;
-  self->mark_list->push(self->mark_list, store_ctx);
 }
 
 typedef struct {

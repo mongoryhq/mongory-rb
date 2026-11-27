@@ -120,7 +120,8 @@ static bool rb_mongory_custom_matcher_match(void *ruby_matcher, mongory_value *v
   return RTEST(match_result);
 }
 
-static bool rb_mongory_custom_matcher_lookup(char *key) {
+static bool rb_mongory_custom_matcher_lookup(char *key, void *extern_ctx) {
+  (void)extern_ctx;
   VALUE matcher_class = rb_funcall(rb_mongory_m_matchers, rb_intern("lookup"), 1, rb_str_new_cstr(key));
   return RTEST(matcher_class);
 }
