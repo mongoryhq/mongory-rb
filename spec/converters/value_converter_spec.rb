@@ -85,8 +85,8 @@ RSpec.describe Mongory::Converters::ValueConverter do
     context 'when structure is deeply nested' do
       let(:input) { { :'a.b.c'.in => [1, 2] } }
 
-      it 'produces a deeply nested hash with normalized operator' do
-        is_expected.to eq('a' => { 'b' => { 'c' => { '$in' => [1, 2] } } })
+      it 'preserves dotted key with normalized operator for mongory-core to expand' do
+        is_expected.to eq('a.b.c' => { '$in' => [1, 2] })
       end
     end
   end

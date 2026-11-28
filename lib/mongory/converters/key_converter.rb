@@ -56,33 +56,14 @@ module Mongory
         { target => other }
       end
 
-      # Converts a dotted string key into nested hash form.
-      # Splits the key on dots and builds a nested structure.
-      # Handles escaped dots in the key.
+      # Preserves the string key verbatim; dotted path expansion and escaped-dot
+      # unescaping are handled natively by `mongory-core`.
       #
-      # @param key [String] the dotted key string, e.g. "a.b.c"
-      # @param value [Object] the value to assign at the deepest level
-      # @return [Hash] nested hash structure
+      # @param key [String] the field key string
+      # @param value [Object] the condition value
+      # @return [Hash] single-entry hash `{ key => value }`
       def convert_string_key(key, value)
-        return { '' => value } if key.empty?
-
-        ret = {}
-        *sub_keys, last_key = key.split(/(?<!\\)\./)
-        last_hash = sub_keys.reduce(ret) do |res, sub_key|
-          next_res = res[normalize_key(sub_key)] = {}
-          next_res
-        end
-        last_hash[normalize_key(last_key)] = value
-        ret
-      end
-
-      # Normalizes a key by unescaping escaped dots.
-      # This allows for literal dots in field names.
-      #
-      # @param key [String] the key to normalize
-      # @return [String] the normalized key
-      def normalize_key(key)
-        key.gsub(/\\\./, '.')
+        { key => value }
       end
     end
   end

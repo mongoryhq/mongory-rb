@@ -17,16 +17,16 @@ RSpec.describe Mongory::Converters::ConditionConverter do
     context 'when given a nested key with dot notation' do
       let(:input) { { 'user.name' => 'Frank' } }
 
-      it 'converts it into nested hash structure' do
-        expect(result).to eq('user' => { 'name' => 'Frank' })
+      it 'preserves dotted key for mongory-core to expand' do
+        expect(result).to eq('user.name' => 'Frank')
       end
     end
 
     context 'when given multiple keys with shared prefix' do
       let(:input) { { 'user.name' => 'Frank', 'user.age' => 20 } }
 
-      it 'merges them into a single nested hash' do
-        expect(result).to eq('user' => { 'name' => 'Frank', 'age' => 20 })
+      it 'preserves both dotted keys for mongory-core to merge' do
+        expect(result).to eq('user.name' => 'Frank', 'user.age' => 20)
       end
     end
 
@@ -49,8 +49,8 @@ RSpec.describe Mongory::Converters::ConditionConverter do
     context 'when structure is deeply nested' do
       let(:input) { { 'a.b.c' => { in: [1, 2] } } }
 
-      it 'produces a deeply nested hash with normalized operator' do
-        expect(result).to eq('a' => { 'b' => { 'c' => { 'in' => [1, 2] } } })
+      it 'preserves dotted key and normalizes nested operator keys' do
+        expect(result).to eq('a.b.c' => { 'in' => [1, 2] })
       end
     end
   end

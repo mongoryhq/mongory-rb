@@ -50,51 +50,11 @@ RSpec.describe Mongory::Converters::KeyConverter do
       end
     end
 
-    context 'when key has one dot' do
-      let(:key) { 'user.name' }
-
-      it 'returns a nested hash' do
-        expect(result).to eq('user' => { 'name' => value })
-      end
-    end
-
-    context 'when key has multiple dots' do
-      let(:key) { 'a.b.c.d' }
-
-      it 'returns deeply nested hash' do
-        expect(result).to eq('a' => { 'b' => { 'c' => { 'd' => value } } })
-      end
-    end
-
-    context 'when key contains escaped dot' do
+    context 'when key has dots or escaped dots' do
       let(:key) { 'user\.name.age' }
 
-      it 'preserves escaped dot as literal' do
-        expect(result).to eq('user.name' => { 'age' => value })
-      end
-    end
-
-    context 'when key contains double backslash' do
-      let(:key) { 'foo\\\\bar.baz' }
-
-      it 'treats backslash as literal and splits correctly' do
-        expect(result).to eq('foo\\\\bar' => { 'baz' => value })
-      end
-    end
-
-    context 'when key ends with escaped dot' do
-      let(:key) { 'a\.b\.' }
-
-      it 'preserves literal dot at end' do
-        expect(result).to eq('a.b.' => value)
-      end
-    end
-
-    context 'when key is fully escaped' do
-      let(:key) { 'a\.b\.c' }
-
-      it 'preserves all escaped dots as part of key' do
-        expect(result).to eq('a.b.c' => value)
+      it 'preserves the string key verbatim for mongory-core to expand' do
+        expect(result).to eq('user\.name.age' => value)
       end
     end
   end
