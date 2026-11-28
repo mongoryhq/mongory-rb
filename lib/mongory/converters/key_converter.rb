@@ -3,25 +3,21 @@
 module Mongory
   module Converters
     # KeyConverter handles transformation of field keys in query conditions.
-    # It normalizes symbol keys into string paths, splits dotted keys,
-    # and delegates to the appropriate converter logic.
+    # It normalizes symbol, integer, and QueryOperator keys into string keys;
+    # dotted-path expansion and escaped-dot unescaping are handled natively by `mongory-core`.
     #
     # This class inherits from AbstractConverter and provides specialized
     # handling for different key types:
-    # - String keys with dots are split into nested paths
-    # - Symbol keys are converted to strings
+    # - String keys are preserved verbatim for `mongory-core`
+    # - Symbol and Integer keys are converted to strings
     # - QueryOperator instances are handled via their DSL hooks
     # - Other types fall back to the parent converter
     #
-    # Used by ConditionConverter to build query structures from flat input.
+    # Used by ConditionConverter to normalize query keys from Ruby DSL input.
     #
-    # - `"a.b.c" => v` becomes `{ "a" => { "b" => { "c" => v } } }`
-    # - Symbols are stringified and delegated to String logic
-    # - QueryOperator dispatches to internal DSL hook
-    #
-    # @example Convert a dotted string key
+    # @example Preserve a dotted string key for `mongory-core`
     #   KeyConverter.instance.convert("user.name", "John")
-    #   # => { "user" => { "name" => "John" } }
+    #   # => { "user.name" => "John" }
     #
     # @example Convert a symbol key
     #   KeyConverter.instance.convert(:status, "active")
